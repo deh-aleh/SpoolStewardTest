@@ -8,7 +8,7 @@ A guided tour of the repository: what every source file is for, how configuratio
 ## 1. Repository layout
 
 ```
-app/            the application (Python package)
+spoolsteward/   the application (Python package)
   admin/        the web portal: routes + Jinja templates
   audit/        administrative log and audit archive
   auth/         accounts, passwords, print keys, RADIUS, login protection
@@ -19,24 +19,24 @@ app/            the application (Python package)
   migrations/   Alembic revisions
   policy/       quotas, grants, page counting, controls, keep-alive, ordering
   certwatch.py  cli.py  config.py  crypto_fields.py  cups_client.py  escl.py  escl_window.py  i18n.py  keywatch.py  logsetup.py  main.py  mdns.py  notices.py  printerwatch.py  secretcheck.py  titles.py  updates.py
-deploy/         installation on the host without docker (systemd)
+deploy/         host install without docker: not supported in this release, not in the release package
 docker/         container definitions (stack/ is the production one)
 docs/           this documentation (en/ and it/)
+requirements/   locked Python dependencies, with hashes (CONTRIBUTING.md)
 scripts/        helper scripts
 tests/          automated tests
-docker-compose.yml  docker-compose.test.yml  pyproject.toml  alembic.ini
+docker-compose.yml  docker-compose.test.yml  pyproject.toml  alembic.ini  CONTRIBUTING.md
 ```
 
 ## 2. Configuration: who reads what
 
-With docker there is **one single** settings file, `.env`. (For the host install without docker there is a similar one, described below.)
+There is **one single** settings file, `.env`.
 
 | File | Read by | Contains | Created by |
 |---|---|---|---|
 | **`.env`** (project folder) | **docker compose** (to build `docker-compose.yml`) **and** the **gateway** and **mdns** containers (`env_file: .env`) | part A: `PUID`, `PGID`, `PORTAL_PORT`, `CUPS_QUEUES`, `CUPS_VIRTUAL_QUEUE`, `AUDIT_ARCHIVE_HOST_PATH`, `BACKUP_HOST_PATH`, `BACKUP_DIR`, `SPOOLSTEWARD_REGISTRY`, `SPOOLSTEWARD_VERSION`. Part B: every `SPOOLSTEWARD_*` setting, including secrets. Plus the `CERT_SYNC_*` options of `scripts/cert-sync.sh` | `scripts/docker-init.sh` (from `docker/env.example`), mode 600 |
-| **`deploy/env.example`** → `/etc/spoolsteward/env` | systemd unit of the **host install** | same `SPOOLSTEWARD_*` settings, for installs without docker | `deploy/install.sh` |
 
-The application itself ([`app/config.py`](../../app/config.py)) reads **only real environment variables** with the prefix
+The application itself ([`spoolsteward/config.py`](../../spoolsteward/config.py)) reads **only real environment variables** with the prefix
 `SPOOLSTEWARD_` (it does not read a `.env` file: that one belongs to compose). Every setting has a safe default; an empty value
 is an error (write `none` where a setting may be left unset). After editing `.env` run `docker compose up -d` (recreates the containers that use it). **`docker-compose.yml` is never edited**: everything the user may change is in `.env`, so an update can replace the compose file without erasing anyone's choices. The extra variables passed to the containers (like `PUID`) are ignored by the application.
 
@@ -54,12 +54,12 @@ is an error (write `none` where a setting may be left unset). After editing `.en
 | `PROJECT_DIR` | set by init | Full path of the project folder; only the optional `updater` container uses it |
 | `COMPOSE_PROFILES` | unset | `autoupdate` starts the optional `updater` container |
 
-The file is made from `docker/env.example` (by `scripts/docker-init.sh`, in plain shell: it fills in version, user, folder and generates the secret). An update **never touches `.env`**: new options work with their default value (the one in `app/config.py`) even when missing, and `docker/env.example` (replaced by every update) lists them with their explanation. A test checks that every active value of `docker/env.example` equals the default in `app/config.py`.
+The file is made from `docker/env.example` (by `scripts/docker-init.sh`, in plain shell: it fills in version, user, folder and generates the secret). An update **never touches `.env`**: new options work with their default value (the one in `spoolsteward/config.py`) even when missing, and `docker/env.example` (replaced by every update) lists them with their explanation. A test checks that every active value of `docker/env.example` equals the default in `spoolsteward/config.py`.
 
 ### 2.2 Part B of `.env` (`SPOOLSTEWARD_*` settings)
 
 The full reference, one variable at a time with what it does and when to change it, is [configuration.md](configuration.md). The commented reference is part B of [`docker/env.example`](../../docker/env.example) (plain English comments) and the
-authoritative list is `app/config.py`. Summary:
+authoritative list is `spoolsteward/config.py`. Summary:
 
 | Group | Variables |
 |---|---|
@@ -83,17 +83,17 @@ authoritative list is `app/config.py`. Summary:
 
 | File | Role |
 |---|---|
-| `app/__main__.py` | The `spoolsteward` command: refuses to start without TLS, with half-configured RADIUS or with an unusable `SPOOLSTEWARD_ESCL_WINDOW_SECONDS`, then runs uvicorn. |
-| `app/main.py` | Builds the FastAPI app: HTTP client towards CUPS (unix socket), database, auth providers, middleware (sessions, language), routers, `/healthz`, and starts the background tasks. |
-| `app/cli.py` | The `spoolsteward-admin` command: `set-admin-password`, `group-limit`, `user-limit`, `set-group`, `make-admin`, `jobs`, `audit-archive`, `backup-key`, `backup-run`, `backup-verify`, `backup-restore`. |
-| `app/config.py` | `Settings` (pydantic-settings): every `SPOOLSTEWARD_*` variable with its default and validation. |
-| `app/cups_client.py` | The gateway's own conversation with CUPS: lists queues (state, colour, media, online/offline, virtual flag) in the display order; `queue_caps()` asks one queue whether it has colour and a duplex unit (cached 60 s) for the permission checks. |
-| `app/mdns.py` | Separate process (`python -m app.mdns`): announces queues as `_ipps._tcp` (+ AirPrint subtype) and scanners as `_uscans._tcp`. |
-| `app/escl_window.py` | The scan window: which address may scan without credentials, for whom and for how long (in memory). |
-| `app/escl.py` | Scanning: eSCL proxy for native clients (`/eSCL/...`) and the portal scan page (`/me/scan`); discovers scanners at run time. |
-| `app/i18n.py` | Translation engine: language negotiation, `_()`, plurals, middleware. See [languages.md](languages.md). |
+| `spoolsteward/__main__.py` | The `spoolsteward` command: refuses to start without TLS, with half-configured RADIUS or with an unusable `SPOOLSTEWARD_ESCL_WINDOW_SECONDS`, then runs uvicorn. |
+| `spoolsteward/main.py` | Builds the FastAPI app: HTTP client towards CUPS (unix socket), database, auth providers, middleware (sessions, language), routers, `/healthz`, and starts the background tasks. |
+| `spoolsteward/cli.py` | The `spoolsteward-admin` command: `set-admin-password`, `group-limit`, `user-limit`, `set-group`, `make-admin`, `jobs`, `audit-archive`, `backup-key`, `backup-run`, `backup-verify`, `backup-restore`. |
+| `spoolsteward/config.py` | `Settings` (pydantic-settings): every `SPOOLSTEWARD_*` variable with its default and validation. |
+| `spoolsteward/cups_client.py` | The gateway's own conversation with CUPS: lists queues (state, colour, media, online/offline, virtual flag) in the display order; `queue_caps()` asks one queue whether it has colour and a duplex unit (cached 60 s) for the permission checks. |
+| `spoolsteward/mdns.py` | Separate process (`python -m spoolsteward.mdns`): announces queues as `_ipps._tcp` (+ AirPrint subtype) and scanners as `_uscans._tcp`. |
+| `spoolsteward/escl_window.py` | The scan window: which address may scan without credentials, for whom and for how long (in memory). |
+| `spoolsteward/escl.py` | Scanning: eSCL proxy for native clients (`/eSCL/...`) and the portal scan page (`/me/scan`); discovers scanners at run time. |
+| `spoolsteward/i18n.py` | Translation engine: language negotiation, `_()`, plurals, middleware. See [languages.md](languages.md). |
 
-### 3.2 `app/ipp/` — the IPP side
+### 3.2 `spoolsteward/ipp/` — the IPP side
 
 | File | Role |
 |---|---|
@@ -101,7 +101,7 @@ authoritative list is `app/config.py`. Summary:
 | `gateway.py` | The reverse proxy: HTTPS check, capability queries, authentication, operation filter, identity override, permissions (colour, sides, printer, hours: refuses or rewrites `print-color-mode` / `sides` before CUPS, filters the printer lists), quota reservation, streaming to CUPS, recording the outcome. |
 | `rewrite.py` | Rewrites internal CUPS URIs in responses so clients keep talking to the gateway; declares `uri-authentication-supported=basic` so Mopria sends credentials. |
 
-### 3.3 `app/auth/` — who you are
+### 3.3 `spoolsteward/auth/` — who you are
 
 | File | Role |
 |---|---|
@@ -115,7 +115,7 @@ authoritative list is `app/config.py`. Summary:
 | `throttle.py` | Login lock-out; kept in `/data/login-lockout.json`, so a restart does not reset it. |
 | `dictionary` | RADIUS attribute dictionary needed by pyrad. |
 
-### 3.4 `app/policy/` — quotas and controls
+### 3.4 `spoolsteward/policy/` — quotas and controls
 
 | File | Role |
 |---|---|
@@ -132,7 +132,7 @@ authoritative list is `app/config.py`. Summary:
 | `ordering.py` | List order: physical first, then virtual; each by first-seen time. |
 | `discovery.py` | Finds new USB printers (ipp-usb first, CUPS usb backend + driver second), creates their queues, tracks unreachable USB queues and removes them after `OFFLINE_REMOVE_HOURS`; remembers the names of removed and renamed queues (`printer_former`) for the rename dialog. |
 
-### 3.5 `app/admin/` — the portal
+### 3.5 `spoolsteward/admin/` — the portal
 
 | File | Role (URL prefix) |
 |---|---|
@@ -149,7 +149,7 @@ authoritative list is `app/config.py`. Summary:
 | `audit_view.py` | How one audit row is displayed (clipped text, device, print specs). |
 | `me.py` | User area: consumption, keys, password, settings (theme, language, refresh), requests (`/me`). |
 | `printing.py` | Print from the browser (`/me/print`): checks, quota, options, landscape handling, permissions (same `decide()` as the gateway), Print-Job to CUPS. |
-| `../secheaders.py` (in `app/`) | The Content-Security-Policy added to every HTML page (`SPOOLSTEWARD_CONTENT_SECURITY_POLICY`). It forbids inline scripts and styles: pages must keep their CSS and JavaScript in `static/`. |
+| `../secheaders.py` (in `spoolsteward/`) | The Content-Security-Policy added to every HTML page (`SPOOLSTEWARD_CONTENT_SECURITY_POLICY`). It forbids inline scripts and styles: pages must keep their CSS and JavaScript in `static/`. |
 | `common.py` | Shared pieces: templates, session and CSRF dependencies, flash messages, redirects, helpers. |
 | `templates/*.html` | Jinja pages: `base.html` (layout, menu, theme), `macros.html`, one template per page (`docs.html` shows the documentation). |
 
@@ -157,23 +157,23 @@ authoritative list is `app/config.py`. Summary:
 
 | File | Role |
 |---|---|
-| `app/audit/adminlog.py` | `record()`: writes an `admin_audit` row (who did what). |
-| `app/audit/archive.py` | Size estimation, crash-safe archiving to `.jsonl.gz`, verification, streaming reader, the periodic archiver. |
-| `app/backup/core.py` | Create/verify/prune/restore backups; SQLite snapshot; tar.gz with `MANIFEST.json`; retention; the marker file and the time limit (`bounded`) for network disks. |
-| `app/backup/crypto.py` | Recovery-key encryption (X25519 + HKDF + AES-256-GCM; private key wrapped by scrypt of the passphrase). |
-| `app/backup/service.py` | `backup_target` bookkeeping and the 60 s scheduler. |
-| `app/db/models.py` | All SQLAlchemy models. `session.py`: engine and sessions (SQLite WAL). `migrate.py`: runs Alembic from inside the app. |
-| `app/notices.py`, `app/admin/notices.py` | The bell: notices for administrators with a limit on how often the same one is reported (interval by `SPOOLSTEWARD_LOG_LEVEL`), and notices for one user; table `notice`. For users: `notify_user_counted` renews the open notice of the same kind and subject (counter, time) instead of adding rows; `SECONDARY_KINDS` (today `job_adjusted`, the forced prints) are marked read by `read_secondary` after `user.secondary_read_minutes` (default 20, 0 = never; `/me/settings`), run on every page render. |
-| `app/secretcheck.py` | At every start: notice when `SPOOLSTEWARD_SECRET_KEY` is missing or has changed (with how many file names it locked), and the one-time reminder to save it. What was already said is kept in `gateway_setting`, never the key itself. |
-| `app/printerwatch.py` | Every minute: paper jam, paper out, ink out/low on the physical printers, as notices for administrators and for the users waiting. |
-| `app/keywatch.py` | Every hour: forgets old print keys, if turned on warns of keys about to expire, and tells people whose temporary permission ended. |
-| `app/updates.py`, `app/admin/updates.py` | Daily check for a newer release (note for administrators) and the portal button that hands an update to the `updater` container through files in `/data/update` (the gateway never touches Docker). |
-| `app/crypto_fields.py` | SQLAlchemy column types that encrypt the file names (AES-GCM, key derived from `SPOOLSTEWARD_SECRET_KEY`); an unreadable value shows as `[encrypted]`. |
-| `app/titles.py` | Background task: encrypts names written before the key existed and, if enabled, erases names older than `SPOOLSTEWARD_JOB_TITLE_RETENTION_DAYS`. |
-| `app/certwatch.py` | Reads the TLS certificate and `sync-status.json`; opens and closes the certificate notices ([certificates.md](certificates.md)). |
-| `app/logsetup.py` | Log format: time zone of `SPOOLSTEWARD_TIMEZONE` with the UTC offset, level from `SPOOLSTEWARD_LOG_LEVEL`. |
-| `app/migrations/` | `env.py` and the revisions `0001`…`0017` (schema history; `0015` adds `permission_rule` and `printer_former`, `0016` adds `permission_grant`, `0017` adds `user.secondary_read_minutes`). From `0014` on a migration may only add (expand/contract; a test checks it), so a rolled-back older version still starts on a newer database. |
-| `app/locales/` | `messages.pot` (template) and `<lang>/messages.po` (it, es, ru, zh). |
+| `spoolsteward/audit/adminlog.py` | `record()`: writes an `admin_audit` row (who did what). |
+| `spoolsteward/audit/archive.py` | Size estimation, crash-safe archiving to `.jsonl.gz`, verification, streaming reader, the periodic archiver. |
+| `spoolsteward/backup/core.py` | Create/verify/prune/restore backups; SQLite snapshot; tar.gz with `MANIFEST.json`; retention; the marker file and the time limit (`bounded`) for network disks. |
+| `spoolsteward/backup/crypto.py` | Recovery-key encryption (X25519 + HKDF + AES-256-GCM; private key wrapped by scrypt of the passphrase). |
+| `spoolsteward/backup/service.py` | `backup_target` bookkeeping and the 60 s scheduler. |
+| `spoolsteward/db/models.py` | All SQLAlchemy models. `session.py`: engine and sessions (SQLite WAL). `migrate.py`: runs Alembic from inside the app. |
+| `spoolsteward/notices.py`, `spoolsteward/admin/notices.py` | The bell: notices for administrators with a limit on how often the same one is reported (interval by `SPOOLSTEWARD_LOG_LEVEL`), and notices for one user; table `notice`. For users: `notify_user_counted` renews the open notice of the same kind and subject (counter, time) instead of adding rows; `SECONDARY_KINDS` (today `job_adjusted`, the forced prints) are marked read by `read_secondary` after `user.secondary_read_minutes` (default 20, 0 = never; `/me/settings`), run on every page render. |
+| `spoolsteward/secretcheck.py` | At every start: notice when `SPOOLSTEWARD_SECRET_KEY` is missing or has changed (with how many file names it locked), and the one-time reminder to save it. What was already said is kept in `gateway_setting`, never the key itself. |
+| `spoolsteward/printerwatch.py` | Every minute: paper jam, paper out, ink out/low on the physical printers, as notices for administrators and for the users waiting. |
+| `spoolsteward/keywatch.py` | Every hour: forgets old print keys, if turned on warns of keys about to expire, and tells people whose temporary permission ended. |
+| `spoolsteward/updates.py`, `spoolsteward/admin/updates.py` | Daily check for a newer release (note for administrators) and the portal button that hands an update to the `updater` container through files in `/data/update` (the gateway never touches Docker). |
+| `spoolsteward/crypto_fields.py` | SQLAlchemy column types that encrypt the file names (AES-GCM, key derived from `SPOOLSTEWARD_SECRET_KEY`); an unreadable value shows as `[encrypted]`. |
+| `spoolsteward/titles.py` | Background task: encrypts names written before the key existed and, if enabled, erases names older than `SPOOLSTEWARD_JOB_TITLE_RETENTION_DAYS`. |
+| `spoolsteward/certwatch.py` | Reads the TLS certificate and `sync-status.json`; opens and closes the certificate notices ([certificates.md](certificates.md)). |
+| `spoolsteward/logsetup.py` | Log format: time zone of `SPOOLSTEWARD_TIMEZONE` with the UTC offset, level from `SPOOLSTEWARD_LOG_LEVEL`. |
+| `spoolsteward/migrations/` | `env.py` and the revisions `0001`…`0017` (schema history; `0015` adds `permission_rule` and `printer_former`, `0016` adds `permission_grant`, `0017` adds `user.secondary_read_minutes`). From `0014` on a migration may only add (expand/contract; a test checks it), so a rolled-back older version still starts on a newer database. |
+| `spoolsteward/locales/` | `messages.pot` (template) and `<lang>/messages.po` (it, es, ru, zh). |
 
 ## 4. Scripts
 
@@ -184,13 +184,13 @@ authoritative list is `app/config.py`. Summary:
 | `scripts/add-printer-linux.sh` | Adds a gateway printer to a Linux computer with the print key stored in the queue address. |
 | `scripts/print-test.sh` | Sends one small text page as a user (uses a sheet of paper). |
 | `scripts/gen_dev_cert.sh` | Development-only self-signed certificate. |
-| `scripts/cert-sync.sh [--dry-run]` | From cron: copies the TLS certificate from the machine that renews it (`rsync` over `ssh`), checks it, installs it in `config/tls/` and restarts the gateway if it changed. Writes `config/tls/sync-status.json`, which the portal reads (`app/certwatch.py`). See [certificates.md](certificates.md). |
+| `scripts/cert-sync.sh [--dry-run]` | From cron: copies the TLS certificate from the machine that renews it (`rsync` over `ssh`), checks it, installs it in `config/tls/` and restarts the gateway if it changed. Writes `config/tls/sync-status.json`, which the portal reads (`spoolsteward/certwatch.py`). See [certificates.md](certificates.md). |
 | `scripts/make-release-package.sh VERSION FOLDER` | Builds the release package (`spoolsteward-<version>.tar.gz` + `SHA256SUMS`): compose, scripts, `docker/env.example`, documentation. Used by the release workflow; it never holds `.env`, `config/`, `data/`. |
 | `scripts/update.sh [VERSION\|--check]` | Safe update with the published images: backup, downloads and checks (sha256) the release package, replaces the compose file and the scripts (never `.env`, `config/`, `data/`), new version in `.env`, pull, restart, waits for health, automatic return to the previous files and version and, if needed, an offer to restore the backup. It refuses to run in a folder with `.git`. `--from-portal` is the mode used by the `updater` container. |
 | `scripts/queue-restore.sh NAME [--reboot]` / `--list` | Brings back a deleted queue of `CUPS_QUEUES`: takes its name out of `/etc/cups/spoolsteward-queues` in the `cups` container (the list of queues already created once); `--reboot` also restarts that container. |
 | `scripts/i18n.py` | Translation tooling: `extract`, `missing`, `check`, `add`. |
 
-## 5. Containers and host installation
+## 5. Containers
 
 | Path | Purpose |
 |---|---|
@@ -202,16 +202,16 @@ authoritative list is `app/config.py`. Summary:
 | `docker/test/`, `docker/radius/` | `cupsd.conf` of the test CUPS (the production one plus a TCP listener; the test CUPS is built from the production image); test RADIUS users (`mario`, `anna`, `admin`). |
 | `docker/stack/updater/` | Optional image `spoolsteward-updater` (profile `autoupdate`): waits for `/data/update/request.json`, runs `scripts/update.sh --from-portal`, writes `status.json`. Has the Docker socket. |
 | `docker/env.example` | The template of `.env`, with every option explained (part A for compose, part B for the program). It is part of the release package. |
-| `deploy/install.sh`, `setup-cups.sh`, `spoolsteward.service`, `cups.socket.d/`, `env.example` | Installation on the host without docker (see [installation.md](installation.md)). |
+| `deploy/` | Installation on the host without docker (systemd). Not supported in this release and not in the release package ([deploy/README.md](../../deploy/README.md)). |
 
 ## 6. Where to look when…
 
 | You want to… | Look at |
 |---|---|
-| change how a quota is computed | `app/policy/engine.py`, `app/policy/audit.py` |
-| allow/forbid an IPP operation | `app/ipp/gateway.py` |
-| change what colour / one-sided / printer / hours permissions do | `app/policy/permissions.py` (`decide()`), then where it is applied: `app/ipp/gateway.py` and `app/admin/printing.py` |
-| add a portal page | a router in `app/admin/`, a template in `app/admin/templates/` (styles and scripts in `app/admin/static/css/` and `js/`, never inline), a menu entry in `base.html` |
-| add a setting | `app/config.py`, then `docker/env.example` (part B, with its explanation and the same default value: a test checks it) and [this page](#22-part-b-of-env-spoolsteward_-settings) |
-| change the database | `app/db/models.py` **and** a new Alembic revision (a test checks they match) |
+| change how a quota is computed | `spoolsteward/policy/engine.py`, `spoolsteward/policy/audit.py` |
+| allow/forbid an IPP operation | `spoolsteward/ipp/gateway.py` |
+| change what colour / one-sided / printer / hours permissions do | `spoolsteward/policy/permissions.py` (`decide()`), then where it is applied: `spoolsteward/ipp/gateway.py` and `spoolsteward/admin/printing.py` |
+| add a portal page | a router in `spoolsteward/admin/`, a template in `spoolsteward/admin/templates/` (styles and scripts in `spoolsteward/admin/static/css/` and `js/`, never inline), a menu entry in `base.html` |
+| add a setting | `spoolsteward/config.py`, then `docker/env.example` (part B, with its explanation and the same default value: a test checks it) and [this page](#22-part-b-of-env-spoolsteward_-settings) |
+| change the database | `spoolsteward/db/models.py` **and** a new Alembic revision (a test checks they match) |
 | translate a text | [languages.md](languages.md) |

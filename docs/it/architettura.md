@@ -108,7 +108,7 @@ l'autenticazione, che è la sessione del portale.
 
 ## 5. Attività in background
 
-Tutte avviate dal ciclo di vita del gateway ([`app/main.py`](../../app/main.py)):
+Tutte avviate dal ciclo di vita del gateway ([`spoolsteward/main.py`](../../spoolsteward/main.py)):
 
 | Attività | Intervallo | Cosa fa |
 |---|---|---|
@@ -118,11 +118,11 @@ Tutte avviate dal ciclo di vita del gateway ([`app/main.py`](../../app/main.py))
 | Scheduler della stampa periodica | 60 s | Stampa le pagine di manutenzione e annota la prima volta che ogni coda è stata vista |
 | Scoperta delle stampanti | `SPOOLSTEWARD_DISCOVERY_INTERVAL` (30 s) | Crea le code delle stampanti USB nuove (prima ipp-usb, poi backend usb di CUPS) e toglie le code USB irraggiungibili da `SPOOLSTEWARD_OFFLINE_REMOVE_HOURS` |
 | Annunciatore mDNS | `SPOOLSTEWARD_MDNS_INTERVAL` (30 s) | Contenitore a parte: rilegge l'elenco delle code e dice al gateway quale indirizzo annuncia |
-| Nomi dei file ([`app/titles.py`](../../app/titles.py)) | all'avvio, poi 1 giorno | Cifra i nomi scritti prima che ci fosse la chiave; con la retention accesa cancella i nomi più vecchi di `SPOOLSTEWARD_JOB_TITLE_RETENTION_DAYS` |
-| Controllo del certificato ([`app/certwatch.py`](../../app/certwatch.py)) | 6 h | Legge il certificato TLS e `config/tls/sync-status.json`, e apre o chiude gli avvisi sul certificato |
-| Controllo stampanti ([`app/printerwatch.py`](../../app/printerwatch.py)) | 1 min | Inceppamento, carta finita, inchiostro finito/in esaurimento come avvisi (confermati da due controlli consecutivi) |
-| Manutenzione delle chiavi ([`app/keywatch.py`](../../app/keywatch.py)) | 1 h | Elimina le chiavi di stampa concluse, avvisa di quelle in scadenza e dei permessi temporanei terminati |
-| Controllo aggiornamenti ([`app/updates.py`](../../app/updates.py)) | 24 h (la prima volta 2 min dopo l'avvio) | Chiede a GitHub l'ultima release (`SPOOLSTEWARD_UPDATE_CHECK`) |
+| Nomi dei file ([`spoolsteward/titles.py`](../../spoolsteward/titles.py)) | all'avvio, poi 1 giorno | Cifra i nomi scritti prima che ci fosse la chiave; con la retention accesa cancella i nomi più vecchi di `SPOOLSTEWARD_JOB_TITLE_RETENTION_DAYS` |
+| Controllo del certificato ([`spoolsteward/certwatch.py`](../../spoolsteward/certwatch.py)) | 6 h | Legge il certificato TLS e `config/tls/sync-status.json`, e apre o chiude gli avvisi sul certificato |
+| Controllo stampanti ([`spoolsteward/printerwatch.py`](../../spoolsteward/printerwatch.py)) | 1 min | Inceppamento, carta finita, inchiostro finito/in esaurimento come avvisi (confermati da due controlli consecutivi) |
+| Manutenzione delle chiavi ([`spoolsteward/keywatch.py`](../../spoolsteward/keywatch.py)) | 1 h | Elimina le chiavi di stampa concluse, avvisa di quelle in scadenza e dei permessi temporanei terminati |
+| Controllo aggiornamenti ([`spoolsteward/updates.py`](../../spoolsteward/updates.py)) | 24 h (la prima volta 2 min dopo l'avvio) | Chiede a GitHub l'ultima release (`SPOOLSTEWARD_UPDATE_CHECK`) |
 
 ## 6. Modello dei dati
 

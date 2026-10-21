@@ -1,6 +1,7 @@
 # Publishes the container images when you push a version tag, for example:  git tag v1.2.0 && git push origin v1.2.0
 # A beta is tagged v1.2.0-beta.1 and written 1.2.0b1 in pyproject.toml; it is published as a GitHub "pre-release", which
-# scripts/update.sh and the portal never offer by themselves.
+# scripts/update.sh and the portal offer only where SPOOLSTEWARD_UPDATE_BETA=true (the default).
+# Breaking changes: give the release notes a "## Breaking changes" heading; installs then ask for a stronger confirmation.
 # One tag gives two images, each built for both amd64 (PC, server) and arm64 (Raspberry Pi, ARM NAS):
 # spoolsteward (the application, CUPS and ipp-usb) and spoolsteward-updater.
 # Images go to ghcr.io/<owner>/<name>:<version>. The tag must match "version" in pyproject.toml.
@@ -11,29 +12,33 @@ on:
     tags: ["v[0-9]+.[0-9]+.[0-9]+", "v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+"]
   workflow_dispatch:      # "Run workflow" button: builds everything for both architectures but publishes nothing (a dry run)
 
+# Actions are pinned to a commit (the comment says which version it is): a moved tag can not change what runs here.
 permissions:
-  contents: write     # create the GitHub release
-  packages: write     # push images to ghcr.io
+  contents: read
 
 jobs:
+  # the same tests as every pull request (ci.yml), with the CUPS and FreeRADIUS test stack
   test:
+    uses: ./.github/workflows/ci.yml
+
+  version:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
-          python-version: "3.12"
-      - run: pip install ".[dev]"
-      - run: python -m pytest -q
+          persist-credentials: false
       - name: Tag must match the version in pyproject.toml
         if: github.event_name == 'push'
         run: |
-          v="$(python -c 'import re,tomllib;print(re.sub(r"^(\d+\.\d+\.\d+)b(\d+)$", r"\1-beta.\2", tomllib.load(open("pyproject.toml","rb"))["project"]["version"]))')"
+          v="$(python3 -c 'import re,tomllib;print(re.sub(r"^(\d+\.\d+\.\d+)b(\d+)$", r"\1-beta.\2", tomllib.load(open("pyproject.toml","rb"))["project"]["version"]))')"
           test "v$v" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != pyproject version v$v"; exit 1; }
 
   images:
-    needs: test
+    needs: [test, version]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write     # push images to ghcr.io
     strategy:
       fail-fast: false      # one image failing must not cancel the other: both errors show up in one run
       matrix:
@@ -41,10 +46,12 @@ jobs:
           - {name: spoolsteward,          context: ".",                  file: docker/stack/Dockerfile}
           - {name: spoolsteward-updater,  context: docker/stack/updater, file: docker/stack/updater/Dockerfile}
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1  # v4.4.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4.4.1
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
         if: github.event_name == 'push'
         with:
           registry: ghcr.io
@@ -52,9 +59,9 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - id: meta
         run: |
-          echo "owner=$(echo '${{ github.repository_owner }}' | tr 'A-Z' 'a-z')" >> "$GITHUB_OUTPUT"
+          echo "owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
           echo "version=$(python3 -c 'import re,tomllib;print(re.sub(r"^(\d+\.\d+\.\d+)b(\d+)$", r"\1-beta.\2", tomllib.load(open("pyproject.toml","rb"))["project"]["version"]))')" >> "$GITHUB_OUTPUT"
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc  # v7.4.0
         with:
           context: ${{ matrix.context }}
           file: ${{ matrix.file }}
@@ -69,12 +76,16 @@ jobs:
     needs: images
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write     # create the GitHub release
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       # the package that scripts/update.sh downloads and that new installs unpack: compose file, scripts, docs, env template
       - name: Build the release package
         run: sh scripts/make-release-package.sh "${GITHUB_REF_NAME#v}" dist
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64  # v3.0.3
         with:
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, '-beta.') }}

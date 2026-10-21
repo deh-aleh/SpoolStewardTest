@@ -1,6 +1,6 @@
 import logging
 
-from app.logsetup import ZonedFormatter
+from spoolsteward.logsetup import ZonedFormatter
 
 
 def _line(tz):

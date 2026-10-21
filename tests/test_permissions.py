@@ -10,15 +10,15 @@ import httpx
 import pytest
 from sqlalchemy import select
 
-from app import notices
-from app.auth import keys
-from app.config import settings
-from app.db.models import (
+from spoolsteward import notices
+from spoolsteward.auth import keys
+from spoolsteward.config import settings
+from spoolsteward.db.models import (
     AdminAudit, Group, JobLog, Notice, PermissionRule, PrinterFormer, SubjectType, User,
 )
-from app.ipp import codec as c
-from app.policy import audit, discovery, permissions
-from app.policy.permissions import Perms, Window, decide, in_window
+from spoolsteward.ipp import codec as c
+from spoolsteward.policy import audit, discovery, permissions
+from spoolsteward.policy.permissions import Perms, Window, decide, in_window
 from tests.conftest import csrf_of_page, make_user, portal_login
 
 GOOD = "correct horse battery"
@@ -153,7 +153,7 @@ def test_the_window_follows_the_clock_of_the_time_zone_across_daylight_saving():
     assert not in_window(w, datetime(2026, 10, 25, 2, 30, tzinfo=UTC), ROME)
 
 
-def test_start_equal_to_end_lets_nobody_in_and_the_text_is_readable(english):
+def test_start_equal_to_end_lets_nobody_in_and_the_text_is_readable():
     assert not in_window(Window(frozenset(range(7)), 600, 600), WED_10, ZUTC)
     assert permissions.describe_window(Window(frozenset({0, 1, 2, 3, 4}), 480, 1020)) == "Mon–Fri 08:00–17:00"
     assert permissions.describe_days({0, 2, 5, 6}) == "Mon, Wed, Sat, Sun"
@@ -358,7 +358,6 @@ def open_notices(cl, kind):
         return [n for n in s.scalars(select(Notice).where(Notice.kind == kind)) if n.dismissed_at is None]
 
 
-@pytest.mark.usefixtures("english")
 async def test_a_forbidden_printer_is_refused_audited_without_quota_and_told_once(gw):
     limit(gw, printers_mode="list", printers=["bw"])
     for _ in range(2):
@@ -375,7 +374,6 @@ async def test_a_forbidden_printer_is_refused_audited_without_quota_and_told_onc
     gw.cups.seen.clear()
 
 
-@pytest.mark.usefixtures("english")
 async def test_outside_the_hours_the_job_is_refused_and_inside_it_goes_through(gw, monkeypatch):
     limit(gw, hours_mode="window", hours_days="01234", hours_start=480, hours_end=1020)
     monkeypatch.setattr(audit, "now_utc", lambda: datetime(2026, 10, 17, 10, 0, tzinfo=UTC))   # a Saturday
@@ -389,7 +387,6 @@ async def test_outside_the_hours_the_job_is_refused_and_inside_it_goes_through(g
     assert (await send(gw, job())).code == 0 and len(gw.cups.jobs()) == 1
 
 
-@pytest.mark.usefixtures("english")
 async def test_adjust_forwards_black_and_white_and_double_sided_and_tells_the_user(gw):
     limit(gw, color=False, one_sided=False)
     out = await send(gw, job(job_attrs=[kw("print-color-mode", "color"), kw("sides", "one-sided"), kw("ColorModel", "RGB"), kw("Duplex", "None"),
@@ -429,7 +426,6 @@ async def test_not_asked_is_corrected_silently_and_a_printer_without_the_feature
     assert [r[0] for r in log_rows(gw)] == ["accepted", "accepted"]
 
 
-@pytest.mark.usefixtures("english")
 async def test_refuse_mode_refuses_what_was_asked_and_forces_what_was_not(gw, monkeypatch):
     monkeypatch.setattr(settings, "permission_mode", "refuse")
     limit(gw, color=False)
@@ -458,9 +454,8 @@ async def test_the_printer_is_asked_for_its_capabilities_once_a_minute_and_only_
     assert gw.cups.caps_asked == 1
 
 
-@pytest.mark.usefixtures("english")
 async def test_a_blocked_printer_still_gives_the_block_reason_and_the_quota_is_not_touched_by_permissions(gw):
-    from app.policy import control
+    from spoolsteward.policy import control
     with gw.sm() as s:
         control.set_printer_flag(s, "color", "blocked", True)
         s.commit()
@@ -472,7 +467,6 @@ async def test_a_blocked_printer_still_gives_the_block_reason_and_the_quota_is_n
     assert val.get(c.TAG_OPERATION, "status-message") == control.BLOCKED_REASON
 
 
-@pytest.mark.usefixtures("english")
 async def test_validate_job_follows_the_same_rules_but_never_fails_on_colour_or_sides_in_adjust_mode(gw, monkeypatch):
     limit(gw, color=False, one_sided=False, printers_mode="list", printers=["color"])
     ok = await send(gw, job(c.VALIDATE_JOB, job_attrs=[kw("print-color-mode", "color"), kw("sides", "one-sided")]))
@@ -539,7 +533,6 @@ async def post_print(cl, queue="color", **extra):
                          files={"file": ("a.pdf", PDF, "application/pdf")})
 
 
-@pytest.mark.usefixtures("english")
 async def test_web_form_offers_only_allowed_printers_and_options_and_refuses_the_rest(web):
     limit(web, printers_mode="list", printers=["color"], color=False, one_sided=False)
     page = (await web.get("/me/print")).text
@@ -555,7 +548,6 @@ async def test_web_form_offers_only_allowed_printers_and_options_and_refuses_the
     assert [x[0] for x in log_rows(web)] == ["denied", "accepted"]
 
 
-@pytest.mark.usefixtures("english")
 async def test_web_form_shows_the_double_sided_choice_only_to_those_who_may_and_adjusts_a_crafted_post(web):
     page = (await web.get("/me/print")).text
     assert 'name="sides"' in page and 'name="color"' in page and 'value="two-sided-short-edge"' in page
@@ -571,7 +563,6 @@ async def test_web_form_shows_the_double_sided_choice_only_to_those_who_may_and_
     assert r.status_code == 400
 
 
-@pytest.mark.usefixtures("english")
 async def test_web_form_outside_the_hours_shows_the_window_and_refuses(web, monkeypatch):
     limit(web, hours_mode="window", hours_days="01234", hours_start=480, hours_end=1020)
     monkeypatch.setattr(audit, "now_utc", lambda: datetime(2026, 10, 17, 10, 0, tzinfo=UTC))
@@ -582,7 +573,6 @@ async def test_web_form_outside_the_hours_shows_the_window_and_refuses(web, monk
     assert open_notices(web, "job_refused")[0].detail_json["why"] == "hours"
 
 
-@pytest.mark.usefixtures("english")
 async def test_the_profile_and_the_key_page_list_only_allowed_printers_and_show_the_permissions(web):
     limit(web, printers_mode="list", printers=["bw"], color=False)
     page = (await web.get("/me")).text
@@ -621,7 +611,6 @@ def user_form(cl, uid, **extra):
             "perm_form": "1", **extra}
 
 
-@pytest.mark.usefixtures("english")
 async def test_group_permissions_round_trip_through_the_form(adm):
     gid = gid_of(adm.sm, "staff")
     page = (await adm.get(f"/admin/groups/{gid}/edit")).text
@@ -642,7 +631,6 @@ async def test_group_permissions_round_trip_through_the_form(adm):
         assert permissions.get_rule(s, SubjectType.group, gid) is None                     # all defaults: nothing stored
 
 
-@pytest.mark.usefixtures("english")
 async def test_a_post_without_the_permission_block_leaves_the_rules_alone(adm):
     gid = gid_of(adm.sm, "staff")
     limit(adm, color=False)
@@ -651,7 +639,6 @@ async def test_a_post_without_the_permission_block_leaves_the_rules_alone(adm):
         assert permissions.get_rule(s, SubjectType.group, gid).color is False
 
 
-@pytest.mark.usefixtures("english")
 async def test_bad_permission_values_are_refused_with_a_message_and_nothing_is_saved(adm):
     gid = gid_of(adm.sm, "staff")
     bad = [
@@ -675,7 +662,6 @@ async def test_bad_permission_values_are_refused_with_a_message_and_nothing_is_s
         assert s.query(PermissionRule).count() == 0
 
 
-@pytest.mark.usefixtures("english")
 async def test_user_permissions_override_the_group_and_the_user_is_told(adm):
     ann = uid_of(adm.sm, "ann")
     limit(adm, color=False)
@@ -700,7 +686,6 @@ async def test_user_permissions_override_the_group_and_the_user_is_told(adm):
         assert permissions.get_rule(s, SubjectType.user, ann) is None
 
 
-@pytest.mark.usefixtures("english")
 async def test_changing_the_group_does_not_notify_users_and_an_administrator_is_not_told_about_themselves(adm):
     gid = gid_of(adm.sm, "staff")
     await adm.post(f"/admin/groups/{gid}", data=group_form(adm))
@@ -713,7 +698,6 @@ async def test_changing_the_group_does_not_notify_users_and_an_administrator_is_
     assert not perms_of(adm.sm, "boss").color and open_notices(adm, "permissions_changed") == []
 
 
-@pytest.mark.usefixtures("english")
 async def test_the_emergency_administrators_page_is_disabled_and_the_server_ignores_what_is_posted(adm):
     make_user(adm.sm, settings.bootstrap_admin_username, password=GOOD, admin=True)
     em = uid_of(adm.sm, settings.bootstrap_admin_username)
@@ -725,7 +709,6 @@ async def test_the_emergency_administrators_page_is_disabled_and_the_server_igno
     assert perms_of(adm.sm, settings.bootstrap_admin_username) == Perms(exempt=True)
 
 
-@pytest.mark.usefixtures("english")
 async def test_the_notices_say_what_happened_in_plain_words(gw):
     uid = uid_of(gw.sm, "ann")
     notices.notify_user(gw.sm, uid, "permissions_changed", {})
@@ -750,7 +733,6 @@ def former(cl):
         return {r.name: (r.display, r.reason) for r in s.scalars(select(PrinterFormer))}
 
 
-@pytest.mark.usefixtures("english")
 async def test_renaming_moves_the_name_in_the_lists_and_remembers_the_old_one(adm):
     cl = adm
     with cl.sm() as s:
@@ -767,7 +749,6 @@ async def test_renaming_moves_the_name_in_the_lists_and_remembers_the_old_one(ad
     assert 'data-name="Colour2"' not in page                                              # a name in use is not offered
 
 
-@pytest.mark.usefixtures("english")
 async def test_a_deleted_queue_is_offered_and_taking_its_name_again_removes_it(adm):
     cl = adm
     r = await cl.post("/admin/printers/pdf/delete", data={"csrf_token": cl.token})
@@ -793,7 +774,7 @@ def test_the_migration_seeds_former_names_from_the_audit(tmp_path):
     from alembic import command
     from sqlalchemy import create_engine, text
 
-    from app.db.migrate import _config
+    from spoolsteward.db.migrate import _config
 
     eng = create_engine(f"sqlite:///{tmp_path}/m.db")
     with eng.begin() as conn:
@@ -809,7 +790,6 @@ def test_the_migration_seeds_former_names_from_the_audit(tmp_path):
     assert rows["hp_old"][3] == "deleted" and rows["hp_old"][2].startswith("2026-09-05")
 
 
-@pytest.mark.usefixtures("english")
 async def test_the_printers_and_the_days_sit_under_the_choice_that_uses_them(adm):
     """The printer and day boxes are inside the part that only shows with "only some" / "some hours": a printer can not be
     ticked while the list is not in use (that is how a saved list used to be ignored)."""
@@ -821,7 +801,6 @@ async def test_the_printers_and_the_days_sit_under_the_choice_that_uses_them(adm
     assert 'class="seg"' in page and 'type="radio" name="perm_printers" value="list"' in page
 
 
-@pytest.mark.usefixtures("english")
 async def test_renaming_can_tell_every_active_user_in_their_notices(adm):
     cl = adm
     assert 'data-confirm-check-name="notify"' in (await cl.get("/admin/printers")).text           # the tick is in the application's own window
@@ -838,7 +817,6 @@ async def test_renaming_can_tell_every_active_user_in_their_notices(adm):
         assert all(n.detail_json == {"old": "color", "new": "Colour3"} and n.key == "Colour3" for n in rows)
 
 
-@pytest.mark.usefixtures("english")
 async def test_renaming_without_the_tick_tells_nobody(adm):
     r = await rename(adm, "color", "Colour4")
     assert r.status_code == 303
@@ -846,7 +824,6 @@ async def test_renaming_without_the_tick_tells_nobody(adm):
         assert not list(s.scalars(select(Notice).where(Notice.kind == "printer_renamed")))
 
 
-@pytest.mark.usefixtures("english")
 async def test_maintenance_can_tell_the_users_and_leaving_closes_that_notice(adm):
     cl = adm
     await cl.post("/admin/maintenance", data={"csrf_token": cl.token, "on": "1", "notify": "1"})
@@ -859,10 +836,9 @@ async def test_maintenance_can_tell_the_users_and_leaving_closes_that_notice(adm
         assert list(s.scalars(select(Notice).where(Notice.kind == "maintenance_off")))
 
 
-@pytest.mark.usefixtures("english")
 async def test_reaching_the_quota_tells_the_user_on_every_refused_print(gw):
-    from app.db.models import Metric, Period
-    from app.policy.rules import set_limit
+    from spoolsteward.db.models import Metric, Period
+    from spoolsteward.policy.rules import set_limit
 
     with gw.sm() as s:
         set_limit(s, SubjectType.user, uid_of(gw.sm, "ann"), Metric.jobs, 0, Period.weekly)
@@ -874,7 +850,6 @@ async def test_reaching_the_quota_tells_the_user_on_every_refused_print(gw):
     assert n.detail_json["used"] == 0 and n.detail_json["limit"] == 0 and n.detail_json["printer"] == "color"
 
 
-@pytest.mark.usefixtures("english")
 async def test_a_name_of_the_past_can_be_forgotten(adm):
     cl = adm
     await cl.post("/admin/printers/pdf/delete", data={"csrf_token": cl.token})
@@ -888,7 +863,6 @@ async def test_a_name_of_the_past_can_be_forgotten(adm):
     assert r.status_code == 303
 
 
-@pytest.mark.usefixtures("english")
 async def test_forgetting_a_name_from_the_page_answers_json_without_a_message(adm):
     cl = adm
     await cl.post("/admin/printers/pdf/delete", data={"csrf_token": cl.token})

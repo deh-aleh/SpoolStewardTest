@@ -1,9 +1,17 @@
+import os
 from pathlib import Path
 
 import httpx
 import pytest
 
+# The tests marked requires_cups / requires_radius need the docker test stack (docker-compose.test.yml). Without it they
+# are skipped. With SPOOLSTEWARD_TESTS_REQUIRE_DOCKER=1 (set in CI) they fail instead: a stack that did not start, or a
+# socket the tests cannot open, must never turn into a green run with the IPP proxy tests quietly skipped.
+REQUIRE_DOCKER = os.environ.get("SPOOLSTEWARD_TESTS_REQUIRE_DOCKER") == "1"
+_START_STACK = "start it with: docker compose -f docker-compose.test.yml up -d --build --wait"
+
 CUPS_TEST_URL = "http://localhost:6310"
+CUPS_SOCK = str(Path(__file__).resolve().parent.parent / "docker" / "run" / "cups.sock")  # the test CUPS (docker-compose.test.yml) exposes it here
 
 
 def cups_up() -> bool:
@@ -13,22 +21,47 @@ def cups_up() -> bool:
         return False
 
 
-requires_cups = pytest.mark.skipif(not cups_up(), reason="docker CUPS not running on :6310")
+def cups_sock_up() -> bool:
+    try:
+        with httpx.Client(transport=httpx.HTTPTransport(uds=CUPS_SOCK), timeout=1.0) as c:
+            return c.get("http://localhost/").status_code < 500
+    except httpx.HTTPError:
+        return False
 
 
 def radius_up() -> bool:
     import asyncio
 
-    from app.auth.radius import RadiusProvider
+    from spoolsteward.auth.radius import RadiusProvider
 
     p = RadiusProvider("127.0.0.1", 1812, "testing123", timeout=1, retries=1)
     return asyncio.run(p.authenticate("mario", "mario123"))
 
 
-requires_radius = pytest.mark.skipif(not radius_up(), reason="docker FreeRADIUS not running on :1812")
+def _needs_docker(up: bool, missing: str, fail_fixture: str):
+    if up or not REQUIRE_DOCKER:
+        return pytest.mark.skipif(not up, reason=missing)
+    return pytest.mark.usefixtures(fail_fixture)
 
 
-CUPS_SOCK = str(Path(__file__).resolve().parent.parent / "docker" / "run" / "cups.sock")  # the test CUPS (docker-compose.test.yml) exposes it here
+# in CI the socket counts too: some tests use it, and one of them skips by itself when it is missing
+_CUPS_MISSING = ("docker CUPS not reachable on :6310 or through docker/run/cups.sock" if REQUIRE_DOCKER
+                 else "docker CUPS not running on :6310")
+_RADIUS_MISSING = "docker FreeRADIUS not running on :1812"
+
+
+@pytest.fixture
+def _docker_cups_missing():
+    pytest.fail(f"SPOOLSTEWARD_TESTS_REQUIRE_DOCKER=1 but {_CUPS_MISSING}; {_START_STACK}", pytrace=False)
+
+
+@pytest.fixture
+def _docker_radius_missing():
+    pytest.fail(f"SPOOLSTEWARD_TESTS_REQUIRE_DOCKER=1 but {_RADIUS_MISSING}; {_START_STACK}", pytrace=False)
+
+
+requires_cups = _needs_docker(cups_up() and (not REQUIRE_DOCKER or cups_sock_up()), _CUPS_MISSING, "_docker_cups_missing")
+requires_radius = _needs_docker(radius_up(), _RADIUS_MISSING, "_docker_radius_missing")
 
 
 # ---------------------------------------------------------------- shared portal/gateway fixtures
@@ -54,8 +87,8 @@ class StubRadius:
 
 def make_user(sm, username, *, provider="local", password=None, admin=False, group=None, enabled=True,
               must_change=False):
-    from app.auth.passwords import hash_password
-    from app.db.models import Group, User
+    from spoolsteward.auth.passwords import hash_password
+    from spoolsteward.db.models import Group, User
 
     with sm() as s:
         gid = None
@@ -80,10 +113,10 @@ def csrf_from(html: str) -> str:
 @pytest.fixture
 async def portal(monkeypatch, tmp_path):
     """A fresh in-memory database behind the real app, over https, with a stub RADIUS (users: rad/radpw)."""
-    from app.auth.throttle import Throttle
-    from app.config import settings
-    from app.db.models import Base
-    from app.main import app
+    from spoolsteward.auth.throttle import Throttle
+    from spoolsteward.config import settings
+    from spoolsteward.db.models import Base
+    from spoolsteward.main import app
 
     monkeypatch.setattr(settings, "audit_archive_dir", str(tmp_path / "archive"))
     monkeypatch.setattr(settings, "bootstrap_admin", True)
@@ -115,7 +148,7 @@ GOOD = "correct horse battery"
 @pytest.fixture
 async def admin(portal):
     """The portal with an administrator ('boss') logged in; the system groups exist, as after a real start."""
-    from app.auth.groups import ensure_system_groups
+    from spoolsteward.auth.groups import ensure_system_groups
 
     make_user(portal.sm, "boss", password=GOOD, admin=True)
     ensure_system_groups(portal.sm)
@@ -126,7 +159,7 @@ async def admin(portal):
 def user_row(cl, name):
     from sqlalchemy import select
 
-    from app.db.models import User
+    from spoolsteward.db.models import User
 
     with cl.sm() as s:
         return s.scalars(select(User).where(User.username == name)).first()
@@ -137,17 +170,17 @@ async def csrf_of_page(cl, path="/me"):
 
 
 @pytest.fixture(autouse=True)
-def italian_by_default(monkeypatch):
-    """The portal's texts were Italian before it became multilingual: the existing assertions are in Italian, so the
-    suite runs with Italian as the installation default. Tests of other languages ask for them explicitly."""
-    from app.config import settings
+def english_by_default(monkeypatch):
+    """The suite runs with English, the product's default language, as the installation language, whatever the
+    developer's .env says. Tests about languages and translations set another one themselves (see `italian`)."""
+    from spoolsteward.config import settings
 
-    monkeypatch.setattr(settings, "language", "it")
+    monkeypatch.setattr(settings, "language", "en")
 
 
 @pytest.fixture
-def english(monkeypatch):
-    """For the tests whose assertions are in English (the texts that were English before the portal was translated)."""
-    from app.config import settings
+def italian(monkeypatch):
+    """Italian as the installation language, for the tests that check a translated page or message."""
+    from spoolsteward.config import settings
 
-    monkeypatch.setattr(settings, "language", "en")
+    monkeypatch.setattr(settings, "language", "it")

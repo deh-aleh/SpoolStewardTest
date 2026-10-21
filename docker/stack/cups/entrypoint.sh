@@ -10,6 +10,18 @@ set -u
 case "${CUPS_QUEUES:-}" in [Nn][Oo][Nn][Ee]) CUPS_QUEUES= ;; esac
 cupsd
 
+# `docker stop` signals this script (PID 1), not cupsd: pass the signal on and wait, so cupsd writes its job history
+# and closes its socket instead of being killed 10 seconds later
+stop() {
+    pid="$(cat /run/cups/cupsd.pid 2>/dev/null)"
+    if [ -n "$pid" ]; then
+        kill -TERM "$pid" 2>/dev/null
+        for i in $(seq 1 40); do kill -0 "$pid" 2>/dev/null || break; sleep 0.25; done
+    fi
+    exit 0
+}
+trap stop TERM INT
+
 for i in $(seq 1 40); do lpstat -r >/dev/null 2>&1 && break; sleep 0.5; done
 
 STATE=/etc/cups/spoolsteward-queues

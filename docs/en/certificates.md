@@ -58,10 +58,29 @@ With a certificate from a public CA (Let's Encrypt) there is nothing to install 
 ## 4. Copying the certificate by hand
 
 Put `fullchain.pem` (the certificate, with its chain) and `privkey.pem` (the key) in `config/tls/`, make the key readable only by you
-(`chmod 600 config/tls/privkey.pem`) and restart: `docker compose restart gateway`. Details and an example with Nginx Proxy Manager are in
-[installation.md](installation.md#34-tls-certificate).
+(`chmod 600 config/tls/privkey.pem`) and restart: `docker compose restart gateway`. The key must be readable by the `PUID` user of `.env`.
+
+**You already have a valid certificate (for example one issued by Nginx Proxy Manager on another machine).** The simplest way is to let the
+gateway use that same certificate itself, with no proxy in between:
+
+1. Make a name that certificate covers (say `print.example.com`) resolve to the server inside your network (local DNS record or router entry).
+2. Copy the pair from the machine that holds it (NPM: `data/letsencrypt/live/npm-<n>/fullchain.pem` and `privkey.pem`; custom certificates:
+   `data/custom_ssl/npm-<n>/`) to `config/tls/fullchain.pem` and `config/tls/privkey.pem`, make the key readable by the `PUID` user
+   (`chmod 600`), and run `docker compose restart gateway`.
+3. Set `SPOOLSTEWARD_PORTAL_URL=https://print.example.com:8631` in `.env`, and use `ipps://print.example.com:8631/printers/<queue>`.
+
+Devices that find printers through mDNS are given the `<name>.local` name or the IP, which a certificate for `print.example.com` does not
+cover: use the real name by hand on those devices, or stop the `mdns` service if you do not need discovery.
 
 A Let's Encrypt certificate is renewed about every 60 days; for that case use the script of §5.
+
+### 4.1 Behind a reverse proxy
+
+Instead of giving the certificate to the gateway, a reverse proxy can keep it and forward to `https://<server>:8631` (not tested by the
+project). The proxy must forward to scheme `https`, allow large bodies and not buffer them (`client_max_body_size 250m;
+proxy_request_buffering off; proxy_read_timeout 600s;`). The gateway sees every client as the proxy's address (login lock-out per address,
+audit IPs) unless `FORWARDED_ALLOW_IPS=<proxy address>` is set in `.env`, so that it trusts `X-Forwarded-For`. Printer addresses given back
+to clients carry the `Host` the proxy forwards, without `:443`, so devices must keep the address they were set up with.
 
 ## 5. Keeping the certificate up to date by itself: `scripts/cert-sync.sh`
 

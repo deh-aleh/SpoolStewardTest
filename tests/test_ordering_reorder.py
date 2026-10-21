@@ -3,8 +3,8 @@
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-from app.db.models import Base, PrinterOrder, User
-from app.policy.ordering import reorder
+from spoolsteward.db.models import Base, PrinterOrder, User
+from spoolsteward.policy.ordering import reorder
 
 
 def _sm(tmp_path):

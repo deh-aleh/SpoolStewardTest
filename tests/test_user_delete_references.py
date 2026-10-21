@@ -5,8 +5,8 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select, text
 
-from app.auth.users import delete_user
-from app.db.models import (
+from spoolsteward.auth.users import delete_user
+from spoolsteward.db.models import (
     AdminAudit, Base, BackupTarget, JobKind, JobLog, JobState, Metric, PermissionGrant, PermissionRule, Period, PolicyRule,
     PrinterOrder, PrintKey, QuotaGrant, QuotaRequest, RequestKind, RequestScope, SubjectType, User,
 )

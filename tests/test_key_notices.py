@@ -7,11 +7,11 @@ import httpx
 import pytest
 from sqlalchemy import select
 
-from app import notices
-from app.auth import keys
-from app.config import settings
-from app.db.models import AdminAudit, Notice, PrintKey, User
-from app.keywatch import run_once, warn_expiring
+from spoolsteward import notices
+from spoolsteward.auth import keys
+from spoolsteward.config import settings
+from spoolsteward.db.models import AdminAudit, Notice, PrintKey, User
+from spoolsteward.keywatch import run_once, warn_expiring
 from tests.conftest import csrf_of_page, make_user, portal_login
 
 GOOD = "correct horse battery"
@@ -103,7 +103,6 @@ async def test_an_admin_acting_on_their_own_key_gets_no_notice(boss):
     assert own_notices(boss, "boss") == []
 
 
-@pytest.mark.usefixtures("english")
 async def test_the_owner_sees_their_notices_and_nobody_else_does(boss):
     kid, _p = key_of(boss, "ann", "my laptop")
     await act(boss, "ann", kid, "revoke")

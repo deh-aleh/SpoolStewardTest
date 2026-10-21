@@ -23,7 +23,47 @@ Per più dettaglio metti `SPOOLSTEWARD_LOG_LEVEL=DEBUG` in `.env` e poi `docker 
 | Permission denied su `config/tls/privkey.pem` | La chiave deve essere leggibile dall'utente `PUID:PGID` di `.env` (`chown`/`chmod 600`). |
 | `Bind for 0.0.0.0:631 failed` | Un altro CUPS usa la 631. Tieni `PORTAL_PORT=8631` oppure ferma l'altro servizio. |
 | "archive folder not usable" | `data/audit-archive` deve essere scrivibile dall'utente del contenitore (stesso uid di `PUID`). |
-| A ogni riavvio tutti escono dalle sessioni | `SPOOLSTEWARD_SECRET_KEY` è `none` o manca, quindi ne viene generata una casuale a ogni avvio. Impostala (lo fa `scripts/docker-init.sh`). |
+| A ogni riavvio tutti escono dalle sessioni, oppure la campanella dice **Nessuna chiave segreta impostata** | `SPOOLSTEWARD_SECRET_KEY` manca in `.env` o vale `none`: vedi [Nessuna chiave segreta impostata](#nessuna-chiave-segreta-impostata) più sotto. |
+| `SPOOLSTEWARD_SECRET_KEY: still holds the placeholder of docker/env.example` | `docker/env.example` è stato copiato a mano in `.env`, quindi la chiave è ancora `__GENERATED__`, un valore che tutti conoscono: il gateway non parte. Scrivi l'output di `openssl rand -hex 32` al posto di `__GENERATED__`, controlla `PUID`, `PGID` e `PROJECT_DIR` (li avrebbe compilati lo script), poi `docker compose up -d`. |
+| `SPOOLSTEWARD_SECRET_KEY: is shorter than 64 characters` | Una chiave scritta a mano è troppo corta per essere sicura. Scrivi al suo posto l'output di `openssl rand -hex 32` (64 caratteri), poi `docker compose up -d`. I nomi dei file salvati con la chiave vecchia compaiono poi come `[encrypted]` e tutti rifanno il login. |
+
+### Nessuna chiave segreta impostata
+
+Gli amministratori vedono questo avviso nella campanella:
+
+> **Nessuna chiave segreta impostata.** `SPOOLSTEWARD_SECRET_KEY` manca in `.env` oppure vale `none`: i nomi dei file nell'audit sono
+> salvati senza cifratura e dopo ogni riavvio tutti devono rifare il login. Scrivi un valore casuale (l'output di
+> `openssl rand -hex 32`) dopo `SPOOLSTEWARD_SECRET_KEY=` in `.env`, esegui `docker compose up -d` e salva la chiave in un posto sicuro.
+> Passo per passo.
+
+**Cause.**
+
+- `.env` viene da un'installazione precedente, o è stato scritto a mano, e non ha la riga `SPOOLSTEWARD_SECRET_KEY=`.
+- `scripts/docker-init.sh` scrive una chiave solo quando crea `.env`. Non tocca mai un `.env` esistente, quindi eseguirlo di nuovo non
+  aggiunge la chiave: stampa un avviso che rimanda qui.
+- La riga c'è, con il valore `none`.
+
+**Cosa vuol dire.**
+
+- I nomi dei file stampati e scansionati sono salvati nell'audit senza cifratura ([protezione-dati.md](protezione-dati.md)).
+- Il gateway crea una chiave casuale nuova a ogni avvio: dopo ogni riavvio tutti rifanno il login al portale, e il canale tra `gateway` e
+  `mdns` non è protetto.
+- Non si perde nulla. I nomi salvati senza chiave restano leggibili dopo che l'hai aggiunta: al primo avvio con la chiave il gateway li cifra.
+
+**Come si risolve.**
+
+1. Nella cartella di SpoolSteward apri `.env` con un editor.
+2. Se c'è una riga `SPOOLSTEWARD_SECRET_KEY=none`, sostituisci `none` con l'output di `openssl rand -hex 32` (64 caratteri). Se la riga
+   non c'è, aggiungila in fondo, con lo stesso tipo di valore. Il comando qui sotto la aggiunge senza mostrare la chiave a schermo; usalo
+   solo quando la riga manca, perché il file deve avere una sola riga `SPOOLSTEWARD_SECRET_KEY=`:
+
+   ```sh
+   printf 'SPOOLSTEWARD_SECRET_KEY=%s\n' "$(openssl rand -hex 32)" >> .env
+   ```
+
+3. Esegui `docker compose up -d`. Tutti rifanno il login un'ultima volta; l'avviso si chiude da solo.
+4. Copia la chiave in un posto sicuro, per esempio un password manager ([backup.md](backup.md#salva-la-chiave-segreta)). Senza di essa i
+   nomi dei file di un backup non cifrato, una volta ripristinato, non si possono leggere.
 
 ## 2. Non riesco ad accedere
 
@@ -103,8 +143,8 @@ Per più dettaglio metti `SPOOLSTEWARD_LOG_LEVEL=DEBUG` in `.env` e poi `docker 
 
 | Sintomo | Causa e rimedio |
 |---|---|
-| `scripts/update.sh` dice `SPOOLSTEWARD_REGISTRY is empty` | Le immagini si costruiscono da questa cartella: aggiorna con `git pull && docker compose up -d --build`. |
-| `scripts/update.sh` dice «This folder is a git clone» | Con una cartella clonata con git l'aggiornamento è `git pull && docker compose up -d --build`: lo script rifiuta di sostituire file che git gestisce. |
+| `scripts/update.sh` dice `SPOOLSTEWARD_REGISTRY is empty` | La riga `SPOOLSTEWARD_REGISTRY=` di `.env` ha perso il suo valore. Riscrivila come in `docker/env.example` (`SPOOLSTEWARD_REGISTRY=ghcr.io/deh-aleh`) ed esegui di nuovo lo script. |
+| `scripts/update.sh` dice «This folder is a git clone» | Lo script aggiorna una cartella creata dal pacchetto della release. Un clone git è una copia da sviluppatore e non si aggiorna così ([CONTRIBUTING.md](../../CONTRIBUTING.md)). |
 | `the package does not match its sha256 sum` | Il file scaricato non è quello pubblicato (download interrotto, o una rete che lo modifica). Non è stato cambiato nulla: riprova; se persiste, scaricalo dal browser dalla pagina delle release. |
 | `NOT healthy after the update: going back` | La versione nuova non è diventata sana in due minuti. Lo script ha rimesso i file e la versione di prima. Guarda `docker compose logs --tail 50 gateway` per capire perché. |
 | Dopo l'aggiornamento non parte né la versione nuova né la vecchia | La nuova ha già cambiato il database. `update.sh` ti propone di ripristinare il backup preso all'inizio (`YES`); a mano: `scripts/backup.sh restore data/backups/pre-update/<file>`. |
@@ -118,4 +158,4 @@ Per più dettaglio metti `SPOOLSTEWARD_LOG_LEVEL=DEBUG` in `.env` e poi `docker 
 ## 9. Ancora bloccato
 
 Prima di chiedere aiuto raccogli `docker compose logs gateway`, `docker compose ps`, l'esito di `/healthz`, la versione del gateway
-(`SPOOLSTEWARD_VERSION` o il commit) e ciò che mostrava la pagina. Non incollare mai `.env` o la chiave TLS.
+(`SPOOLSTEWARD_VERSION` in `.env`) e ciò che mostrava la pagina. Non incollare mai `.env` o la chiave TLS.

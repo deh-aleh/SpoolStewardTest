@@ -7,9 +7,9 @@ from datetime import UTC, datetime
 import pytest
 from sqlalchemy import select
 
-from app import notices, printerwatch
-from app.config import settings
-from app.db.models import Group, JobKind, JobLog, JobState, Notice, QuotaGrant, User
+from spoolsteward import notices, printerwatch
+from spoolsteward.config import settings
+from spoolsteward.db.models import Group, JobKind, JobLog, JobState, Notice, QuotaGrant, User
 from tests.conftest import csrf_of_page, make_user, portal_login
 
 GOOD = "correct horse battery"
@@ -92,7 +92,6 @@ def test_users_are_not_told_when_the_option_is_off_and_low_ink_is_for_admins_onl
         assert "hp:ink_low" in [n.key for n in s.scalars(select(Notice).where(Notice.user_id.is_(None), Notice.dismissed_at.is_(None)))]
 
 
-@pytest.mark.usefixtures("english")
 async def test_an_administrator_has_one_bell_with_both_kinds_of_notices(boss):
     notices.notify_user(boss.sm, uid(boss, "boss"), "key_revoked", {"label": "old laptop", "prefix": "abc"})
     notices.report(boss.sm, "escl_anonymous_refused", "10.0.0.8")
@@ -109,7 +108,6 @@ async def test_an_administrator_has_one_bell_with_both_kinds_of_notices(boss):
     assert mine(boss, "boss") == []
 
 
-@pytest.mark.usefixtures("english")
 async def test_users_are_told_about_group_admin_grants_and_requests(boss):
     await portal_login(boss, "boss", GOOD)
     token = await csrf_of_page(boss, "/admin/users")
@@ -129,8 +127,8 @@ async def test_users_are_told_about_group_admin_grants_and_requests(boss):
     await boss.post(f"/admin/users/{ann}", data=form)
     off = mine(boss, "ann", "admin_off")
     assert len(off) == 1 and off[0].detail_json["group"] == "staff"
-    from app.db.models import Metric, SubjectType
-    from app.policy.rules import set_limit
+    from spoolsteward.db.models import Metric, SubjectType
+    from spoolsteward.policy.rules import set_limit
     with boss.sm() as s:
         set_limit(s, SubjectType.user, ann, Metric.pages, 10)
         s.commit()

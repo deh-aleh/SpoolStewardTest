@@ -83,7 +83,7 @@ in the audit. It rests on one weak thing: the address of the TCP connection. Eve
   address, not your computer's, and the window is opened for the proxy's address. The scan app normally connects straight to
   port 8631 with its own address, so the two never match and the scan is refused. The reverse case is worse: if the scan app also
   goes through the proxy, every device that reaches the server through the proxy has the same address, so during the window
-  *any of them* can scan. The server believes `X-Forwarded-For` only from `127.0.0.1` and from the addresses in `FORWARDED_ALLOW_IPS` ([installation.md](installation.md)), so a proxy on another machine does not help unless it is listed there.
+  *any of them* can scan. The server believes `X-Forwarded-For` only from `127.0.0.1` and from the addresses in `FORWARDED_ALLOW_IPS` ([certificates.md](certificates.md#41-behind-a-reverse-proxy)), so a proxy on another machine does not help unless it is listed there.
   What works: press the button from a page opened **directly** on the gateway (`https://<server>:8631/me/scan`, not through the
   proxy). The box warns you when the request carried proxy headers.
 - **A different device**: the button must be pressed from the computer that runs the scan app. Pressing it on a phone opens the

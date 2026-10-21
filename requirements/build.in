@@ -1,0 +1,4 @@
+# The tools that install the project (pip itself, and the build backend of pyproject.toml: [build-system] requires).
+# Keep setuptools in step with pyproject.toml.
+pip
+setuptools>=68

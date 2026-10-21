@@ -10,10 +10,10 @@ import pypdf
 import pytest
 from sqlalchemy import select
 
-from app.cups_client import list_queues
-from app.db.models import AdminAudit, PrinterKeepalive, PrinterSeen
-from app.ipp import codec
-from app.policy import keepalive, ordering, testpage
+from spoolsteward.cups_client import list_queues
+from spoolsteward.db.models import AdminAudit, PrinterKeepalive, PrinterSeen
+from spoolsteward.ipp import codec
+from spoolsteward.policy import keepalive, ordering, testpage
 from tests.conftest import csrf_of_page, make_user, portal_login
 
 GOOD = "correct horse battery"
@@ -54,8 +54,8 @@ PHYS = "ipp://192.0.2.10:631/ipp/print"
 
 @pytest.fixture
 async def cups(portal, monkeypatch):
-    import app.admin.printers as printers_mod
-    import app.cups_client as cc
+    import spoolsteward.admin.printers as printers_mod
+    import spoolsteward.cups_client as cc
 
     async def up(uri, usb_present=None):
         return True
@@ -80,13 +80,13 @@ async def cups(portal, monkeypatch):
 # ---------------------------------------------------------------- the PDF
 
 def test_the_maintenance_and_test_pages_are_valid_pdfs():
-    pdf = testpage.build("Titolo (con) parentesi \\ e àè", "sub", ink=[{"name": "Nero", "level": 40, "color": "#000000"}, {"name": "?", "level": -1}],
-                         sections=[("S", [("a", "b"), ("vuoto", "")])], swatches="color", stripes=True)
+    pdf = testpage.build("Title (with) parentheses \\ and àè", "sub", ink=[{"name": "Black", "level": 40, "color": "#000000"}, {"name": "?", "level": -1}],
+                         sections=[("S", [("a", "b"), ("empty", "")])], swatches="color", stripes=True)
     r = pypdf.PdfReader(io.BytesIO(pdf))
-    assert len(r.pages) >= 1 and "Titolo (con) parentesi" in r.pages[0].extract_text() and "40%" in r.pages[0].extract_text()
-    long = testpage.build("x", sections=[("S", [(f"riga{i}", "v") for i in range(200)])])
+    assert len(r.pages) >= 1 and "Title (with) parentheses" in r.pages[0].extract_text() and "40%" in r.pages[0].extract_text()
+    long = testpage.build("x", sections=[("S", [(f"row{i}", "v") for i in range(200)])])
     assert len(pypdf.PdfReader(io.BytesIO(long)).pages) > 1
-    assert pypdf.PdfReader(io.BytesIO(keepalive.maintenance_page("q", "Stampante", False, 168))).pages
+    assert pypdf.PdfReader(io.BytesIO(keepalive.maintenance_page("q", "Printer", False, 168))).pages
 
 
 # ---------------------------------------------------------------- interval rules
@@ -96,7 +96,7 @@ def test_interval_is_validated():
     for amount, unit in (("0", "days"), ("91", "days"), ("-1", "days"), ("1.5", "days"), ("", "days"), ("3", "weeks"), ("٣", "days")):
         with pytest.raises(ValueError):
             keepalive.parse_interval(amount, unit)
-    assert keepalive.describe(24) == "ogni giorno" and keepalive.describe(168) == "ogni 7 giorni" and keepalive.describe(5) == "ogni 5 ore"
+    assert keepalive.describe(24) == "every day" and keepalive.describe(168) == "every 7 days" and keepalive.describe(5) == "every 5 hours"
     assert keepalive.split(168) == (7, "days") and keepalive.split(5) == (5, "hours")
 
 
@@ -146,7 +146,7 @@ async def test_buttons_exist_for_physical_printers_only(cups):
     for path in ("keepalive/toggle", "keepalive", "testprint"):                  # and the server refuses them too
         r = await cups.post(f"/admin/printers/virtual/{path}", data={"csrf_token": tok, "on": "1", "mode": "mono", "amount": "7", "unit": "days"})
         assert r.status_code == 303
-    assert "virtuale" in (await cups.get("/admin/printers")).text
+    assert "is a virtual printer" in (await cups.get("/admin/printers")).text
     assert cups.fake.jobs == []
     with cups.sm() as s:
         assert s.scalars(select(PrinterKeepalive)).first() is None
@@ -163,10 +163,10 @@ async def test_save_does_not_switch_on_and_the_toggle_is_shared_by_all_admins(cu
         assert (row.enabled, row.interval_hours, row.color) == (False, 72, False)
     await cups.post("/admin/printers/mono1/keepalive/toggle", data={"csrf_token": tok, "on": "1"})
     page = (await cups.get("/admin/printers")).text
-    assert "Stampa periodica attiva: ogni 3 giorni" in page
+    assert "Periodic print active: every 3 days" in page
     await cups.post("/logout", data={"csrf_token": tok})                          # another administrator sees the same state
     await portal_login(cups, "boss2", GOOD)
-    assert "Stampa periodica attiva: ogni 3 giorni" in (await cups.get("/admin/printers")).text
+    assert "Periodic print active: every 3 days" in (await cups.get("/admin/printers")).text
     tok = await csrf_of_page(cups, "/admin/printers")
     await cups.post("/admin/printers/mono1/keepalive", data={"csrf_token": tok, "amount": "2", "unit": "days"})
     with cups.sm() as s:
@@ -238,7 +238,7 @@ async def test_scheduler_prints_only_due_enabled_reachable_physical_queues(cups,
 
 
 async def test_offline_printer_is_skipped_and_retried_when_back(cups, monkeypatch):
-    import app.cups_client as cc
+    import spoolsteward.cups_client as cc
     now = datetime.now(UTC)
     with cups.sm() as s:
         s.add(PrinterKeepalive(printer="col1", enabled=True, interval_hours=24, enabled_at=now - timedelta(days=2)))
@@ -250,7 +250,7 @@ async def test_offline_printer_is_skipped_and_retried_when_back(cups, monkeypatc
     assert await keepalive.run_due(cups.app) == 0 and cups.fake.jobs == []
     with cups.sm() as s:
         assert s.get(PrinterKeepalive, "col1").last_status == "offline" and s.get(PrinterKeepalive, "col1").last_attempt_at is None
-    assert "riprovo appena risponde" in (await cups.get("/admin/printers")).text
+    assert "I will retry as soon as it answers" in (await cups.get("/admin/printers")).text
     async def up(uri, usb_present=None):
         return True
     monkeypatch.setattr(cc, "is_online", up)
@@ -270,9 +270,9 @@ async def test_failed_print_is_recorded_and_retried_later(cups):
     assert await keepalive.run_due(cups.app) == 0
     with cups.sm() as s:
         row = s.get(PrinterKeepalive, "col1")
-        assert row.last_status == "error" and "rifiutato" in row.last_error and row.last_ok_at is None
+        assert row.last_status == "error" and "refused" in row.last_error and row.last_ok_at is None
     assert await keepalive.run_due(cups.app) == 0                                       # waits RETRY_AFTER before trying again
-    assert "ultimo tentativo fallito" in (await cups.get("/admin/printers")).text
+    assert "last attempt failed" in (await cups.get("/admin/printers")).text
 
 
 # ---------------------------------------------------------------- languages
@@ -289,8 +289,8 @@ async def test_printers_page_and_pages_it_prints_work_in_every_language(cups, co
 
 
 async def test_counter_labels_and_test_printer_names_follow_the_language(cups, monkeypatch):
-    import app.admin.printers as printers_mod
-    from app.i18n import _catalog
+    import spoolsteward.admin.printers as printers_mod
+    from spoolsteward.i18n import _catalog
 
     async def device(base):
         return {"ipp": {}, "usage": [(label, 1) for label in printers_mod.LEDM_USAGE.values()], "config": {}, "scanner": None}
@@ -310,7 +310,7 @@ async def test_counter_labels_and_test_printer_names_follow_the_language(cups, m
 def test_the_printers_refresh_interval_is_configurable_and_out_of_range_is_an_error(monkeypatch):
     from pydantic import ValidationError
 
-    from app.config import Settings
+    from spoolsteward.config import Settings
     for raw, want in (("5", 5), ("30", 30), ("3600", 3600), ("15", 15)):
         monkeypatch.setenv("SPOOLSTEWARD_PRINTERS_REFRESH_SECONDS", raw)
         assert Settings().printers_refresh_seconds == want, raw
@@ -323,7 +323,7 @@ def test_the_printers_refresh_interval_is_configurable_and_out_of_range_is_an_er
 
 
 async def test_printers_page_has_the_refresh_switch_and_uses_the_configured_interval(cups, monkeypatch):
-    from app.config import settings
+    from spoolsteward.config import settings
     page = (await cups.get("/admin/printers")).text
     assert 'id="ar-printers"' in page and 'data-ar-secs="15"' in page and 'data-ar-on="0"' in page      # off at first, 15 s by default
     monkeypatch.setattr(settings, "printers_refresh_seconds", 40)
@@ -332,7 +332,7 @@ async def test_printers_page_has_the_refresh_switch_and_uses_the_configured_inte
 
 
 async def test_the_cache_follows_the_configured_interval(cups, monkeypatch):
-    from app.config import settings
+    from spoolsteward.config import settings
     monkeypatch.setattr(settings, "printers_refresh_seconds", 5)
     await cups.get("/admin/printers")
     stamp = cups.app.state.printers_cache[0]

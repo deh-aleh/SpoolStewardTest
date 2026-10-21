@@ -2,8 +2,8 @@
 
 import re
 
-from app.config import settings
-from app.secheaders import POLICY
+from spoolsteward.config import settings
+from spoolsteward.secheaders import POLICY
 from tests.conftest import make_user, portal_login
 
 GOOD = "correct horse battery"

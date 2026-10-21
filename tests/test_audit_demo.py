@@ -11,7 +11,7 @@ import httpx
 import pytest
 from sqlalchemy import select
 
-from app.db.models import JobKind, JobLog, JobState
+from spoolsteward.db.models import JobKind, JobLog, JobState
 from tests.conftest import CUPS_TEST_URL, csrf_of_page, make_user, portal_login, requires_cups
 from tests.test_audit_ui import GOOD, LONG_COMMENT, LONG_NAME, PDF
 
@@ -28,7 +28,7 @@ async def test_print_on_the_virtual_printer_and_save_the_audit_page(portal):
     try:
         await portal_login(portal, "ann", GOOD)
         tok = await csrf_of_page(portal, "/me")
-        for name, comment in ((LONG_NAME, LONG_COMMENT), ("breve.pdf", ""), ("contratto-fornitura-2026.pdf", "urgente")):
+        for name, comment in ((LONG_NAME, LONG_COMMENT), ("short.pdf", ""), ("supply-contract-2026.pdf", "urgent")):
             r = await portal.post("/me/print", data={"queue": "virtual", "copies": "2", "csrf_token": tok, "comment": comment[:50],
                                                        "color": "monochrome"},
                                   files={"file": (name, PDF, "application/pdf")})
@@ -37,13 +37,13 @@ async def test_print_on_the_virtual_printer_and_save_the_audit_page(portal):
             jobs = s.scalars(select(JobLog).order_by(JobLog.id)).all()
             assert [j.state for j in jobs] == [JobState.accepted] * 3 and all(j.cups_job_id for j in jobs)   # really sent to CUPS
             # what a scan from the browser and a denied job look like next to them
-            s.add(JobLog(user_name="ann", kind=JobKind.scan, printer="scanner", title="scansione-20261011-0930", pages=3,
+            s.add(JobLog(user_name="ann", kind=JobKind.scan, printer="scanner", title="scan-20261011-0930", pages=3,
                          state=JobState.completed, options_json={"via": "web", "source": "adf", "format": "pdf", "dpi": 300}))
-            s.add(JobLog(user_name="ann", kind=JobKind.scan, printer="scanner", title="scansione-20261011-0935", pages=1,
+            s.add(JobLog(user_name="ann", kind=JobKind.scan, printer="scanner", title="scan-20261011-0935", pages=1,
                          state=JobState.completed, options_json={"via": "web", "source": "platen", "format": "pdf", "dpi": 300}))
-            s.add(JobLog(user_name="ann", printer="virtual", title="tesi.pdf", state=JobState.denied,
+            s.add(JobLog(user_name="ann", printer="virtual", title="thesis.pdf", state=JobState.denied,
                          denied_reason="weekly page limit would be exceeded (used 48, this document 20, limit 50)"))
-            s.add(JobLog(user_name="ann", printer="virtual", title="da-ipp.txt", state=JobState.completed, pages=1,
+            s.add(JobLog(user_name="ann", printer="virtual", title="from-ipp.txt", state=JobState.completed, pages=1,
                          options_json={"color": "monochrome", "sides": "two-sided-long-edge", "document_format": "text/plain"}))
             s.commit()
         portal.app.state.scanner_device_cache = (time.monotonic(), "virtual")
@@ -57,7 +57,7 @@ async def test_print_on_the_virtual_printer_and_save_the_audit_page(portal):
     (OUT / "audit-demo.html").write_text(html)
     # variant for a screenshot: every popup shown, as if all the "…" and "ⓘ" buttons had been clicked
     (OUT / "audit-demo-popups.html").write_text(html.replace("<dialog>", "<dialog open style=\"position:static;margin:8px 0;box-shadow:0 2px 12px rgba(0,0,0,.25)\">"))
-    assert "relazione-trimestrale" in html and html.count("<dialog") >= 4
+    assert "quarterly-report" in html and html.count("<dialog") >= 4
 
 
 from tests import test_dynamic  # noqa: E402
@@ -71,7 +71,7 @@ async def test_save_the_other_pages_too(two_scanners):
     cl = two_scanners
     (OUT / "scan-demo.html").write_text((await cl.get("/me/scan")).text)
     tok = await csrf_of_page(cl, "/me/keys")
-    (OUT / "key-demo.html").write_text((await cl.post("/me/keys", data={"csrf_token": tok, "label": "portatile"})).text)
+    (OUT / "key-demo.html").write_text((await cl.post("/me/keys", data={"csrf_token": tok, "label": "laptop"})).text)
     await cl.post("/logout", data={"csrf_token": tok})
     make_user(cl.sm, "boss", password=GOOD, admin=True)
     make_user(cl.sm, "emma", password=GOOD, admin=True)

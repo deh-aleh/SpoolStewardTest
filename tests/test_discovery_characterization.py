@@ -5,8 +5,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from app.config import settings
-from app.policy import discovery
+from spoolsteward.config import settings
+from spoolsteward.policy import discovery
 
 
 def uri(n):

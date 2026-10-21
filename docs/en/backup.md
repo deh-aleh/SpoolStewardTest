@@ -114,7 +114,7 @@ Restore is the way back after an upgrade you want to undo.
 ## 3. Host-side full backup
 
 ```sh
-scripts/backup.sh backup [DEST_DIR]        # writes DEST_DIR/spoolsteward-vX.Y.Z-YYYYMMDD-HHMMSS.tar.gz  (default ./backups; X.Y.Z = the version running)
+scripts/backup.sh backup [DEST_DIR]        # writes DEST_DIR/spoolsteward-v<version>-YYYYMMDD-HHMMSS.tar.gz  (default ./backups; <version> = the version running)
 scripts/backup.sh restore FILE.tar.gz      # stops the gateway first and asks for confirmation
 ```
 

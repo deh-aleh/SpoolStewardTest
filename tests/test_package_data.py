@@ -9,8 +9,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 def test_every_static_file_and_template_is_packaged():
-    patterns = tomllib.loads((ROOT / "pyproject.toml").read_text())["tool"]["setuptools"]["package-data"]["app"]
-    packaged = {p for pat in patterns for p in (ROOT / "app").glob(pat) if p.is_file()}
-    wanted = {p for folder in ("admin/static", "admin/templates") for p in (ROOT / "app" / folder).rglob("*")
+    patterns = tomllib.loads((ROOT / "pyproject.toml").read_text())["tool"]["setuptools"]["package-data"]["spoolsteward"]
+    packaged = {p for pat in patterns for p in (ROOT / "spoolsteward").glob(pat) if p.is_file()}
+    wanted = {p for folder in ("admin/static", "admin/templates") for p in (ROOT / "spoolsteward" / folder).rglob("*")
               if p.is_file() and "__pycache__" not in p.parts}
     assert wanted - packaged == set(), f"not in package-data: {sorted(str(p.relative_to(ROOT)) for p in wanted - packaged)}"

@@ -1,4 +1,4 @@
-"""The rules every setting follows (app/config.py): never empty, `none` only where a setting may be unset, ranges, lists of
+"""The rules every setting follows (spoolsteward/config.py): never empty, `none` only where a setting may be unset, ranges, lists of
 accepted words, lower-case booleans, one error message that lists every wrong setting and never a secret."""
 
 import re
@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from app.config import OPTIONAL, SECRETS, Settings, load_settings, problems
+from spoolsteward.config import OPTIONAL, SECRETS, Settings, load_settings, problems
 
 ROOT = Path(__file__).resolve().parent.parent
 ALL = list(Settings.model_fields)
@@ -112,7 +112,7 @@ WORDS = {   # field: (accepted, refused)
     "healthz_info": (["version", "printers", "version,printers", "none"], ["secret", "version,secret", "version;printers"]),
     "cups_url": (["unix:///run/cups/cups.sock", "http://cups:631", "https://cups:631"], ["/run/cups/cups.sock", "ipp://cups", "unix://run"]),
     "portal_url": (["https://print.lan", "http://10.0.0.1:8631", "none"], ["print.lan", "ftp://x"]),
-    "update_api_url": (["https://api.github.com/x"], ["api.github.com", "file:///x"]),
+    "update_repository": (["deh-aleh/SpoolStewardTest", "a/b.c_d-e"], ["deh-aleh", "https://github.com/a/b", "a/..", "-a/b", "a/b c"]),
     "scan_url": (["http://ipp-usb:60000", "office=https://10.0.0.5:443", "a=http://x,http://y", "none"], ["ipp-usb:60000", "=http://x", "x=ftp://y"]),
     "usb_bridge_ports": (["60000-60099", "1-65535", "5-5"], ["60099-60000", "0-5", "1-65536", "60000", "a-b"]),
     "mdns_addresses": (["10.0.0.5", "10.0.0.5, 192.168.1.2", "none"], ["10.0.0.256", "::1", "host.lan"]),
@@ -136,7 +136,7 @@ def test_words_must_be_in_the_accepted_list(field):
 
 
 def test_the_languages_of_the_setting_are_the_languages_of_the_portal():
-    from app.i18n import LANGUAGES
+    from spoolsteward.i18n import LANGUAGES
     allowed = set(Settings.model_fields["language"].annotation.__args__)
     assert allowed == set(LANGUAGES)
 
@@ -168,6 +168,27 @@ def test_an_error_lists_every_wrong_setting_and_never_a_secret(monkeypatch):
     assert "SPOOLSTEWARD_SECRET_KEY" in "\n".join(problems(e.value))
 
 
+def test_the_secret_key_placeholder_of_the_template_is_refused(monkeypatch):
+    """docker/env.example copied by hand: __GENERATED__ is a key everybody knows."""
+    monkeypatch.setenv("SPOOLSTEWARD_SECRET_KEY", "__GENERATED__")
+    with pytest.raises(ValidationError) as e:
+        Settings()
+    assert "SPOOLSTEWARD_SECRET_KEY: still holds the placeholder" in "\n".join(problems(e.value))
+
+
+def test_the_secret_key_needs_64_characters_the_length_of_openssl_rand_hex_32(monkeypatch):
+    monkeypatch.setenv("SPOOLSTEWARD_SECRET_KEY", "k" * 63)
+    with pytest.raises(ValidationError) as e:
+        Settings()
+    text = "\n".join(problems(e.value))
+    assert "SPOOLSTEWARD_SECRET_KEY: is shorter than 64 characters" in text and "openssl rand -hex 32" in text
+    assert "k" * 63 not in text                                                     # the name, never the value
+    monkeypatch.setenv("SPOOLSTEWARD_SECRET_KEY", "0123456789abcdef" * 4)           # what openssl rand -hex 32 prints
+    assert Settings().secret_key == "0123456789abcdef" * 4
+    monkeypatch.setenv("SPOOLSTEWARD_SECRET_KEY", "none")                           # a random key at every start
+    assert Settings().secret_key is None
+
+
 def test_starting_with_wrong_settings_exits_with_code_2_and_a_readable_list(monkeypatch, capsys):
     monkeypatch.setenv("SPOOLSTEWARD_ESCL_WINDOW_SECONDS", "")
     monkeypatch.setenv("SPOOLSTEWARD_ESCL_ANONYMOUS", "True")
@@ -189,7 +210,7 @@ def test_the_template_of_env_is_valid_as_written(monkeypatch):
     for name, value in lines.items():
         if name in ("SPOOLSTEWARD_REGISTRY", "SPOOLSTEWARD_VERSION"):
             continue                                                    # part A: read by compose, not by the program
-        monkeypatch.setenv(name, "x" * 48 if value == "__GENERATED__" else value)
+        monkeypatch.setenv(name, "x" * 64 if value == "__GENERATED__" else value)
     Settings()
 
 

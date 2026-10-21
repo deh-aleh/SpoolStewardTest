@@ -6,9 +6,9 @@ import httpx
 import pytest
 from sqlalchemy import select
 
-from app.auth import keys as keylib
-from app.config import settings
-from app.db.models import JobKind, JobLog, JobState, Metric, Notice, Period, PolicyRule, SubjectType, User
+from spoolsteward.auth import keys as keylib
+from spoolsteward.config import settings
+from spoolsteward.db.models import JobKind, JobLog, JobState, Metric, Notice, Period, PolicyRule, SubjectType, User
 from tests.conftest import csrf_of_page, make_user, portal_login
 
 GOOD = "correct horse battery"
@@ -122,7 +122,7 @@ async def test_scan_limits_apply(scanner):
 
 async def test_browser_scan_returns_the_file_and_audits_it(scanner):
     await portal_login(scanner, "rita", GOOD)
-    assert "Scansiona" in (await scanner.get("/me/scan")).text
+    assert "Scan" in (await scanner.get("/me/scan")).text
     tok = await csrf_of_page(scanner, "/me/scan")
     st, r = await do_scan(scanner, tok, source="platen", color="color", dpi="300", fmt="pdf")
     assert r.status_code == 200 and r.content == b"%PDF-fake" and "attachment" in r.headers["content-disposition"]
@@ -132,7 +132,7 @@ async def test_browser_scan_returns_the_file_and_audits_it(scanner):
 
 
 def test_scanner_is_announced_with_escl_keys():
-    from app.mdns import scanner_txt
+    from spoolsteward.mdns import scanner_txt
     t = scanner_txt({"model": "HP Scan", "uuid": "abc", "adf": True, "color": True}, "https://h/me")
     assert t["rs"] == "eSCL" and t["is"] == "platen,adf" and "color" in t["cs"] and t["UUID"] == "abc"
 
@@ -163,13 +163,13 @@ def _pdf_page() -> bytes:
 
 
 def test_each_source_reports_its_own_resolutions():
-    from app.escl import parse_caps
+    from spoolsteward.escl import parse_caps
     caps = parse_caps(FULL_CAPS % (_res(75, 300, 600, 1200), _res(75, 300)))
     assert caps["platen"]["dpi"] == [75, 300, 600, 1200] and caps["adf"]["dpi"] == [75, 300]
 
 
 def test_page_ranges_are_parsed_and_counted():
-    from app.policy.pages import pages_in_ranges, parse_ranges
+    from spoolsteward.policy.pages import pages_in_ranges, parse_ranges
     assert parse_ranges("1, 5") == [(1, 1), (5, 5)] and parse_ranges("2-4,7") == [(2, 4), (7, 7)] and parse_ranges("") == []
     assert pages_in_ranges(parse_ranges("1,5"), 10) == 2 and pages_in_ranges(parse_ranges("3-"), 10) == 8
     assert pages_in_ranges(parse_ranges("1-3,2-4"), 10) == 4 and pages_in_ranges([], 7) == 7
@@ -203,7 +203,7 @@ async def test_the_guest_name_comes_from_the_setting(scanner, monkeypatch):
 
 @pytest.fixture(autouse=True)
 def _fresh_notice_memory():
-    from app import notices
+    from spoolsteward import notices
     notices._state.clear()      # "reported a moment ago" is kept in memory: one test must not silence the next
     yield
     notices._state.clear()
@@ -262,7 +262,7 @@ async def test_the_guest_notice_closes_itself_when_the_name_is_free(scanner, mon
 def test_the_guest_name_is_checked_at_start():
     from pydantic import ValidationError
 
-    from app.config import Settings
+    from spoolsteward.config import Settings
     assert Settings(escl_guest_username="scan-anon").escl_guest_username == "scan-anon"
     for bad in ("Guest Name", "Scan-Anon", "-x", "a" * 64, "ü", "a/b", "", "none", "administrator"):   # the last: the emergency administrator
         with pytest.raises(ValidationError):
@@ -292,9 +292,9 @@ async def test_feeder_scan_reads_every_sheet_and_the_limit_follows_the_source(sc
     html = (await scanner.get("/me/scan")).text
     assert 'name="filename"' in html and "1200" in html                       # glass offers its real maximum
     tok = await csrf_of_page(scanner, "/me/scan")
-    st, r = await do_scan(scanner, tok, source="auto", color="color", dpi="300", fmt="pdf", filename="contratto/finale")
+    st, r = await do_scan(scanner, tok, source="auto", color="color", dpi="300", fmt="pdf", filename="contract/final")
     assert r.status_code == 200 and "<pwg:InputSource>Feeder<" in seen["xml"]                # auto picked the loaded feeder
-    assert 'filename="finale.pdf"' in r.headers["content-disposition"]   # path part dropped
+    assert 'filename="final.pdf"' in r.headers["content-disposition"]   # path part dropped
     assert "/" not in r.headers["content-disposition"].split("filename=")[1].split(";")[0]
     from pypdf import PdfReader
     import io
@@ -313,7 +313,7 @@ async def test_a_scan_survives_leaving_the_page_and_belongs_to_its_owner(scanner
     import asyncio
     await asyncio.sleep(0.3)
     page = (await scanner.get("/me/scan")).text
-    assert "Scarica" in page and scan_rows(scanner)[0][1] is JobState.completed
+    assert "Download" in page and scan_rows(scanner)[0][1] is JobState.completed
     sid = re.search(r"/me/scan/([\w-]+)/file", page).group(1)
     assert (await scanner.get(f"/me/scan/{sid}/file")).content == b"%PDF-fake"
     await scanner.post("/logout", data={"csrf_token": tok})
@@ -322,7 +322,7 @@ async def test_a_scan_survives_leaving_the_page_and_belongs_to_its_owner(scanner
 
 
 async def test_guest_scan_records_the_host_name(portal, monkeypatch):
-    from app import escl
+    from spoolsteward import escl
 
     monkeypatch.setattr(escl.socket, "gethostbyaddr", lambda ip: ("laptop.lan", [], [ip]))
     assert await escl._hostname("10.0.0.7") == "laptop.lan"
@@ -332,10 +332,10 @@ async def test_guest_scan_records_the_host_name(portal, monkeypatch):
 
 def test_mfp_badge_follows_what_the_device_reports():
     """Only a device that also answers as an eSCL scanner is marked MFP; nothing depends on a model name."""
-    from app.admin.common import templates
+    from spoolsteward.admin.common import templates
 
     def render(scanner):
-        q = {"name": "q1", "state": "inattiva", "online": True, "accepting": True, "queued": 0, "reasons": [], "message": "",
+        q = {"name": "q1", "state": "idle", "online": True, "accepting": True, "queued": 0, "reasons": [], "message": "",
              "device_uri": "ipp://x", "ink": [], "location": "", "color": False}
         dev = {"ipp": {}, "usage": [], "config": {}, "scanner": scanner}
         d = {"title": "Printer", "base": "http://x:631", "online": True, "virtual": False, "queues": [q], "device": dev, "stats": {}, "scan_stats": None}

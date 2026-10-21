@@ -10,15 +10,13 @@ import pytest
 from sqlalchemy import create_engine, select, text
 from sqlalchemy.orm import sessionmaker
 
-from app import keywatch
-from app.db.migrate import upgrade
-from app.db.models import (
+from spoolsteward import keywatch
+from spoolsteward.db.migrate import upgrade
+from spoolsteward.db.models import (
     AdminAudit, Notice, PermissionGrant, QuotaGrant, QuotaRequest, RequestKind, RequestStatus, SubjectType, User,
 )
-from app.policy import grants, permissions
+from spoolsteward.policy import grants, permissions
 from tests.conftest import csrf_of_page, make_user, portal_login
-
-pytestmark = pytest.mark.usefixtures("english")
 
 GOOD = "correct horse battery"
 TZ = ZoneInfo("Europe/Rome")
@@ -122,7 +120,7 @@ def test_reject_grants_nothing(org):
 
 
 def test_the_open_request_limit_counts_permission_requests(org, monkeypatch):
-    from app.config import settings
+    from spoolsteward.config import settings
     monkeypatch.setattr(settings, "max_open_requests", 2)
     ask(org.sm, org.ann, "color")
     ask(org.sm, org.ann, "one_sided")
@@ -153,7 +151,7 @@ def test_invalid_permission_requests_are_refused(org, perm, printer):
 
 
 def test_the_reason_is_required(org, monkeypatch):
-    from app.config import settings
+    from spoolsteward.config import settings
     monkeypatch.setattr(settings, "request_reason_required", True)
     with pytest.raises(grants.RequestError, match="reason"):
         ask(org.sm, org.ann, reason="  ")
@@ -170,7 +168,7 @@ def test_the_printer_name_is_stored_in_lower_case_and_the_params_have_two_keys(o
 
 
 def test_the_emergency_administrator_has_everything_so_has_nothing_to_ask(portal, monkeypatch):
-    from app.config import settings
+    from spoolsteward.config import settings
     monkeypatch.setattr(settings, "bootstrap_admin_username", "root1")
     root = make_user(portal.sm, "root1", password=GOOD, admin=True)
     with pytest.raises(grants.RequestError, match="already have"):
@@ -220,7 +218,7 @@ def test_notify_expired_tells_once_and_never_for_revoked_or_permanent_ones(org):
 
 
 def test_purge_deletes_ended_and_revoked_permission_grants_and_logs_both_kinds(org):
-    from app.db.models import Metric, RequestScope
+    from spoolsteward.db.models import Metric, RequestScope
     with org.sm() as s:
         boss = s.get(User, org.boss)
         s.add_all([
@@ -326,7 +324,7 @@ async def test_reject_through_the_page_tells_the_user(web):
 
 
 async def test_user_can_cancel_a_permission_request_and_the_form_validates(web, monkeypatch):
-    from app.config import settings
+    from spoolsteward.config import settings
     monkeypatch.setattr(settings, "request_reason_required", True)
     for data in ({"perm": "printer", "printer": "ghost", "reason": "r"}, {"perm": "printer", "printer": "", "reason": "r"},
                  {"perm": "printer", "printer": "bw", "reason": "r"}, {"perm": "zzz", "reason": "r"}, {"perm": "color", "reason": ""}):
@@ -364,8 +362,8 @@ async def test_direct_grant_form_permission_and_quota_revoke_and_notices(web):
     assert notices_of(web.sm, web.ann, "grant_given") == [{"what": "permission", "perm": "color", "printer": None, "until": None, "note": "gift"}]
     assert "An administrator gave you a permission: colour printing, with no end date" in (await web.get("/me/notices")).text
     with web.sm() as s:
-        from app.db.models import Metric, Period
-        from app.policy.rules import set_limit
+        from spoolsteward.db.models import Metric, Period
+        from spoolsteward.policy.rules import set_limit
         set_limit(s, SubjectType.user, web.ann, Metric.jobs, 5, Period.weekly)
         s.commit()
     # a form without JavaScript sends every field: only those of the chosen kind count
@@ -435,17 +433,16 @@ def test_a_permission_request_can_be_stored_after_the_migrations(tmp_path):
         assert s.get(QuotaRequest, req.id).kind is RequestKind.permission
 
 
-@pytest.mark.usefixtures("english")
 async def test_a_permission_already_asked_for_is_not_offered_again(portal):
     """While the answer is awaited, /me says "request waiting" instead of "Ask", and the form does not offer it again."""
-    from app.db.models import SubjectType
-    from app.policy import grants as grants_mod, permissions as perm_mod
+    from spoolsteward.db.models import SubjectType
+    from spoolsteward.policy import grants as grants_mod, permissions as perm_mod
     from tests.conftest import make_user, portal_login
     uid = make_user(portal.sm, "ann", password="correct horse battery")
     with portal.sm() as s:
         perm_mod.set_rule(s, SubjectType.user, uid, color=False, one_sided=False)
         s.commit()
-        from app.db.models import User
+        from spoolsteward.db.models import User
         grants_mod.create_permission_request(s, s.get(User, uid), "color", None, "posters", datetime.now(UTC))
     await portal_login(portal, "ann", "correct horse battery")
     me = (await portal.get("/me")).text
@@ -456,7 +453,6 @@ async def test_a_permission_already_asked_for_is_not_offered_again(portal):
 
 
 
-@pytest.mark.usefixtures("english")
 async def test_a_permission_the_user_already_has_can_not_be_granted_and_the_form_knows_it(web):
     """boss has every permission: the direct grant is refused, and the page tells the form there is nothing to offer."""
     r = await web.admin.post("/admin/grants", data={"username": "boss", "kind": "permission", "perm": "color", "csrf_token": web.boss_token})
@@ -474,8 +470,8 @@ async def test_a_permission_the_user_already_has_can_not_be_granted_and_the_form
 
 
 def test_deleting_a_user_removes_their_permissions_and_grants(web):
-    from app.auth.users import delete_user
-    from app.db.models import PermissionRule
+    from spoolsteward.auth.users import delete_user
+    from spoolsteward.db.models import PermissionRule
     now = datetime.now(UTC)
     with web.sm() as s:
         permissions.set_rule(s, SubjectType.user, web.ann, color=False)

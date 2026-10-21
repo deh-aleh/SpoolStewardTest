@@ -2,10 +2,8 @@
 
 import pytest
 
-from app.admin.accounts import _parse_permissions
-from app.policy import permissions
-
-pytestmark = pytest.mark.usefixtures("english")
+from spoolsteward.admin.accounts import _parse_permissions
+from spoolsteward.policy import permissions
 
 NONE = {"color": None, "one_sided": None, "printers_mode": None, "printers": None,
         "hours_mode": None, "hours_days": None, "hours_start": None, "hours_end": None}

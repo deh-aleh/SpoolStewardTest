@@ -4,7 +4,7 @@
 
 Tutte le impostazioni di SpoolSteward stanno in un solo file, `.env`, nella cartella del progetto. `scripts/docker-init.sh` lo crea da
 [`docker/env.example`](../../docker/env.example) e imposta i permessi 600 (contiene segreti). Questa pagina elenca **tutte** le variabili.
-L'elenco ufficiale, con i valori predefiniti, è [`app/config.py`](../../app/config.py); un test controlla che ogni impostazione che c'è lì sia
+L'elenco ufficiale, con i valori predefiniti, è [`spoolsteward/config.py`](../../spoolsteward/config.py); un test controlla che ogni impostazione che c'è lì sia
 descritta qui.
 
 Come leggere la pagina:
@@ -25,8 +25,7 @@ Come leggere la pagina:
 - I due contenitori `gateway` e `mdns` leggono lo stesso file. Le impostazioni che interessano l'annuncio in rete sono indicate nel testo.
 
 Il file ha due parti. La **parte A** la legge docker compose (quale versione, quale utente, quale porta). La **parte B** la legge il
-programma e ogni variabile inizia con `SPOOLSTEWARD_`. L'installazione sull'host senza docker usa `/etc/spoolsteward/env` con gli stessi
-nomi `SPOOLSTEWARD_*` (vedi [installazione.md](installazione.md)).
+programma e ogni variabile inizia con `SPOOLSTEWARD_`.
 
 ## 1. La chiave segreta
 
@@ -48,8 +47,9 @@ rifare il login. Se è `none`, il gateway ne crea una nuova a ogni avvio: le ses
 protetto e i nomi sono salvati senza cifratura. In produzione impostala sempre. Il portale avvisa gli amministratori nella campanella in
 questi casi. Come salvarla e cosa fa un backup cifrato: [backup.md](backup.md#salva-la-chiave-segreta).
 
-Per crearne una a mano: `python3 -c 'import secrets; print(secrets.token_urlsafe(48))'`. Non condividerla e non metterla mai in un
-repository git: ogni installazione ha la sua.
+Per crearne una a mano: `openssl rand -hex 32`. La chiave deve essere lunga **almeno 64 caratteri**, quanti ne stampa quel comando: una
+più corta blocca l'avvio. Non condividerla e non metterla mai in un repository git: ogni installazione ha la sua. Se la riga manca in
+`.env`: [risoluzione-problemi.md](risoluzione-problemi.md#nessuna-chiave-segreta-impostata).
 
 ## 2. Account e accesso
 
@@ -157,7 +157,8 @@ ripristino: [backup.md](backup.md).
 | Variabile | Predefinito | Cosa fa |
 |---|---|---|
 | `SPOOLSTEWARD_UPDATE_CHECK` | `true` | Una volta al giorno il gateway chiede a GitHub qual è l'ultima versione e, se è più nuova, mostra un avviso agli amministratori. Non si aggiorna nulla da solo e la richiesta non invia nulla del tuo server. `false` = non chiedere mai. |
-| `SPOOLSTEWARD_UPDATE_API_URL` | l'indirizzo "ultima release" di GitHub | A chi lo chiede. Cambialo solo per un fork o uno specchio che risponde nello stesso formato. |
+| `SPOOLSTEWARD_UPDATE_BETA` | `true` | `true`: le beta (pre-release di GitHub, per esempio `0.0.0-beta.2`) sono proposte come le release finali, nell'avviso, dal pulsante *Aggiorna* del portale e da `scripts/update.sh` senza argomenti; installarne una chiede una conferma in più. `false`: solo release finali. Vedi [installazione.md](installazione.md#5-aggiornamenti). |
+| `SPOOLSTEWARD_UPDATE_REPOSITORY` | `deh-aleh/SpoolSteward` | Il repository GitHub, scritto `proprietario/nome`, di cui si controllano e installano le release: lo usano l'avviso, il pulsante *Aggiorna* del portale e `scripts/update.sh` (elenco delle release, download del pacchetto, link alle note di rilascio). Cambialo solo per un fork. |
 | `SPOOLSTEWARD_UPDATE_DIR` | `/data/update` | Cartella condivisa con il contenitore facoltativo `updater` (`docker compose --profile autoupdate`). Lasciala. |
 
 Come aggiornare: [installazione.md](installazione.md).
@@ -242,7 +243,7 @@ Le legge docker compose stesso, non il programma.
 
 | Variabile | Predefinito | Cosa fa |
 |---|---|---|
-| `SPOOLSTEWARD_REGISTRY` | `ghcr.io/deh-aleh` | Da dove arrivano le immagini già pronte. Per costruirle da questa cartella (sviluppatori) cancella la riga. |
+| `SPOOLSTEWARD_REGISTRY` | `ghcr.io/deh-aleh` | Da dove arrivano le immagini già pronte. Lasciala. Costruire le immagini dal sorgente è per gli sviluppatori ([CONTRIBUTING.md](../../CONTRIBUTING.md)). |
 | `SPOOLSTEWARD_VERSION` | la versione installata | Quale versione gira. Non cambiarla a mano: lo fa `scripts/update.sh`, dopo un backup. |
 | `PUID`, `PGID` | il tuo utente | L'utente Linux che esegue il gateway. Deve poter leggere la chiave TLS e scrivere in `data/`. Compilati per te. |
 | `PROJECT_DIR` | la cartella del progetto | Percorso completo di questa cartella. Lo usa solo il contenitore facoltativo `updater`. |
@@ -253,7 +254,7 @@ Le legge docker compose stesso, non il programma.
 | `BACKUP_HOST_PATH` | `<progetto>/data/backups` | Solo mostrata nel portale. |
 | `BACKUP_DIR` | `./data/backups` | La cartella dell'host montata su `/backups`: l'unico posto in cui possono andare i backup. Per salvare su un disco USB o una condivisione, montala **dentro** questa cartella. |
 | `COMPOSE_PROFILES` | non impostata | `autoupdate` avvia il contenitore facoltativo `updater` (il pulsante "Aggiorna" nel portale; richiede il socket di Docker: leggi prima l'avvertenza in [installazione.md](installazione.md)). |
-| `FORWARDED_ALLOW_IPS` | non impostata | Solo dietro un reverse proxy: l'indirizzo del proxy, perché il gateway si fidi di `X-Forwarded-For` (vedi [installazione.md](installazione.md)). |
+| `FORWARDED_ALLOW_IPS` | non impostata | Solo dietro un reverse proxy: l'indirizzo del proxy, perché il gateway si fidi di `X-Forwarded-For` (vedi [certificati.md](certificati.md#41-dietro-un-reverse-proxy)). |
 
 ### Sincronizzazione del certificato (`CERT_SYNC_*`)
 

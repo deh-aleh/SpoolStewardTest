@@ -1,4 +1,4 @@
-"""The version rule "X.Y.Z or X.Y.Z-beta.N" is written three times: app/updates.py, the valid() of scripts/update.sh and
+"""The version rule "X.Y.Z or X.Y.Z-beta.N" is written three times: spoolsteward/updates.py, the valid() of scripts/update.sh and
 the valid() of the updater container. A version ends up in .env, in image names and in a URL, so the three must agree.
 Every case is applied to all three; where one disagrees the pair is listed in KNOWN_GAPS (xfail, strict) instead of
 being hidden: the day it is fixed the test turns red and the entry must be removed."""
@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from app import updates
+from spoolsteward import updates
 
 ROOT = Path(__file__).resolve().parent.parent
 SHELLS = {"update.sh": ROOT / "scripts" / "update.sh", "updater.sh": ROOT / "docker" / "stack" / "updater" / "updater.sh"}
@@ -26,7 +26,7 @@ def shell_valid(script: Path, text: str) -> bool:
 
 
 def python_valid(text: str) -> bool:
-    return updates._order(text) is not None          # finals and betas, as the checker and write_request see them
+    return updates._RELEASE.fullmatch(text) is not None   # the rule of release tags (without the v) and of write_request
 
 
 IMPLEMENTATIONS = {"updates.py": python_valid, **{n: (lambda t, p=p: shell_valid(p, t)) for n, p in SHELLS.items()}}
@@ -37,10 +37,7 @@ INVALID = ["1.2", "1.2.3-rc.1", "1.2.3-beta", "1.2.3-beta.", "1.2.3-beta.4-x", "
 # all three accept these today, which is lenient but harmless (the number is only compared and printed)
 AGREED_LENIENT = ["01.2.3"]
 # (implementation, input) pairs that SHOULD be refused and are not
-KNOWN_GAPS = {
-    ("updates.py", "v1.2.3"),            # by design: release tags carry the v and fetch_latest() strips it; the shells refuse it
-    ("updates.py", "1.2.3b1"),           # by design: the spelling of package metadata for a beta
-}
+KNOWN_GAPS: set = set()
 SHOULD_BE_REFUSED = ["v1.2.3", " 1.2.3", "1.2.3 ", "1.2.3\n", "1.2.3b1", "١.٢.٣", "1.2.3\nfoo", "foo\n1.2.3"]
 
 

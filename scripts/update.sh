@@ -1,10 +1,10 @@
 #!/bin/sh
 # Update SpoolSteward to a newer published version, safely.
-#   scripts/update.sh              update to the newest release
+#   scripts/update.sh              update to the newest release (betas too, unless SPOOLSTEWARD_UPDATE_BETA=false in .env)
 #   scripts/update.sh 1.2.0        update (or go back) to this exact version. After restoring a backup made with 1.2.0 it
 #                                  puts the files of 1.2.0 back too
 #   scripts/update.sh --check      only say if a newer version exists
-#   scripts/update.sh 1.3.0-beta.1 a beta (a pre-release) is never offered by itself: only by naming it
+#   scripts/update.sh 1.3.0-beta.1 a beta (a GitHub pre-release) can always be named, whatever SPOOLSTEWARD_UPDATE_BETA says
 #   (--from-portal VERSION is used by the "updater" container: the portal already made the backup, there are no questions,
 #    and the updater container itself is left alone while it works)
 #
@@ -17,19 +17,23 @@
 #   5. waits until the gateway says it is healthy
 #   6. if it is NOT healthy: puts the old files and the old version back and, if the old version does not start either
 #      (the new one changed the database), offers to restore the backup of step 1
+# Before step 1 it asks for a YES when the update has breaking changes: another major version, another minor version
+# while on 0.x, or a release on the way (after the installed one, up to the new one) whose notes have a heading
+# "Breaking changes". It also asks for a beta it found by itself (not for one you named).
 # Not for git clones (the folder has .git): there "git pull && docker compose up -d --build" is the way.
-# Needs: .env with SPOOLSTEWARD_REGISTRY and SPOOLSTEWARD_VERSION set (scripts/docker-init.sh does this), docker compose, curl, tar, sha256sum.
-# Environment:
-#   SPOOLSTEWARD_RELEASES_API   where the newest version is looked up      (default: GitHub releases of this project)
-#   SPOOLSTEWARD_RELEASES_URL   where the packages are downloaded from     (default: GitHub releases of this project)
+# Needs: .env with SPOOLSTEWARD_REGISTRY and SPOOLSTEWARD_VERSION set (scripts/docker-init.sh does this), docker compose, curl, tar,
+# sha256sum, awk.
+# From .env it also reads SPOOLSTEWARD_UPDATE_REPOSITORY (owner/name on GitHub, default deh-aleh/SpoolSteward) and
+# SPOOLSTEWARD_UPDATE_BETA (true or false, default true), the same settings the portal uses.
+# Environment (for tests and mirrors):
+#   SPOOLSTEWARD_RELEASES_API   the list of releases, as GitHub's API gives it  (default: https://api.github.com/repos/<repository>/releases)
+#   SPOOLSTEWARD_RELEASES_URL   where the packages are downloaded from          (default: https://github.com/<repository>/releases/download)
 set -eu
 cd "$(dirname "$0")/.."
 
 # The whole script is one function, and the last line runs it and exits: this script is one of the files an update
 # replaces, and the shell must not read a half-replaced file.
 main() {
-API="${SPOOLSTEWARD_RELEASES_API:-https://api.github.com/repos/deh-aleh/SpoolSteward/releases/latest}"
-DL="${SPOOLSTEWARD_RELEASES_URL:-https://github.com/deh-aleh/SpoolSteward/releases/download}"
 mode="update"; target=""; portal=0
 if [ "${1:-}" = "--from-portal" ]; then portal=1; shift; fi
 case "${1:-}" in
@@ -41,10 +45,107 @@ esac
 
 # only 1.2.3 or a beta like 1.2.3-beta.1 are accepted: the value ends up in .env, in image names and in a URL
 valid() { case "$1" in *[!0-9A-Za-z.-]*) return 1;; esac; printf '%s' "$1" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$'; }
-envget() { sed -n "s/^$1=//p" .env 2>/dev/null | head -1; }
+envget() { sed -n "s/^$1=//p" .env 2>/dev/null | tail -n 1; }   # the last line wins, as in docker compose
 # a path from a package: relative, no "..", and never something that belongs to the user
 safe_path() { case "$1" in ""|/*|*..*|.env|.env/*|config|config/*|data|data/*|.git|.git/*) return 1 ;; esac; return 0; }
+# a GitHub repository owner/name, with the characters GitHub allows (the same rule as spoolsteward/config.py)
+valid_repo() { case "$1" in *[!0-9A-Za-z._/-]*|*/.|*/..) return 1;; esac; printf '%s' "$1" | grep -Eq '^[A-Za-z0-9]([A-Za-z0-9-]{0,37}[A-Za-z0-9])?/[A-Za-z0-9._-]{1,100}$'; }
 sha256() { if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1; else shasum -a 256 "$1" | cut -d' ' -f1; fi; }
+
+# The list of releases is JSON; awk reads it, so nothing else is needed on the server. PARSE prints one line per release:
+# TAG (or "-" when it is not v1.2.3 / v1.2.3-beta.1) DRAFT PRERELEASE BREAKING (1 when the notes have a heading "Breaking
+# changes", any level, any case), and a line ERR when the answer is not a complete list. The records are cut at every '"',
+# so a string is read in pieces and nothing is ever copied twice (release notes can be long).
+PARSE='
+BEGIN { RS = "\""; depth = 0 }
+FNR == 1 { instr = 0; seen = 0 }
+function heading(s,   n, L, i, t, u) {
+    gsub(/\\\\/, "\001", s); gsub(/\\r/, "", s); gsub(/\\t/, " ", s)
+    n = split(s, L, /\\n/)
+    for (i = 1; i <= n; i++) {
+        t = tolower(L[i]); sub(/^ ? ? ?/, "", t)
+        if (t ~ /^#+ /) {
+            match(t, /^#+/); if (RLENGTH > 6) continue
+            t = substr(t, RLENGTH + 1); sub(/^ +/, "", t); sub(/ +$/, "", t); sub(/ +#+$/, "", t); sub(/ +$/, "", t)
+            sub(/:$/, "", t); sub(/ +$/, "", t)
+            if (t == "breaking changes") return 1
+        } else if (i < n) {
+            sub(/ +$/, "", t); sub(/:$/, "", t); sub(/ +$/, "", t)
+            u = L[i + 1]; sub(/^ ? ? ?/, "", u)
+            if (t == "breaking changes" && (u ~ /^=+ *$/ || u ~ /^-+ *$/)) return 1
+        }
+    }
+    return 0
+}
+function piece(s, cont, more) {
+    if (depth != 2 || !obj) return
+    if (want_key) { key = (cont || more) ? "-" : s; if (!more) want_key = 0; return }
+    if (key == "tag_name") tag = (!cont && !more && s ~ /^v?[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$/ && length(s) <= 40) ? s : "-"
+    else if (key == "body" && heading(cont ? "x" s : s)) brk = 1
+}
+function outside(r,   i, c, n) {
+    n = length(r)
+    for (i = 1; i <= n; i++) {
+        c = substr(r, i, 1)
+        if (c == " " || c == "\n" || c == "\r" || c == "\t" || c == ":") continue
+        if (!seen) { seen = 1; if (c != "[") bad = 1 }
+        if (c == "{" || c == "[") {
+            depth++
+            if (depth == 2) { obj = (c == "{"); want_key = 1; tag = "-"; draft = "-"; pre = "-"; brk = 0; key = "" }
+        } else if (c == "}" || c == "]") {
+            if (depth == 2 && obj) { print tag "\t" draft "\t" pre "\t" brk; obj = 0 }
+            depth--
+        } else if (c == ",") {
+            if (depth == 2) want_key = 1
+        } else if (match(substr(r, i), /^[a-z0-9.eE+-]+/)) {
+            if (depth == 2 && obj && !want_key) { if (key == "draft") draft = substr(r, i, RLENGTH); else if (key == "prerelease") pre = substr(r, i, RLENGTH) }
+            i += RLENGTH - 1
+        } else bad = 1
+    }
+}
+{
+    if (!instr) { outside($0); instr = 1; cont = 0; next }
+    more = match($0, /\\+$/) && RLENGTH % 2 == 1
+    piece($0, cont, more)
+    if (more) { cont = 1; next }
+    instr = 0
+}
+END { if (bad || !seen || depth != 0 || !instr) print "ERR" }
+'
+# PICK reads those lines with cur= (installed), beta= (true/false), want= (a named version, or empty for the newest) and
+# prints VERSION BETA BREAKING, BREAKING meaning that a release after cur up to that version says so in its notes;
+# nothing when no release is newer. Order: 1.2.3-beta.2 < 1.2.3 < 1.2.4-beta.1.
+PICK='
+function key(v,   a, n) {
+    sub(/^v/, "", v); n = split(v, a, /[.-]/)
+    if (length(a[1]) > 9 || length(a[2]) > 9 || length(a[3]) > 9 || length(a[5]) > 9) return ""
+    return sprintf("k%09d.%09d.%09d.%d.%09d", a[1], a[2], a[3], n == 3, n == 3 ? 0 : a[5])
+}
+$1 != "-" && $2 == "false" { n++; K[n] = key($1); V[n] = $1; sub(/^v/, "", V[n]); P[n] = ($3 != "false" || $1 ~ /-beta\./); B[n] = $4 }
+END {
+    now = key(cur); if (now == "") exit
+    if (want != "") { top = key(want); t = want; tb = (want ~ /-beta\./) }
+    else {
+        for (i = 1; i <= n; i++) if (K[i] != "" && K[i] > now && (beta == "true" || !P[i]) && (top == "" || K[i] > top)) { top = K[i]; t = V[i]; tb = P[i] }
+        if (top == "") exit
+    }
+    for (i = 1; i <= n; i++) if (K[i] != "" && K[i] > now && K[i] <= top && B[i] == 1) brk = 1
+    for (i = 1; i <= n; i++) if (K[i] == top && P[i]) tb = 1
+    print t "\t" (tb ? 1 : 0) "\t" (brk ? 1 : 0)
+}
+'
+# every release of the project, one line each (see PARSE). Fails when the list cannot be read
+releases() {
+    case "$API" in *\?*) sep="&" ;; *) sep="?" ;; esac
+    p=1
+    while [ "$p" -le 10 ]; do
+        out="$(curl -fsS --max-time 15 --max-filesize 20000000 -H "Accept: application/vnd.github+json" "$API${sep}per_page=100&page=$p" | LC_ALL=C awk "$PARSE")"
+        if printf '%s\n' "$out" | grep -qx ERR; then return 1; fi
+        [ -z "$out" ] || printf '%s\n' "$out"
+        [ "$(printf '%s\n' "$out" | grep -c .)" -ge 100 ] || return 0
+        p=$((p + 1))
+    done
+}
 
 if [ "$mode" != "check" ] && [ -d .git ]; then
     echo "This folder is a git clone: update it with  git pull && docker compose up -d --build  (this script replaces files, which would fight with git)." >&2
@@ -54,16 +155,46 @@ fi
 current="$(envget SPOOLSTEWARD_VERSION)"
 registry="$(envget SPOOLSTEWARD_REGISTRY)"
 valid "${current:-x}" || { echo "SPOOLSTEWARD_VERSION in .env is not a version number like 1.2.3 (found: '${current}')." >&2; return 1; }
+repo="$(envget SPOOLSTEWARD_UPDATE_REPOSITORY)"; repo="${repo:-deh-aleh/SpoolSteward}"
+valid_repo "$repo" || { echo "SPOOLSTEWARD_UPDATE_REPOSITORY in .env is not a GitHub repository written owner/name (found: '$repo')." >&2; return 1; }
+beta="$(envget SPOOLSTEWARD_UPDATE_BETA)"; beta="${beta:-true}"
+case "$beta" in true|false) ;; *) echo "SPOOLSTEWARD_UPDATE_BETA in .env must be true or false (found: '$beta')." >&2; return 1 ;; esac
+API="${SPOOLSTEWARD_RELEASES_API:-https://api.github.com/repos/$repo/releases}"
+DL="${SPOOLSTEWARD_RELEASES_URL:-https://github.com/$repo/releases/download}"
 
-if [ -z "$target" ]; then
-    target="$(curl -fsS --max-time 15 "$API" | sed -n 's/.*"tag_name": *"v\{0,1\}\([0-9][0-9.]*\)".*/\1/p' | head -1)"
-    [ -n "$target" ] || { echo "could not look up the newest version (no network?). Give one: $0 1.2.0" >&2; return 1; }
+# What the releases say (not asked when the portal sent us: it has checked already). `list`: one line per release,
+# TAG DRAFT PRERELEASE BREAKING; `pick`: VERSION BETA BREAKING of the release to install (see the two awk programs above)
+named=1; [ -n "$target" ] || named=0
+listed=0; is_beta=0; notes=0; pick=""
+if [ "$portal" = 0 ] && list="$(releases)"; then listed=1; fi
+if [ "$named" = 0 ]; then
+    [ "$listed" = 1 ] || { echo "could not look up the newest version (no network?). Give one: $0 1.2.0" >&2; return 1; }
+    pick="$(printf '%s\n' "$list" | LC_ALL=C awk -F '\t' -v cur="$current" -v beta="$beta" -v want= "$PICK")"
+    if [ -z "$pick" ]; then
+        echo "installed: $current"
+        [ "$beta" = true ] && echo "up to date" || echo "up to date (betas are not offered: SPOOLSTEWARD_UPDATE_BETA=false)"
+        return 0
+    fi
+    target="$(printf '%s' "$pick" | cut -f1)"
+elif [ "$listed" = 1 ] && valid "$target"; then
+    pick="$(printf '%s\n' "$list" | LC_ALL=C awk -F '\t' -v cur="$current" -v beta="$beta" -v want="$target" "$PICK")"
 fi
 valid "$target" || { echo "'$target' is not a version number like 1.2.3 (or 1.2.3-beta.1)" >&2; return 1; }
+if [ -n "${pick:-}" ]; then is_beta="$(printf '%s' "$pick" | cut -f2)"; notes="$(printf '%s' "$pick" | cut -f3)"; fi
+case "$target" in *-beta.*) is_beta=1 ;; esac
+notes_page="https://github.com/$repo/releases/tag/v$target"
+
+# breaking: another major version, another minor version on 0.x, or the notes of a release on the way say so
+cmaj="${current%%.*}"; tmaj="${target%%.*}"; cmin="$(echo "$current" | cut -d. -f2)"; tmin="$(echo "$target" | cut -d. -f2)"
+breaking=0
+if [ "$cmaj" != "$tmaj" ] || { [ "$tmaj" = 0 ] && [ "$cmin" != "$tmin" ]; } || [ "$notes" = 1 ]; then breaking=1; fi
 
 echo "installed: $current    wanted: $target"
 if [ "$mode" = "check" ]; then
-    [ "$current" = "$target" ] && echo "up to date" || echo "update available: run scripts/update.sh"
+    if [ "$current" = "$target" ]; then echo "up to date"; return 0; fi
+    [ "$is_beta" = 1 ] && echo "$target is a test release (pre-release): it can contain bugs."
+    [ "$breaking" = 1 ] && echo "$target has breaking changes: read the release notes first: $notes_page"
+    echo "update available: run scripts/update.sh"
     return 0
 fi
 # after restoring an old backup, .env says one version while the files here (VERSION) are of another: then the files are installed again
@@ -71,10 +202,18 @@ files_version="$(cat VERSION 2>/dev/null || true)"
 if [ "$current" = "$target" ] && { [ -z "$files_version" ] || [ "$files_version" = "$target" ]; }; then echo "already on $target"; return 0; fi
 [ -n "$registry" ] || { echo "SPOOLSTEWARD_REGISTRY is empty in .env: images are built from this folder. Update with: git pull && docker compose up -d --build" >&2; return 1; }
 
-# a jump to another major version can change things by hand: ask first
-if [ "$portal" = 0 ] && [ "${current%%.*}" != "${target%%.*}" ]; then
-    echo "WARNING: major version change ($current -> $target). Read the release notes first."
-    printf "type YES to continue: "; read -r a; [ "$a" = "YES" ] || { echo "cancelled"; return 1; }
+# breaking changes, or a beta that was not named: ask first (the portal asked already)
+if [ "$portal" = 0 ] && [ "$named" = 1 ] && [ "$listed" = 0 ]; then
+    echo "NOTE: the list of releases could not be read, so the release notes were not searched for breaking changes. Read them: $notes_page"
+fi
+if [ "$portal" = 0 ] && { [ "$breaking" = 1 ] || { [ "$is_beta" = 1 ] && [ "$named" = 0 ]; }; }; then
+    [ "$is_beta" = 1 ] && echo "NOTE: $target is a test release (pre-release): it can contain bugs."
+    if [ "$breaking" = 1 ]; then
+        echo "WARNING: the update $current -> $target has breaking changes. The installation could fail and leave SpoolSteward not working."
+        echo "Before you go on, keep a copy of the file .env and of the folder config (this script saves a backup of the data in data/backups/pre-update first)."
+        echo "Read the release notes first: $notes_page"
+    fi
+    printf "type YES to continue: "; read -r a || a=""; [ "$a" = "YES" ] || { echo "cancelled"; return 1; }
 fi
 
 backup_file=""

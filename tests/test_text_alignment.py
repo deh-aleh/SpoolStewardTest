@@ -9,13 +9,13 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from app import i18n
-from app.db.models import Metric, PolicyRule, Resource, SubjectType
-from app.policy.engine import check_job
-from app.policy.permissions import Perms, Window, decide
+from spoolsteward import i18n
+from spoolsteward.db.models import Metric, PolicyRule, Resource, SubjectType
+from spoolsteward.policy.engine import check_job
+from spoolsteward.policy.permissions import Perms, Window, decide
 from tests.test_policy import NOW, TZ, _log, _setup, session  # noqa: F401  (session is a fixture)
 
-APP = Path(__file__).resolve().parent.parent / "app"
+APP = Path(__file__).resolve().parent.parent / "spoolsteward"
 WED_10 = datetime(2026, 10, 14, 10, 0, tzinfo=UTC)
 BOTH = {"color": True, "duplex": True}
 UTC_ZONE = ZoneInfo("UTC")

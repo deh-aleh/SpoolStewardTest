@@ -10,6 +10,8 @@ license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 authors = [{name = "Alessio Paccino"}]
 requires-python = ">=3.12"
+# The source of requirements/*.txt (exact versions with their SHA-256), which the image and CI install from.
+# After a change here, regenerate them: the command is at the top of each file.
 dependencies = [
     "fastapi",
     "uvicorn",
@@ -34,14 +36,14 @@ dependencies = [
 dev = ["pytest", "pytest-asyncio"]
 
 [project.scripts]
-spoolsteward = "app.__main__:main"
-spoolsteward-admin = "app.cli:main"
+spoolsteward = "spoolsteward.__main__:main"
+spoolsteward-admin = "spoolsteward.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["app*"]
+include = ["spoolsteward*"]
 
 [tool.setuptools.package-data]
-app = ["admin/templates/*.html", "admin/static/*", "admin/static/css/*", "admin/static/js/*", "locales/*/messages.po", "auth/dictionary", "migrations/script.py.mako", "migrations/versions/*.py"]
+spoolsteward = ["admin/templates/*.html", "admin/static/*", "admin/static/css/*", "admin/static/js/*", "locales/*/messages.po", "auth/dictionary", "migrations/script.py.mako", "migrations/versions/*.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,4 +1,4 @@
-from app.mdns import SERVICE, UNIVERSAL, build_services, txt_for
+from spoolsteward.mdns import SERVICE, UNIVERSAL, build_services, txt_for
 
 Q = {"name": "HP7305", "info": "Office printer", "model": "HP Smart Tank", "urf": ["CP1", "W8"],
      "formats": ["application/pdf", "image/urf", "application/postscript"], "color": True, "duplex": True,

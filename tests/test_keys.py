@@ -8,11 +8,11 @@ import httpx
 import pytest
 from sqlalchemy import select
 
-from app.auth import keys
-from app.auth import keys as keylib
-from app.config import settings
-from app.db.models import AdminAudit, JobLog, PrintKey, User
-from app.ipp import codec as c
+from spoolsteward.auth import keys
+from spoolsteward.auth import keys as keylib
+from spoolsteward.config import settings
+from spoolsteward.db.models import AdminAudit, JobLog, PrintKey, User
+from spoolsteward.ipp import codec as c
 from tests.conftest import (
     CUPS_TEST_URL, StubRadius, csrf_of_page, make_user, portal_login, requires_cups,
 )
@@ -66,7 +66,6 @@ def test_a_key_is_valid_for_its_owner_only_and_until_expiry_or_revocation(portal
     assert not check(portal.sm, "ann", plain)                                          # revoked
 
 
-@pytest.mark.usefixtures("english")
 def test_limits_and_validation(portal):
     make_user(portal.sm, "ann", password=GOOD)
     with portal.sm() as s:
@@ -392,8 +391,8 @@ async def test_a_single_use_key_prints_once_then_only_answers_status_queries(ipp
 
 @requires_cups
 async def test_a_job_refused_by_the_quota_does_not_spend_the_single_use_key(ipp):
-    from app.db.models import Metric, Period, SubjectType
-    from app.policy.rules import set_limit
+    from spoolsteward.db.models import Metric, Period, SubjectType
+    from spoolsteward.policy.rules import set_limit
 
     make_user(ipp.sm, "ann", password=GOOD)
     kid, plain = new_once(ipp.sm, "ann")
@@ -432,7 +431,7 @@ async def test_admin_can_revoke_one_key_or_all(admin):
     uid = make_user(admin.sm, "kim", password=GOOD)
     k1, k2 = await _two_keys(admin, uid)
     page = (await admin.get(f"/admin/users/{uid}/keys")).text
-    assert "phone" in page and "laptop" in page and "Revoca tutte" in page
+    assert "phone" in page and "laptop" in page and "Revoke all" in page
     tok = await csrf_of_page(admin, f"/admin/users/{uid}/keys")
     await admin.post(f"/admin/users/{uid}/keys/{k1}/revoke", data={"csrf_token": tok})
     with admin.sm() as s:

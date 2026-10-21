@@ -4,8 +4,8 @@ lib/
 lib64
 include/
 pyvenv.cfg
-__pycache__/
-*.pyc
+**/__pycache__/
+**/*.pyc
 .pytest_cache/
 .git/
 certs/
@@ -16,7 +16,14 @@ docker/run/
 *.db-wal
 *.db-shm
 tests/
-# the image needs pyproject.toml, app/, docs/ and the start scripts of docker/stack/ (cups, ipp-usb)
+# local working files of whoever develops the project: never needed by the image
+build/
+*.egg-info/
+graphify-out/
+NOTE.md
+TEST.md
+*.odt
+# the image needs pyproject.toml, requirements/ (the lock files), spoolsteward/, docs/ and the start scripts of docker/stack/ (cups, ipp-usb)
 deploy/
 docker/*
 !docker/stack/

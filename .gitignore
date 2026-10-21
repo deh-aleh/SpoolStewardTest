@@ -37,3 +37,4 @@ tests/_out/
 /.update-new/
 /.update-prev/
 *.pm-tmp
+/.venv/

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Translation catalogs. Texts are English in the code; app/locales/<lang>/messages.po holds the other languages.
+"""Translation catalogs. Texts are English in the code; spoolsteward/locales/<lang>/messages.po holds the other languages.
 
-  scripts/i18n.py extract            find every _() / ngettext() text in app/ -> app/locales/messages.pot
+  scripts/i18n.py extract            find every _() / ngettext() text in spoolsteward/ -> spoolsteward/locales/messages.pot
                                      and add the new ones (empty) to every language, dropping the ones no longer used
   scripts/i18n.py check              per language: untranslated texts, placeholders that do not match the English
   scripts/i18n.py missing            the English texts still to translate
@@ -19,7 +19,7 @@ from babel.messages.extract import extract_from_dir
 from babel.messages.pofile import read_po, write_po
 
 ROOT = Path(__file__).resolve().parent.parent
-APP = ROOT / "app"
+APP = ROOT / "spoolsteward"
 LOCALES = APP / "locales"
 LANGS = ("it", "es", "ru", "zh")
 KEYWORDS = {"_": None, "_t": None, "_js": None, "gettext": None, "ngettext": (1, 2), "_p": ((1, "c"), 2), "pgettext": ((1, "c"), 2), "N_": None, "lazy": None}
@@ -32,7 +32,7 @@ def extract_pot() -> Catalog:
     cat = Catalog(project=PROJECT, charset="utf-8")
     for filename, lineno, message, comments, ctx in extract_from_dir(
             str(APP), method_map=METHODS, options_map=OPTIONS, keywords=KEYWORDS, comment_tags=["i18n:"], strip_comment_tags=True):
-        cat.add(message, locations=[(f"app/{filename}".replace("\\", "/"), lineno)], auto_comments=comments, context=ctx)
+        cat.add(message, locations=[(f"spoolsteward/{filename}".replace("\\", "/"), lineno)], auto_comments=comments, context=ctx)
     return cat
 
 

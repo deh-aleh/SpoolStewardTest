@@ -11,11 +11,11 @@ from zoneinfo import ZoneInfo
 import pytest
 from sqlalchemy import func, select
 
-from app.audit import archive
-from app.audit.adminlog import record
-from app.config import settings
-from app.db.models import AdminAudit, AuditArchive, JobKind, JobLog, JobState, Metric, PolicyRule, SubjectType, User
-from app.policy.engine import usage
+from spoolsteward.audit import archive
+from spoolsteward.audit.adminlog import record
+from spoolsteward.config import settings
+from spoolsteward.db.models import AdminAudit, AuditArchive, JobKind, JobLog, JobState, Metric, PolicyRule, SubjectType, User
+from spoolsteward.policy.engine import usage
 from tests.conftest import csrf_of_page, make_user, portal_login
 
 GOOD = "correct horse battery"
@@ -194,7 +194,7 @@ def test_status_notices_a_missing_or_tampered_file(world):
 
 
 def test_cli_archives_on_demand(world, monkeypatch, capsys):
-    from app import cli
+    from spoolsteward import cli
 
     add_jobs(world.sm, world.uid, 4, OLD)
     monkeypatch.setattr(cli, "SessionLocal", world.sm)
@@ -208,8 +208,8 @@ def test_cli_archives_on_demand(world, monkeypatch, capsys):
 @pytest.fixture
 async def admin(world):          # own fixture on purpose: built on `world` (archive data, own db), not on the shared `portal`
     make_user(world.sm, "boss", password=GOOD, admin=True)
-    add_jobs(world.sm, world.uid, 250, OLD, title="relazione")
-    add_jobs(world.sm, world.uid, 3, RECENT, title="recente")
+    add_jobs(world.sm, world.uid, 250, OLD, title="report")
+    add_jobs(world.sm, world.uid, 3, RECENT, title="recent")
     [res] = [r for r in run(world) if r.table == "job_log"]
     world.res = res
     await portal_login(world, "boss", GOOD)
@@ -221,8 +221,8 @@ async def admin(world):          # own fixture on purpose: built on `world` (arc
 
 async def test_the_audit_page_warns_that_older_rows_are_archived(admin):
     html = (await admin.get("/admin/jobs")).text
-    assert "Esiste 1 archivio compresso dell'audit" in html and "/admin/archive" in html
-    assert "recente-0.pdf" in html and "relazione-0.pdf" not in html                  # the old rows left the table
+    assert "There is 1 compressed audit archive" in html and "/admin/archive" in html
+    assert "recent-0.pdf" in html and "report-0.pdf" not in html                  # the old rows left the table
 
 
 async def test_the_archive_page_shows_both_paths_and_the_checksum(admin, monkeypatch):
@@ -236,11 +236,11 @@ async def test_the_archive_page_shows_both_paths_and_the_checksum(admin, monkeyp
 
 async def test_an_archive_can_be_read_searched_and_paged_in_the_portal(admin):
     page1 = (await admin.get(f"/admin/archive/{admin.aid}/view")).text
-    assert "relazione-0.pdf" in page1 and "relazione-99.pdf" in page1 and "relazione-100.pdf" not in page1
-    assert "Pagina 1 / 3" in page1
-    assert "relazione-249.pdf" in (await admin.get(f"/admin/archive/{admin.aid}/view?page=3")).text
-    hit = (await admin.get(f"/admin/archive/{admin.aid}/view?q=relazione-17.pdf")).text
-    assert "relazione-17.pdf" in hit and "1 risultati" in hit and "relazione-18.pdf" not in hit
+    assert "report-0.pdf" in page1 and "report-99.pdf" in page1 and "report-100.pdf" not in page1
+    assert "Page 1 / 3" in page1
+    assert "report-249.pdf" in (await admin.get(f"/admin/archive/{admin.aid}/view?page=3")).text
+    hit = (await admin.get(f"/admin/archive/{admin.aid}/view?q=report-17.pdf")).text
+    assert "report-17.pdf" in hit and "1 results" in hit and "report-18.pdf" not in hit
 
 
 async def test_the_archive_can_be_downloaded_byte_for_byte(admin):
@@ -249,7 +249,6 @@ async def test_the_archive_can_be_downloaded_byte_for_byte(admin):
     assert r.headers["content-disposition"].endswith(f'{admin.res.path.name}"')
 
 
-@pytest.mark.usefixtures("english")
 async def test_verify_reports_integrity_and_tampering(admin):
     await admin.post(f"/admin/archive/{admin.aid}/verify", data={"csrf_token": admin.token})
     assert "integrity OK" in (await admin.get("/admin/archive")).text
@@ -262,7 +261,7 @@ async def test_verify_reports_integrity_and_tampering(admin):
 
 
 async def test_nothing_in_the_portal_can_delete_audit_data(admin):
-    from app.main import app
+    from spoolsteward.main import app
 
     for route in app.routes:
         path, methods = getattr(route, "path", ""), getattr(route, "methods", set()) or set()

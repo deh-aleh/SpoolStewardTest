@@ -6,10 +6,10 @@ import httpx
 import pytest
 from sqlalchemy import select
 
-from app.admin.printing import clean_filename, detect_type
-from app.config import settings
-from app.db.models import JobLog, Metric, Period, SubjectType, User
-from app.policy.rules import set_limit
+from spoolsteward.admin.printing import clean_filename, detect_type
+from spoolsteward.config import settings
+from spoolsteward.db.models import JobLog, Metric, Period, SubjectType, User
+from spoolsteward.policy.rules import set_limit
 from tests.conftest import CUPS_TEST_URL, csrf_of_page, make_user, portal_login, requires_cups
 
 GOOD = "correct horse battery"
@@ -24,14 +24,14 @@ JPG = b"\xff\xd8\xff\xe0" + b"\x00" * 40
 
 def test_file_type_comes_from_the_content_not_from_the_name_or_the_browser():
     assert detect_type(PDF) == "application/pdf" and detect_type(PNG) == "image/png" and detect_type(JPG) == "image/jpeg"
-    assert detect_type(b"GIF89a....") == "image/gif" and detect_type("ciao è un testo\n\tcon tab\r\n".encode()) == "text/plain"
+    assert detect_type(b"GIF89a....") == "image/gif" and detect_type("hello, a text with è\n\tand a tab\r\n".encode()) == "text/plain"
     for bad in (b"MZ\x90\x00\x03", b"PK\x03\x04zip", b"\x7fELF\x02", b"#!/bin/sh\x00\x00", b"\x00\x01\x02", b"\xff\xfe\xfd\xfc", b"", b"<svg/>\x00"):
         assert detect_type(bad) is None, bad
 
 
 def test_file_names_are_cleaned():
     assert clean_filename("../../etc/passwd") == "passwd"
-    assert clean_filename("C:\\Users\\x\\relazione finale.pdf") == "relazione finale.pdf"
+    assert clean_filename("C:\\Users\\x\\final report.pdf") == "final report.pdf"
     assert clean_filename("a\x00b\x07c\n.pdf") == "abc.pdf"
     assert clean_filename("") == "document" and clean_filename(None) == "document" and clean_filename("...") == "document"
     assert len(clean_filename("x" * 999)) == 200
@@ -53,7 +53,7 @@ async def web(portal):
     await portal.app.state.upstream.aclose()
 
 
-async def send(cl, data=PDF, name="relazione.pdf", queue="virtual", copies="1", token=None, content_type="application/pdf"):
+async def send(cl, data=PDF, name="report.pdf", queue="virtual", copies="1", token=None, content_type="application/pdf"):
     return await cl.post("/me/print", data={"queue": queue, "copies": copies, "csrf_token": token or cl.token},
                          files={"file": (name, data, content_type)} if data is not None else None)
 
@@ -70,38 +70,35 @@ async def last_message(cl):
 
 
 @requires_cups
-@pytest.mark.usefixtures("english")
 async def test_a_phone_user_prints_a_pdf_and_it_is_audited_like_any_other_job(web):
     html = (await web.get("/me/print")).text
     assert 'enctype="multipart/form-data"' in html and 'name="file"' in html and "virtual" in html
     assert 'viewport' in (await web.get("/me")).text                                # usable at phone width
-    r = await send(web, name="../../relazione.pdf", copies="2")
+    r = await send(web, name="../../report.pdf", copies="2")
     assert r.status_code == 303 and r.headers["location"] == "/me/print"
-    assert "Sent to virtual: relazione.pdf" in await last_message(web)
+    assert "Sent to virtual: report.pdf" in await last_message(web)
     [(title, state, printer, job_id, opts)] = rows(web)
-    assert (title, state, printer) == ("relazione.pdf", "accepted", "virtual") and job_id
+    assert (title, state, printer) == ("report.pdf", "accepted", "virtual") and job_id
     assert opts == {"via": "web", "document_format": "application/pdf", "copies": 2}
 
 
 @requires_cups
 async def test_images_and_text_are_accepted_too(web):
-    for data, name, ctype in ((JPG, "foto.jpg", "image/jpeg"), ("nota di prova\n".encode(), "nota.txt", "text/plain")):
+    for data, name, ctype in ((JPG, "photo.jpg", "image/jpeg"), ("a test note\n".encode(), "note.txt", "text/plain")):
         await send(web, data, name, content_type=ctype)
     assert [r[1] for r in rows(web)] == ["accepted", "accepted"]
 
 
 @requires_cups
-@pytest.mark.usefixtures("english")
 async def test_the_quota_applies_and_the_refusal_points_to_the_request_form(web):
     await send(web)
-    await send(web, name="due.pdf")
-    r = await send(web, name="tre.pdf")
+    await send(web, name="two.pdf")
+    r = await send(web, name="three.pdf")
     assert r.status_code == 303 and r.headers["location"] == "/me"                   # sent where the request form is
     assert "weekly job limit reached (2/2)" in (await web.get("/me")).text
-    assert [(r[0], r[1]) for r in rows(web)] == [("relazione.pdf", "accepted"), ("due.pdf", "accepted"), ("tre.pdf", "denied")]
+    assert [(r[0], r[1]) for r in rows(web)] == [("report.pdf", "accepted"), ("two.pdf", "accepted"), ("three.pdf", "denied")]
 
 
-@pytest.mark.usefixtures("english")
 async def test_bad_uploads_are_refused_with_a_message_and_leave_no_trace(web, monkeypatch):
     cases = [
         (dict(data=b"MZ\x90\x00 an executable", name="innocent.pdf"), "Unsupported file"),     # lying name and content-type
@@ -121,7 +118,6 @@ async def test_bad_uploads_are_refused_with_a_message_and_leave_no_trace(web, mo
     assert rows(web) == []
 
 
-@pytest.mark.usefixtures("english")
 async def test_oversized_uploads_are_stopped_before_they_are_read(web, monkeypatch):
     monkeypatch.setattr(settings, "web_upload_mb", 1)
     web.app.state.queues_cache = (__import__("time").monotonic(), [{"name": "virtual", "info": "", "model": ""}])
@@ -154,7 +150,6 @@ async def test_a_disabled_user_can_not_print_from_an_old_session(web):
     assert r.status_code == 303 and r.headers["location"] == "/login" and rows(web) == []
 
 
-@pytest.mark.usefixtures("english")
 async def test_cups_down_frees_the_quota_slot(web):
     web.app.state.queues_cache = (__import__("time").monotonic(), [{"name": "virtual", "info": "", "model": ""}])
     await web.app.state.upstream.aclose()
@@ -193,7 +188,7 @@ async def test_the_key_page_gives_a_ready_command_per_printer_and_never_logs_the
 async def test_the_profile_explains_how_to_connect_each_kind_of_device(web):
     web.app.state.queues_cache = (__import__("time").monotonic(), [{"name": "HP7305", "info": "", "model": ""}])
     page = (await web.get("/me")).text
-    assert "Telefono o tablet" in page and "/me/print" in page and "Linux" in page and "Windows" in page and "macOS" in page and "/docs/windows" in page
+    assert "Phone or tablet" in page and "/me/print" in page and "Linux" in page and "Windows" in page and "macOS" in page and "/docs/windows" in page
     assert "ipps://gw.test/printers/" in page and "HP7305" in page
 
 
@@ -209,20 +204,19 @@ def two_pages() -> bytes:
 
 
 @requires_cups
-@pytest.mark.usefixtures("english")
 async def test_print_options_reach_cups_and_page_ranges_are_checked_first(web):
     async def go(**extra):
         return await web.post("/me/print", data={"queue": "virtual", "copies": "1", "csrf_token": web.token, **extra},
-                              files={"file": ("relazione.pdf", two_pages(), "application/pdf")})
+                              files={"file": ("report.pdf", two_pages(), "application/pdf")})
     for bad in ({"pages": "5"}, {"pages": "3-1"}, {"pages": "x"}, {"media": "iso_a99"}, {"comment": "x" * 51}):
         r = await go(**bad)
         assert r.status_code == 303 and rows(web) == [], bad                      # refused, nothing reserved
     assert (await go(orientation="sideways")).status_code == 400
-    ok = await go(pages="1", orientation="landscape", color="monochrome", comment="Contratto firmato")
-    assert ok.status_code == 303 and "Sent to virtual: relazione.pdf" in await last_message(web)
+    ok = await go(pages="1", orientation="landscape", color="monochrome", comment="Signed contract")
+    assert ok.status_code == 303 and "Sent to virtual: report.pdf" in await last_message(web)
     [(title, state, _, job_id, opts)] = rows(web)
     assert state == "accepted" and job_id
-    assert opts["comment"] == "Contratto firmato" and title == "relazione.pdf" and opts["page_ranges"] == "1" and opts["orientation"] == "landscape" and opts["color"] == "monochrome"
+    assert opts["comment"] == "Signed contract" and title == "report.pdf" and opts["page_ranges"] == "1" and opts["orientation"] == "landscape" and opts["color"] == "monochrome"
 
 
 # ---------------------------------------------------------------- landscape (no CUPS needed: the request is recorded)
@@ -245,7 +239,7 @@ def pdf_of(width, height, pages=2) -> bytes:
 
 @pytest.fixture
 async def recorded(portal):
-    from app.ipp import codec
+    from spoolsteward.ipp import codec
 
     seen = []
 
@@ -266,19 +260,18 @@ async def recorded(portal):
 
 
 def job_attr(msg, name):
-    from app.ipp import codec
+    from spoolsteward.ipp import codec
 
     a = next((g for g in msg.groups if g.tag == codec.TAG_JOB), None)
     return a.get(name) if a else None
 
 
-@pytest.mark.usefixtures("english")
 async def test_landscape_turns_the_pages_of_a_pdf_itself_instead_of_asking_cups(recorded):
     import io
 
     from pypdf import PdfReader
 
-    from app.ipp import codec
+    from spoolsteward.ipp import codec
 
     r = await recorded.post("/me/print", data={"queue": "virtual", "copies": "1", "csrf_token": recorded.token, "orientation": "landscape", "pages": "2"},
                             files={"file": ("a.pdf", pdf_of(595, 842), "application/pdf")})
@@ -298,7 +291,6 @@ def rows_options(web):
         return [j.options_json for j in s.scalars(select(JobLog))]
 
 
-@pytest.mark.usefixtures("english")
 async def test_landscape_pdf_pages_already_landscape_are_left_alone_and_other_files(recorded):
     import io
 
@@ -324,7 +316,7 @@ async def test_landscape_pdf_pages_already_landscape_are_left_alone_and_other_fi
 
 
 def test_landscape_pdf_refuses_what_it_cannot_change():
-    from app.policy import pages
+    from spoolsteward.policy import pages
     with pytest.raises(ValueError):
         pages.landscape_pdf(b"%PDF-1.4 this is not a real document")
 
@@ -335,7 +327,7 @@ def test_landscape_pdf_looks_at_the_displayed_shape_of_each_page():
     from pypdf import PdfReader, PdfWriter
     from pypdf.generic import DecodedStreamObject, NameObject
 
-    from app.policy import pages
+    from spoolsteward.policy import pages
 
     w = PdfWriter()
     for width, height, rotate in ((595, 842, 0), (595, 842, 90), (842, 595, 0), (842, 595, 90)):

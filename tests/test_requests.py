@@ -10,17 +10,17 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.orm import sessionmaker
 
-from app.auth import keys
-from app.config import settings
-from app.db.models import (
+from spoolsteward.auth import keys
+from spoolsteward.config import settings
+from spoolsteward.db.models import (
     AdminAudit, Base, Group, JobKind, JobLog, JobState, Metric, Period, QuotaGrant, QuotaRequest,
     RequestScope, RequestStatus, Resource, SubjectType, User,
 )
-from app.db.session import make_engine
-from app.ipp import codec as c
-from app.policy import audit, grants
-from app.policy.engine import active_grants, check_job, effective_limit, effective_rules, window_end
-from app.policy.rules import set_limit
+from spoolsteward.db.session import make_engine
+from spoolsteward.ipp import codec as c
+from spoolsteward.policy import audit, grants
+from spoolsteward.policy.engine import active_grants, check_job, effective_limit, effective_rules, window_end
+from spoolsteward.policy.rules import set_limit
 from tests.conftest import (
     CUPS_TEST_URL, csrf_of_page, make_user, portal_login, requires_cups,
 )
@@ -108,7 +108,6 @@ def test_the_form_offers_only_limited_metrics_and_the_period_the_admin_set(org):
 
 # ---------------------------------------------------------------- creating requests
 
-@pytest.mark.usefixtures("english")
 def test_request_validation(org, monkeypatch):
     monkeypatch.setattr(settings, "request_reason_required", True)
     with org.sm() as s:
@@ -130,7 +129,6 @@ def test_request_validation(org, monkeypatch):
         assert aware(req.expires_at) == NOW + timedelta(days=settings.request_ttl_days)
 
 
-@pytest.mark.usefixtures("english")
 def test_at_most_three_open_requests_and_expired_ones_do_not_count(org):
     with org.sm() as s:
         ann = s.get(User, org.ann)
@@ -146,7 +144,6 @@ def test_at_most_three_open_requests_and_expired_ones_do_not_count(org):
             grants.create_quota_request(s, ann, "jobs", 1, "temporary", "x", later)
 
 
-@pytest.mark.usefixtures("english")
 def test_only_the_owner_can_cancel_and_only_while_pending(org):
     other = make_user(org.sm, "bob", password=GOOD)
     rid = decide(org.sm, org.ann)
@@ -206,7 +203,7 @@ def test_the_user_never_chooses_the_period(org):
     """The form has no period field, and an invented one is ignored by the server."""
     import inspect
     assert "period" not in inspect.signature(grants.create_quota_request).parameters
-    from app.admin import me
+    from spoolsteward.admin import me
     assert "period" not in inspect.signature(me.quota_submit).parameters
 
 
@@ -244,7 +241,6 @@ def test_invalid_admin_edits_leave_the_request_pending(org):
         assert s.get(QuotaRequest, rid).status is RequestStatus.pending and s.scalar(select(func.count(QuotaGrant.id))) == 0
 
 
-@pytest.mark.usefixtures("english")
 def test_no_grant_when_the_limit_it_extends_no_longer_exists(org):
     rid = decide(org.sm, org.ann)
     with org.sm() as s:
@@ -258,7 +254,6 @@ def test_no_grant_when_the_limit_it_extends_no_longer_exists(org):
 
 # ---------------------------------------------------------------- deciding once
 
-@pytest.mark.usefixtures("english")
 def test_a_request_is_granted_once_even_if_approved_twice_or_rejected_after(org):
     rid = decide(org.sm, org.ann)
     approve(org.sm, rid, org.boss)
@@ -301,7 +296,6 @@ def test_simultaneous_approvals_by_two_admins_grant_exactly_once(tmp_path):
         assert s.scalar(select(func.count(QuotaGrant.id))) == 1
 
 
-@pytest.mark.usefixtures("english")
 def test_rejection_expiry_and_a_disabled_user(org):
     rid = decide(org.sm, org.ann)
     with org.sm() as s:
@@ -326,7 +320,6 @@ def test_rejection_expiry_and_a_disabled_user(org):
 
 # ---------------------------------------------------------------- grants given directly, and revoking
 
-@pytest.mark.usefixtures("english")
 def test_direct_grants_and_revocation_are_audited(org):
     with org.sm() as s:
         boss, ann = s.get(User, org.boss), s.get(User, org.ann)
@@ -380,7 +373,6 @@ def test_grants_count_inside_the_atomic_quota_check(tmp_path):
 
 # ---------------------------------------------------------------- changing group
 
-@pytest.mark.usefixtures("english")
 def test_only_requestable_other_groups_can_be_asked_for(org, monkeypatch):
     monkeypatch.setattr(settings, "request_reason_required", True)
     with org.sm() as s:
@@ -438,12 +430,12 @@ async def web(org):
 
 async def test_full_round_trip_in_the_portal_and_the_invented_period_is_ignored(web):
     page = (await web.get("/me/request/quota")).text
-    assert 'name="period"' not in page and "settimanale" in page and "mensile" in page
+    assert 'name="period"' not in page and "weekly" in page and "monthly" in page
     r = await web.post("/me/request/quota", data={"metric": "jobs", "amount": "3", "scope": "temporary", "period": "monthly",
-                                                  "reason": "fiera", "csrf_token": web.ann_token})
+                                                  "reason": "trade fair", "csrf_token": web.ann_token})
     assert r.headers["location"] == "/me"
     html = (await web.admin.get("/admin/requests")).text
-    assert "+3 job" in html and "fiera" in html and 'class="badge">1<' in html          # waiting, and the nav says so
+    assert "+3 job" in html and "trade fair" in html and 'class="badge">1<' in html          # waiting, and the nav says so
     with web.sm() as s:
         rid = s.scalars(select(QuotaRequest)).one().id
     await web.admin.post(f"/admin/requests/{rid}/approve", data={"amount": "3", "scope": "temporary", "note": "ok",
@@ -453,7 +445,7 @@ async def test_full_round_trip_in_the_portal_and_the_invented_period_is_ignored(
         until = aware(g.valid_until)
         assert until - aware(g.valid_from) <= timedelta(days=7, hours=1)                    # weekly (the admin's rule), not monthly
     mine = (await web.get("/me")).text
-    assert "approved" in mine and "ok" in mine and "3 concessi" in mine
+    assert "approved" in mine and "ok" in mine and "3 granted" in mine
 
 
 async def test_free_text_is_never_interpreted_as_html(web):
@@ -480,7 +472,7 @@ async def test_validation_errors_come_back_as_messages_not_crashes(web, monkeypa
 async def test_users_can_not_see_or_decide_other_peoples_requests_or_admin_pages(web):
     for path in ("/admin/requests", "/admin/actions"):
         assert (await web.get(path)).status_code == 403
-    rid = decide(web.sm, web.ann)
+    rid = decide(web.sm, web.ann, asked=datetime.now(UTC))   # the page expires requests by the real clock
     r = await web.post(f"/admin/requests/{rid}/approve", data={"csrf_token": web.ann_token})
     assert r.status_code == 403
     make_user(web.sm, "bob", password=GOOD)
@@ -492,7 +484,6 @@ async def test_users_can_not_see_or_decide_other_peoples_requests_or_admin_pages
         assert s.get(QuotaRequest, rid).status is RequestStatus.pending
 
 
-@pytest.mark.usefixtures("english")
 async def test_group_change_through_the_pages(web):
     page = (await web.get("/me/request/group")).text
     assert "power" in page and "admins" not in page                                         # non-requestable groups stay hidden
@@ -522,7 +513,6 @@ async def test_users_can_cancel_their_request_from_their_page(web):
     assert 'class="badge"' not in (await web.admin.get("/admin/requests")).text
 
 
-@pytest.mark.usefixtures("english")
 async def test_grants_live_in_the_requests_page_create_and_revoke(web):
     r = await web.admin.post("/admin/grants", data={"username": "ann", "metric": "jobs", "amount": "4", "scope": "temporary",
                                                     "note": "gift", "csrf_token": web.boss_token})
@@ -537,7 +527,6 @@ async def test_grants_live_in_the_requests_page_create_and_revoke(web):
     assert "revoked" in (await web.admin.get("/admin/requests")).text
 
 
-@pytest.mark.usefixtures("english")
 async def test_deleting_ended_grants_keeps_the_active_ones_and_is_logged(web):
     now = datetime.now(UTC)
     with web.sm() as s:

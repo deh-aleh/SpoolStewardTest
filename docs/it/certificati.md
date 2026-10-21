@@ -58,10 +58,31 @@ Con un certificato di una CA pubblica (Let's Encrypt) non c'è nulla da installa
 ## 4. Copiare il certificato a mano
 
 Metti `fullchain.pem` (il certificato, con la catena) e `privkey.pem` (la chiave) in `config/tls/`, rendi la chiave leggibile solo a te
-(`chmod 600 config/tls/privkey.pem`) e riavvia: `docker compose restart gateway`. Dettagli e un esempio con Nginx Proxy Manager in
-[installazione.md](installazione.md#34-certificato-tls).
+(`chmod 600 config/tls/privkey.pem`) e riavvia: `docker compose restart gateway`. La chiave deve essere leggibile dall'utente `PUID` di `.env`.
+
+**Hai già un certificato valido (per esempio emesso da Nginx Proxy Manager su un'altra macchina).** Il modo più semplice è far usare quello stesso
+certificato direttamente al gateway, senza proxy in mezzo:
+
+1. Fai in modo che un nome coperto da quel certificato (diciamo `print.example.com`) risolva verso il server dentro la tua rete (record nel DNS
+   locale o nel router).
+2. Copia la coppia dalla macchina che la tiene (NPM: `data/letsencrypt/live/npm-<n>/fullchain.pem` e `privkey.pem`; certificati personalizzati:
+   `data/custom_ssl/npm-<n>/`) in `config/tls/fullchain.pem` e `config/tls/privkey.pem`, rendi la chiave leggibile dall'utente `PUID`
+   (`chmod 600`) ed esegui `docker compose restart gateway`.
+3. Imposta `SPOOLSTEWARD_PORTAL_URL=https://print.example.com:8631` in `.env` e usa `ipps://print.example.com:8631/printers/<coda>`.
+
+I dispositivi che trovano le stampanti con mDNS ricevono il nome `<nome>.local` o l'IP, che un certificato per `print.example.com` non copre:
+su quei dispositivi usa a mano il nome vero, oppure ferma il servizio `mdns` se non ti serve la scoperta.
 
 Un certificato Let's Encrypt si rinnova circa ogni 60 giorni; per quel caso usa lo script del §5.
+
+### 4.1 Dietro un reverse proxy
+
+Invece di dare il certificato al gateway, un reverse proxy può tenerlo e inoltrare a `https://<server>:8631` (non provato dal progetto).
+Il proxy deve inoltrare con schema `https`, accettare corpi grandi e non metterli in buffer (`client_max_body_size 250m;
+proxy_request_buffering off; proxy_read_timeout 600s;`). Il gateway vede ogni client con l'indirizzo del proxy (blocco dei login per
+indirizzo, IP nell'audit) a meno che in `.env` sia impostato `FORWARDED_ALLOW_IPS=<indirizzo del proxy>`, così si fida di `X-Forwarded-For`.
+Gli indirizzi delle stampanti restituiti ai client portano l'`Host` inoltrato dal proxy, senza `:443`, quindi i dispositivi devono tenere
+l'indirizzo con cui sono stati configurati.
 
 ## 5. Tenere il certificato aggiornato da solo: `scripts/cert-sync.sh`
 

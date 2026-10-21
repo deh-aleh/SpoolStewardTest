@@ -8,11 +8,9 @@ import httpx
 import pytest
 from sqlalchemy import select
 
-from app.db.models import AdminAudit, Notice
+from spoolsteward.db.models import AdminAudit, Notice
 from tests.conftest import csrf_of_page
 from tests.test_discovery import usb  # noqa: F401  (the fixture: an administrator and a fake CUPS with the queues hp and lan)
-
-pytestmark = pytest.mark.usefixtures("english")
 
 
 @pytest.fixture
@@ -95,7 +93,7 @@ async def test_cups_refuses_to_remove_the_old_queue_and_the_new_one_is_taken_bac
     calls = []
 
     def handler(request):
-        from app.ipp import codec
+        from spoolsteward.ipp import codec
         m = codec.decode(request.content)
         if m.code == 0x4004:
             name = m.get(codec.TAG_OPERATION, "printer-uri").rsplit("/", 1)[-1]
@@ -133,7 +131,7 @@ async def test_success_with_notify_tells_the_other_accounts(cl):
     kinds = broadcast(cl)
     assert kinds and all(k == "printer_renamed" and d == {"old": "lan", "new": "Office_1"} for k, d in kinds)
     with cl.sm() as s:
-        from app.db.models import User
+        from spoolsteward.db.models import User
         boss = s.scalars(select(User).where(User.username == "boss")).one().id
         assert {n.user_id for n in s.scalars(select(Notice).where(Notice.kind == "printer_renamed"))}.isdisjoint({boss})
 

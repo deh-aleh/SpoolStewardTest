@@ -4,12 +4,12 @@ import httpx
 import pytest
 from sqlalchemy import select
 
-from app import notices
+from spoolsteward import notices
 from pydantic import ValidationError
 
-from app.config import Settings, settings
-from app.db.models import JobLog, JobState, Notice
-from app.escl_window import Windows, normalize_ip
+from spoolsteward.config import Settings, settings
+from spoolsteward.db.models import JobLog, JobState, Notice
+from spoolsteward.escl_window import Windows, normalize_ip
 from tests.conftest import csrf_of_page, portal_login
 from tests.test_escl import GOOD, scan_rows, scanner  # noqa: F401  (the fixture)
 
@@ -64,14 +64,14 @@ def test_seconds_setting_bounds():
 
 
 def test_the_start_is_refused_with_a_bad_value():
-    """The real start (python -m app), not a function: wrong value in the environment -> exit 2 and the list on stderr."""
+    """The real start (python -m spoolsteward), not a function: wrong value in the environment -> exit 2 and the list on stderr."""
     import os
     import subprocess
     import sys
     from pathlib import Path
 
     env = {**os.environ, "SPOOLSTEWARD_ESCL_WINDOW_SECONDS": "30", "SPOOLSTEWARD_ALLOW_INSECURE_AUTH": "true"}
-    r = subprocess.run([sys.executable, "-m", "app"], cwd=Path(__file__).resolve().parent.parent, env=env,
+    r = subprocess.run([sys.executable, "-m", "spoolsteward"], cwd=Path(__file__).resolve().parent.parent, env=env,
                        capture_output=True, text=True, timeout=60)
     assert r.returncode == 2
     assert "refusing to start: wrong settings" in r.stderr and "SPOOLSTEWARD_ESCL_WINDOW_SECONDS" in r.stderr
@@ -185,7 +185,7 @@ async def test_window_ending_during_a_scan_does_not_cut_it_off(scanner, clock): 
 
 
 async def test_a_job_can_be_followed_only_for_a_limited_time(scanner, clock, monkeypatch):  # noqa: F811
-    from app import escl
+    from spoolsteward import escl
 
     await press(scanner)
     await scanner.post("/eSCL/ScanJobs", content=b"<x/>")
@@ -236,7 +236,7 @@ async def test_with_anonymous_on_the_window_gives_the_scan_to_the_person(scanner
 async def test_a_disabled_account_loses_its_window(scanner, clock):  # noqa: F811
     await press(scanner)
     with scanner.sm() as s:
-        from app.db.models import User
+        from spoolsteward.db.models import User
         s.scalars(select(User).where(User.username == "rita")).one().enabled = False
         s.commit()
     assert (await scanner.post("/eSCL/ScanJobs", content=b"<x/>")).status_code == 401
@@ -250,7 +250,7 @@ async def test_feature_off_ignores_open_windows(scanner, clock, monkeypatch):  #
 
 
 async def test_too_many_windows_are_refused(scanner, clock, monkeypatch):  # noqa: F811
-    from app import escl_window
+    from spoolsteward import escl_window
 
     monkeypatch.setattr(escl_window, "MAX_WINDOWS", 0)
     await portal_login(scanner, "rita", GOOD)
@@ -261,8 +261,8 @@ async def test_too_many_windows_are_refused(scanner, clock, monkeypatch):  # noq
 def test_the_popup_link_points_at_a_real_section_of_the_user_guide():
     from pathlib import Path
 
-    from app.admin.docs import USER_PAGES, slugify
-    from app.escl import WINDOW_DOC
+    from spoolsteward.admin.docs import USER_PAGES, slugify
+    from spoolsteward.escl import WINDOW_DOC
 
     root = Path(__file__).resolve().parent.parent / "docs"
     for lang, (page, heading) in WINDOW_DOC.items():
@@ -274,4 +274,6 @@ def test_the_popup_link_points_at_a_real_section_of_the_user_guide():
 async def test_the_popup_link_is_in_the_page(scanner, clock):  # noqa: F811
     await portal_login(scanner, "rita", GOOD)
     page = (await scanner.get("/me/scan")).text
+    assert 'href="/docs/en/user-guide#scanning-from-an-app-that-cannot-sign-in"' in page
+    page = (await scanner.get("/me/scan", headers={"Accept-Language": "it"})).text          # the Italian page links the Italian guide
     assert 'href="/docs/it/guida-utente#scansione-da-unapp-che-non-sa-accedere"' in page

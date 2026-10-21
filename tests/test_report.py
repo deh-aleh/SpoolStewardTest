@@ -7,7 +7,7 @@ import pytest
 from pypdf import PdfReader
 from sqlalchemy import select
 
-from app.db.models import Group, JobKind, JobLog, JobState, User
+from spoolsteward.db.models import Group, JobKind, JobLog, JobState, User
 from tests.conftest import make_user, portal_login
 
 GOOD = "correct horse battery"
@@ -44,7 +44,6 @@ def groups(cl, *names):
         return [g.id for g in s.scalars(select(Group).where(Group.name.in_(names)))]
 
 
-@pytest.mark.usefixtures("english")
 async def test_the_page_ranks_users_by_pages(rep):
     page = (await rep.get("/admin/report")).text
     order = [page.index(f"<b>{n}</b>") for n in ("bob", "ann", "ghost")]

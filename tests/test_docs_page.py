@@ -1,4 +1,5 @@
-"""The documentation inside the portal: administrators only, only real page names, safe rendering, rewritten links."""
+"""The documentation inside the portal: every page for administrators, the user guides for the others, only real page
+names, safe rendering, rewritten links. The pictures have their own tests in test_docs_images.py."""
 
 import re
 from pathlib import Path
@@ -6,9 +7,9 @@ from pathlib import Path
 import pytest
 from sqlalchemy import select
 
-from app.admin import docs
-from app.config import Settings
-from app.db.models import User
+from spoolsteward.admin import docs
+from spoolsteward.config import Settings
+from spoolsteward.db.models import User
 from tests.conftest import make_user, portal_login
 
 GOOD = "correct horse battery"
@@ -45,6 +46,9 @@ async def test_index_lists_the_pages_of_that_language(boss):
     assert 'href="/docs/it/' not in en.split('class="doctiles"')[1]
     it = (await boss.get("/docs/it/")).text
     assert 'href="/docs/it/backup"' in it and 'href="/docs/it/configurazione"' in it
+    # the notes for contributors in docs/images are not a page
+    assert "images" not in en.split('class="doctiles"')[1] and "images" not in it.split('class="doctiles"')[1]
+    assert (await boss.get("/docs/images/README.md")).status_code == 404
 
 
 async def test_a_page_has_heading_ids_rewritten_links_and_the_language_switch(boss):
@@ -102,14 +106,14 @@ def test_raw_html_is_shown_as_text():
 
 def test_links_are_rewritten():
     h = render("[a](backup.md#save-the-secret-key) [b](../it/backup.md) [c](../README.md#x) [d](#local) "
-               "[e](../../app/config.py) [f](../../README.it.md) [g](https://example.com/p) [h](nothing.md)", "en")
+               "[e](../../spoolsteward/config.py) [f](../../README.it.md) [g](https://example.com/p) [h](nothing.md)", "en")
     assert 'href="/docs/en/backup#save-the-secret-key"' in h
     assert 'href="/docs/it/backup"' in h
     assert 'href="/docs/en/#x"' in h
     assert 'href="#local"' in h and 'href="#local" target' not in h
     version = docs.app_version()
     ref = f"v{version}" if version != "unknown" else "main"
-    assert f'href="https://github.com/deh-aleh/SpoolSteward/blob/{ref}/app/config.py" target="_blank" rel="noopener noreferrer"' in h
+    assert f'href="https://github.com/deh-aleh/SpoolSteward/blob/{ref}/spoolsteward/config.py" target="_blank" rel="noopener noreferrer"' in h
     assert f"blob/{ref}/README.it.md" in h
     assert 'href="https://example.com/p" target="_blank" rel="noopener noreferrer"' in h
     assert f"blob/{ref}/docs/en/nothing.md" in h                  # not a page of the portal: GitHub (the file may be there)
@@ -166,7 +170,7 @@ async def test_every_page_of_every_language_renders(boss):
 
 
 def test_every_setting_is_described_in_both_configuration_pages():
-    """A new field in app/config.py must be documented, in English and in Italian."""
+    """A new field in spoolsteward/config.py must be documented, in English and in Italian."""
     prefix = Settings.model_config["env_prefix"]
     by_image = {"tls_certfile", "tls_keyfile", "database_url", "cups_url", "allow_insecure_auth", "host", "port"}
     pages = [(ROOT / "docs" / "en" / "configuration.md").read_text(), (ROOT / "docs" / "it" / "configurazione.md").read_text()]

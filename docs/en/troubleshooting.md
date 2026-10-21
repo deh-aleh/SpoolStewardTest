@@ -23,7 +23,47 @@ Increase detail with `SPOOLSTEWARD_LOG_LEVEL=DEBUG` in `.env`, then `docker comp
 | Permission denied on `config/tls/privkey.pem` | The key must be readable by the user `PUID:PGID` of `.env` (`chown`/`chmod 600`). |
 | `Bind for 0.0.0.0:631 failed` | Another CUPS uses 631. Keep `PORTAL_PORT=8631`, or stop the other service. |
 | "archive folder not usable" | `data/audit-archive` must be writable by the container user (same uid as `PUID`). |
-| Everybody is logged out at each restart | `SPOOLSTEWARD_SECRET_KEY` is `none` or missing, so a random one is generated at every start. Set it (`scripts/docker-init.sh` does). |
+| Everybody is logged out at each restart, or the bell says **No secret key is set** | `SPOOLSTEWARD_SECRET_KEY` is missing from `.env` or is `none`: see [No secret key is set](#no-secret-key-is-set) below. |
+| `SPOOLSTEWARD_SECRET_KEY: still holds the placeholder of docker/env.example` | `docker/env.example` was copied to `.env` by hand, so the key is still `__GENERATED__`, a value everybody knows: the gateway refuses to start. Write the output of `openssl rand -hex 32` in place of `__GENERATED__`, check `PUID`, `PGID` and `PROJECT_DIR` (the script would have filled them in), then `docker compose up -d`. |
+| `SPOOLSTEWARD_SECRET_KEY: is shorter than 64 characters` | A key written by hand is too short to be safe. Write the output of `openssl rand -hex 32` (64 characters) in its place, then `docker compose up -d`. File names saved with the old key then show as `[encrypted]`, and everybody signs in again. |
+
+### No secret key is set
+
+The administrators see this notice in the bell:
+
+> **No secret key is set.** `SPOOLSTEWARD_SECRET_KEY` is missing from `.env` or set to `none`: the file names in the audit are stored
+> without encryption and everybody has to sign in again after every restart. Write a random value (the output of
+> `openssl rand -hex 32`) after `SPOOLSTEWARD_SECRET_KEY=` in `.env`, run `docker compose up -d` and save the key in a safe place.
+> Step by step.
+
+**Causes.**
+
+- `.env` comes from an older setup, or was written by hand, and has no `SPOOLSTEWARD_SECRET_KEY=` line.
+- `scripts/docker-init.sh` writes a key only when it creates `.env`. It never touches an existing `.env`, so running it again does not
+  add the key: it prints a warning that points here.
+- The line is there with the value `none`.
+
+**What it means.**
+
+- The file names of prints and scans are stored in the audit without encryption ([data-protection.md](data-protection.md)).
+- The gateway makes a new random key at every start: after each restart everybody signs in to the portal again, and the channel between
+  `gateway` and `mdns` is not protected.
+- Nothing is lost. Names saved without a key stay readable after you add one: at the first start with the key the gateway encrypts them.
+
+**Fix.**
+
+1. In the SpoolSteward folder, open `.env` with an editor.
+2. If there is a line `SPOOLSTEWARD_SECRET_KEY=none`, replace `none` with the output of `openssl rand -hex 32` (64 characters). If there
+   is no line, add it at the end, with the same kind of value. The command below adds it without showing the key on screen; use it only
+   when the line is missing, because the file must hold one `SPOOLSTEWARD_SECRET_KEY=` line:
+
+   ```sh
+   printf 'SPOOLSTEWARD_SECRET_KEY=%s\n' "$(openssl rand -hex 32)" >> .env
+   ```
+
+3. Run `docker compose up -d`. Everybody signs in once more; the notice closes by itself.
+4. Copy the key to a safe place, for example a password manager ([backup.md](backup.md#save-the-secret-key)). Without it the file names
+   of a restored unencrypted backup cannot be read.
 
 ## 2. Cannot sign in
 
@@ -103,8 +143,8 @@ Increase detail with `SPOOLSTEWARD_LOG_LEVEL=DEBUG` in `.env`, then `docker comp
 
 | Symptom | Cause and fix |
 |---|---|
-| `scripts/update.sh` says `SPOOLSTEWARD_REGISTRY is empty` | The images are built from this folder: update with `git pull && docker compose up -d --build`. |
-| `scripts/update.sh` says "This folder is a git clone" | In a folder cloned with git the update is `git pull && docker compose up -d --build`: the script refuses to replace files that git manages. |
+| `scripts/update.sh` says `SPOOLSTEWARD_REGISTRY is empty` | The line `SPOOLSTEWARD_REGISTRY=` in `.env` lost its value. Write it back as in `docker/env.example` (`SPOOLSTEWARD_REGISTRY=ghcr.io/deh-aleh`) and run the script again. |
+| `scripts/update.sh` says "This folder is a git clone" | The script updates a folder made from the release package. A git clone is a developer's copy and is not updated this way ([CONTRIBUTING.md](../../CONTRIBUTING.md)). |
 | `the package does not match its sha256 sum` | The downloaded file is not the one that was published (interrupted download, or a network that alters it). Nothing was changed: try again; if it persists, download it in the browser from the releases page. |
 | `NOT healthy after the update: going back` | The new version did not become healthy within two minutes. The script put the previous files and version back. Look at `docker compose logs --tail 50 gateway` to see why. |
 | After the update neither the new nor the old version starts | The new one already changed the database. `update.sh` offers to restore the backup taken at the start (`YES`); by hand: `scripts/backup.sh restore data/backups/pre-update/<file>`. |
@@ -118,4 +158,4 @@ Increase detail with `SPOOLSTEWARD_LOG_LEVEL=DEBUG` in `.env`, then `docker comp
 ## 9. Still stuck
 
 Gather `docker compose logs gateway`, `docker compose ps`, the output of `/healthz`, the gateway version
-(`SPOOLSTEWARD_VERSION` or the commit), and what the page showed, before asking for help. Never paste `.env` or the TLS key.
+(`SPOOLSTEWARD_VERSION` in `.env`), and what the page showed, before asking for help. Never paste `.env` or the TLS key.

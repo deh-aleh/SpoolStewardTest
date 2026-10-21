@@ -7,13 +7,11 @@ import re
 import pytest
 from sqlalchemy import select
 
-from app.auth.groups import ADMIN_GROUP, ensure_system_groups
-from app.config import settings
-from app.db.models import AdminAudit, Group, Notice, SubjectType, User
-from app.policy import permissions
+from spoolsteward.auth.groups import ADMIN_GROUP, ensure_system_groups
+from spoolsteward.config import settings
+from spoolsteward.db.models import AdminAudit, Group, Notice, SubjectType, User
+from spoolsteward.policy import permissions
 from tests.conftest import make_user, user_row
-
-pytestmark = pytest.mark.usefixtures("english")
 
 GOOD = "correct horse battery"
 

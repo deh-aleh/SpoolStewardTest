@@ -1,11 +1,17 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="app/admin/static/icon-light.svg">
-  <img src="app/admin/static/icon-dark.svg" alt="SpoolSteward icon" width="96" align="right">
+  <source media="(prefers-color-scheme: dark)" srcset="spoolsteward/admin/static/icon-light.svg">
+  <img src="spoolsteward/admin/static/icon-dark.svg" alt="SpoolSteward icon" width="96" align="right">
 </picture>
 
 # SpoolSteward
 
 **English** · [Italiano](README.it.md)
+
+> [!WARNING]
+> **SpoolSteward is in beta (versions 0.x).** Until version 1.0 an update may contain **breaking changes**: settings in `.env`
+> renamed or removed, database changes that an older version cannot read, a different install or update procedure. Each release
+> lists them in its notes on GitHub. Read the notes before updating, keep a backup (`scripts/update.sh` makes one before every
+> update) and do not use a beta on a server people depend on without being ready to restore it.
 
 A printer on a shared network lets anyone print as much as they like, and nobody can tell afterwards who printed what. SpoolSteward sits between people and the printer: everyone signs in, each person or group gets a limit (pages, colour, one-sided), and every print and scan is written down. It is for homes, offices and schools that share a printer and want to decide who prints how much, and to see what was printed.
 
@@ -100,14 +106,14 @@ If you are looking for software written entirely by a human, this is not the rig
 What you can check for yourself: the automated tests (`tests/`), the feature status table (what has been tried on real hardware) and the list of known limits. The code has not had an independent review: if you use it where it matters, look closely at the security-sensitive parts (authentication, print keys, certificates).
 
 
-## Install (Docker, recommended)
+## Install (Docker)
 
 Requirements: a **Linux** server, Docker Engine with Compose, `openssl`, `curl`, `tar`, `python3`, a USB or network printer, and a TCP port
 reachable by clients (default 8631). Nothing is installed on the host.
 
 ```sh
 # 0. download the release package (newest version: https://github.com/deh-aleh/SpoolSteward/releases)
-VERSION=x.y.z
+VERSION=0.0.0-beta.1
 curl -LO https://github.com/deh-aleh/SpoolSteward/releases/download/v$VERSION/spoolsteward-$VERSION.tar.gz
 tar xzf spoolsteward-$VERSION.tar.gz && cd spoolsteward-$VERSION      # (the guide also shows how to check the download)
 
@@ -117,33 +123,23 @@ scripts/docker-init.sh print.lan 192.168.1.50      # creates .env (all the setti
 # 2. settings: RADIUS is optional (write none in host and secret for local accounts only)
 $EDITOR .env
 
-# 3. printers, in .env — USB (stop the host's ipp-usb first: sudo systemctl disable --now ipp-usb && sudo systemctl mask ipp-usb)
-#       CUPS_QUEUES=HP7305=ipp://ipp-usb:60000/ipp/print
-#    or a network printer:
-#       CUPS_QUEUES="OFFICE=ipp://192.168.1.60/ipp/print"
-
-# 4. start
+# 3. printers: USB ones get their queue by themselves (stop the host's ipp-usb first, see the guide);
+#    a network printer goes in .env:  CUPS_QUEUES="OFFICE=ipp://192.168.1.60/ipp/print"
 docker compose up -d
 
-# 5. read the one-time code and set the password of the administrator "administrator"
+# 4. read the one-time code and set the password of the administrator "administrator"
 docker compose logs gateway | grep "FIRST RUN"
 #    then open https://<server>:8631/setup
 ```
 
-Then: create users and groups in the portal (`https://<server>:8631/`); every user creates a **print key** in *Profile*
-and uses it as the password when a computer or phone asks for credentials (printer address `ipps://<server>:8631/printers/<queue>`);
-phones with nothing installed can use *Print* in the portal. Check the install with `curl -sk https://<server>:8631/healthz`.
-To use a CA-signed certificate put `fullchain.pem` and `privkey.pem` in `config/tls/` and `docker compose restart gateway` (to keep a renewed one up to date by itself: [certificates.md](docs/en/certificates.md)).
-Update with `scripts/update.sh` (backup first, automatic return if the new version does not start; images for amd64 and arm64).
-Try it with no printer or RADIUS: see the guide. The alternative host install (systemd, modifies `/etc/cups`) is also in the guide.
-
-Full guide: [docs/en/installation.md](docs/en/installation.md).
+Full guide, with certificates, printers, updates and a test setup without printer or RADIUS: [docs/en/installation.md](docs/en/installation.md).
+Then users and groups: [admin-guide.md](docs/en/admin-guide.md); connecting computers and phones: [printing.md](docs/en/printing.md).
 
 ## Documentation
 
 | Topic | Document |
 |---|---|
-| **Installation** (docker and host, USB/network printers, TLS, updates) | [installation.md](docs/en/installation.md) |
+| **Installation** (Docker, printers, TLS, updates) | [installation.md](docs/en/installation.md) |
 | **Troubleshooting** | [troubleshooting.md](docs/en/troubleshooting.md) |
 | Architecture and technologies | [architecture.md](docs/en/architecture.md) |
 | How the application is built (each source file, `.env`, scripts) | [application-internals.md](docs/en/application-internals.md) |

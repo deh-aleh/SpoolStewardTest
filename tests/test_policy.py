@@ -5,10 +5,10 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from app.db.models import (
+from spoolsteward.db.models import (
     Base, Group, JobKind, JobLog, JobState, Metric, Period, PolicyRule, Resource, SubjectType, User,
 )
-from app.policy.engine import check_job, window_start
+from spoolsteward.policy.engine import check_job, window_start
 
 TZ = ZoneInfo("Europe/Rome")
 NOW = datetime(2026, 10, 7, 10, 0, tzinfo=UTC)  # Wednesday
@@ -77,7 +77,7 @@ def test_user_rule_overrides_only_its_own_metric(session):
     session.add(PolicyRule(subject_type=SubjectType.group, subject_id=u.group_id, metric=Metric.pages, limit=5))
     session.add(PolicyRule(subject_type=SubjectType.user, subject_id=u.id, metric=Metric.jobs, limit=9))
     session.commit()
-    from app.policy.engine import effective_rules
+    from spoolsteward.policy.engine import effective_rules
     got = {r.metric: r.limit for r in effective_rules(session, u, Resource.print)}
     assert got == {Metric.jobs: 9, Metric.pages: 5}
 

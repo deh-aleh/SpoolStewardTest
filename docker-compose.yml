@@ -108,7 +108,7 @@ services:
   mdns:
     image: *image
     build: *build
-    command: ["python", "-m", "app.mdns"]
+    command: ["python", "-m", "spoolsteward.mdns"]
     restart: unless-stopped
     depends_on: [gateway]
     network_mode: host
@@ -144,7 +144,7 @@ services:
   # Point .env at it with SPOOLSTEWARD_RADIUS_HOST=radius, SPOOLSTEWARD_RADIUS_SECRET=testing123.
   # (RADIUS is optional: with host/secret empty only local accounts exist.)
   radius:
-    image: freeradius/freeradius-server:latest
+    image: freeradius/freeradius-server:3.2.10
     profiles: [radius-test]
     restart: unless-stopped
     volumes:

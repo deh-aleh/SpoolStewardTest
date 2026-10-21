@@ -1,8 +1,8 @@
 import time
 
-from app.auth.cache import CachedAuth
-from app.auth.radius import RadiusProvider
-from app.auth.throttle import FINGERPRINT_SEP, Throttle, register_failure
+from spoolsteward.auth.cache import CachedAuth
+from spoolsteward.auth.radius import RadiusProvider
+from spoolsteward.auth.throttle import FINGERPRINT_SEP, Throttle, register_failure
 from tests.conftest import requires_radius
 
 
@@ -78,7 +78,7 @@ async def test_cache_does_not_grow_without_bound():
 async def test_radius_reject_reason_is_logged_without_the_password(caplog):
     import logging
     p = RadiusProvider("127.0.0.1", 1812, "testing123", timeout=2, retries=1)
-    with caplog.at_level(logging.WARNING, logger="app.auth.radius"):
+    with caplog.at_level(logging.WARNING, logger="spoolsteward.auth.radius"):
         assert not await p.authenticate("mario", "S3cretWrong")
     assert "RADIUS rejected user='mario'" in caplog.text
     assert "S3cretWrong" not in caplog.text

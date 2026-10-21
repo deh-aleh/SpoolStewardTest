@@ -110,7 +110,7 @@ authentication is the portal session.
 
 ## 5. Background tasks
 
-All started by the gateway's lifespan ([`app/main.py`](../../app/main.py)):
+All started by the gateway's lifespan ([`spoolsteward/main.py`](../../spoolsteward/main.py)):
 
 | Task | Interval | What it does |
 |---|---|---|
@@ -120,11 +120,11 @@ All started by the gateway's lifespan ([`app/main.py`](../../app/main.py)):
 | Keep-alive scheduler | 60 s | Prints maintenance pages and notes the first time each queue is seen |
 | Printer discovery | `SPOOLSTEWARD_DISCOVERY_INTERVAL` (30 s) | Creates queues for new USB printers (ipp-usb first, CUPS usb backend second) and removes USB queues unreachable for `SPOOLSTEWARD_OFFLINE_REMOVE_HOURS` |
 | mDNS announcer | `SPOOLSTEWARD_MDNS_INTERVAL` (30 s) | Separate container: re-reads the queue list and tells the gateway which address it announces |
-| File names ([`app/titles.py`](../../app/titles.py)) | at start, then 1 day | Encrypts names written before the key existed; with retention on, erases names older than `SPOOLSTEWARD_JOB_TITLE_RETENTION_DAYS` |
-| Certificate check ([`app/certwatch.py`](../../app/certwatch.py)) | 6 h | Reads the TLS certificate and `config/tls/sync-status.json`, and opens or closes the certificate notices |
-| Printer watch ([`app/printerwatch.py`](../../app/printerwatch.py)) | 1 min | Paper jam, paper out, ink out/low as notices (confirmed by two consecutive checks) |
-| Key housekeeping ([`app/keywatch.py`](../../app/keywatch.py)) | 1 h | Removes finished print keys, warns about keys about to expire and about temporary permissions that ended |
-| Update check ([`app/updates.py`](../../app/updates.py)) | 24 h (first 2 min after start) | Asks GitHub for the newest release (`SPOOLSTEWARD_UPDATE_CHECK`) |
+| File names ([`spoolsteward/titles.py`](../../spoolsteward/titles.py)) | at start, then 1 day | Encrypts names written before the key existed; with retention on, erases names older than `SPOOLSTEWARD_JOB_TITLE_RETENTION_DAYS` |
+| Certificate check ([`spoolsteward/certwatch.py`](../../spoolsteward/certwatch.py)) | 6 h | Reads the TLS certificate and `config/tls/sync-status.json`, and opens or closes the certificate notices |
+| Printer watch ([`spoolsteward/printerwatch.py`](../../spoolsteward/printerwatch.py)) | 1 min | Paper jam, paper out, ink out/low as notices (confirmed by two consecutive checks) |
+| Key housekeeping ([`spoolsteward/keywatch.py`](../../spoolsteward/keywatch.py)) | 1 h | Removes finished print keys, warns about keys about to expire and about temporary permissions that ended |
+| Update check ([`spoolsteward/updates.py`](../../spoolsteward/updates.py)) | 24 h (first 2 min after start) | Asks GitHub for the newest release (`SPOOLSTEWARD_UPDATE_CHECK`) |
 
 ## 6. Data model
 

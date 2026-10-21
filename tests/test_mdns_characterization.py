@@ -1,9 +1,9 @@
-"""Pins what `app.mdns.main` announces, updates and withdraws, in which order, with zeroconf, CUPS and the gateway faked."""
+"""Pins what `spoolsteward.mdns.main` announces, updates and withdraws, in which order, with zeroconf, CUPS and the gateway faked."""
 
 import pytest
 
-from app import mdns
-from app.config import settings
+from spoolsteward import mdns
+from spoolsteward.config import settings
 
 
 class Stop(Exception):

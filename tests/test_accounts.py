@@ -6,13 +6,13 @@ from datetime import UTC
 import pytest
 from sqlalchemy import select
 
-from app.auth import bootstrap
-from app.auth.groups import ADMIN_GROUP, ensure_system_groups, set_admin
-from app.auth.passwords import hash_password, validate_new_password, verify_password
-from app.config import settings
-from app.db.models import (AdminAudit, Group, JobLog, JobState, Metric, Period, PolicyRule, PrintKey,
+from spoolsteward.auth import bootstrap
+from spoolsteward.auth.groups import ADMIN_GROUP, ensure_system_groups, set_admin
+from spoolsteward.auth.passwords import hash_password, validate_new_password, verify_password
+from spoolsteward.config import settings
+from spoolsteward.db.models import (AdminAudit, Group, JobLog, JobState, Metric, Period, PolicyRule, PrintKey,
                            QuotaGrant, SubjectType, User)
-from app.policy.rules import set_limit
+from spoolsteward.policy.rules import set_limit
 from tests.conftest import csrf_of_page, make_user, portal_login, user_row
 
 ORCH = "administrator"
@@ -148,7 +148,7 @@ async def test_without_radius_only_local_accounts_exist(portal):
     await portal_login(portal, "boss", GOOD)
     token = await csrf_of_page(portal, "/admin/users")
     html = (await portal.get("/admin/users")).text
-    assert "Pre-registra utente RADIUS" not in html and "Nuovo utente locale" in html
+    assert "Pre-register a RADIUS user" not in html and "New local user" in html
     await portal.post("/admin/users", data={"username": "x", "csrf_token": token})
     assert user_row(portal, "x") is None                                              # no provider to pre-register for
 
@@ -201,7 +201,6 @@ async def boss(portal):
     return portal
 
 
-@pytest.mark.usefixtures("english")
 async def test_admin_creates_a_local_user_whose_temporary_password_is_shown_once(boss):
     r = await boss.post("/admin/users/local", data={"username": " NewGuy ", "csrf_token": boss.token})
     assert r.status_code == 200 and "Temporary password" in r.text
@@ -279,10 +278,9 @@ async def test_demoting_an_admin_and_choosing_a_group_in_one_save_keeps_the_chos
         assert not u.is_admin and s.get(Group, u.group_id).name == settings.default_group
 
 
-@pytest.mark.usefixtures("english")
 def test_the_last_enabled_admin_is_protected_even_from_a_non_admin_caller(portal):
     """Defence in depth for races (two admins removing each other at once)."""
-    from app.admin.accounts import _protected_admin
+    from spoolsteward.admin.accounts import _protected_admin
 
     only = make_user(portal.sm, "only", password=GOOD, admin=True)
     nobody = make_user(portal.sm, "plain", password=GOOD)
@@ -319,11 +317,11 @@ def test_a_log_line_tells_when_there_is_no_first_run_code(portal, caplog):
 
     from sqlalchemy import select
 
-    from app.auth import bootstrap
-    from app.auth.passwords import hash_password
-    from app.db.models import User
+    from spoolsteward.auth import bootstrap
+    from spoolsteward.auth.passwords import hash_password
+    from spoolsteward.db.models import User
 
-    with caplog.at_level(logging.INFO, logger="app.auth.bootstrap"):
+    with caplog.at_level(logging.INFO, logger="spoolsteward.auth.bootstrap"):
         assert bootstrap.ensure_orchestrator(portal.sm) and "FIRST RUN" in caplog.text
         caplog.clear()
         with portal.sm() as s:
@@ -394,23 +392,23 @@ async def test_list_is_read_only_and_shows_grants_with_a_plus(admin):
         set_limit(s, SubjectType.user, uid, Metric.pages, 50, Period.monthly)
         from datetime import datetime, timedelta
         now = datetime.now(UTC)
-        from app.db.models import RequestScope
+        from spoolsteward.db.models import RequestScope
         s.add(QuotaGrant(user_id=uid, metric=Metric.pages, amount=20, scope=RequestScope.temporary,
                          valid_from=now - timedelta(hours=1), valid_until=now + timedelta(days=3)))
         s.commit()
     page = (await admin.get("/admin/users")).text
-    assert "built-in method" not in page and "attiv" in page          # jinja: a dict key named "keys" is the method
-    assert "Modifica" in page and "Salva" not in page and "<select name=\"group_id\" form" not in page
-    row = re.search(r"<tr>\s*<td data-l=\"Utente\"><b>fio</b>.*?</tr>", page, re.S).group(0)
+    assert "built-in method" not in page and "0 active" in page          # jinja: a dict key named "keys" is the method
+    assert "Edit" in page and "Save" not in page and "<select name=\"group_id\" form" not in page
+    row = re.search(r"<tr>\s*<td data-l=\"User\"><b>fio</b>.*?</tr>", page, re.S).group(0)
     assert "+20" in row and 'class="extra"' in row and ">50<" in row
-    assert "Origine" not in re.search(r"<tr>.*?</tr>", page, re.S).group(0)         # origin moved to the edit page
+    assert "Origin" not in re.search(r"<tr>.*?</tr>", page, re.S).group(0)         # origin moved to the edit page
 
 
 async def test_edit_page_carries_every_field_including_origin_and_delete(admin):
     uid = make_user(admin.sm, "gus", password=GOOD, group="staff")
     page = (await admin.get(f"/admin/users/{uid}/edit")).text
     for needle in ('name="group_id"', 'name="enabled"', 'name="is_admin"', 'name="jobs_limit"',
-                   'name="pages_limit"', 'name="period"', "Elimina account", f"/admin/users/{uid}/keys"):
+                   'name="pages_limit"', 'name="period"', "Delete account", f"/admin/users/{uid}/keys"):
         assert needle in page, needle
     assert 'name="provider"' not in page and "<select name=\"provider\"" not in page   # the origin is only shown, not a field
 
@@ -422,7 +420,7 @@ async def test_origin_switch_local_to_radius_drops_the_password_and_back_issues_
     u = user_row(admin, "hal")
     assert u.provider == "radius" and u.password_hash is None
     r = await admin.post(f"/admin/users/{uid}", data={"csrf_token": tok, "enabled": "1", "provider": "local", "group_id": "0"})
-    assert "Temporary password" in r.text or "Password temporanea" in r.text or "secret" in r.text
+    assert "Temporary password" in r.text or "secret" in r.text
     u = user_row(admin, "hal")
     assert u.provider == "local" and u.password_hash and u.must_change_password
 
@@ -451,7 +449,7 @@ async def test_nobody_can_create_or_turn_into_local_an_account_with_the_emergenc
 async def test_delete_keeps_the_print_history_readable(admin):
     uid = make_user(admin.sm, "ivo", password=GOOD, group="staff")
     with admin.sm() as s:
-        s.add(JobLog(user_id=uid, user_name="ivo", printer="p", title="contratto.pdf", state=JobState.completed, pages=3))
+        s.add(JobLog(user_id=uid, user_name="ivo", printer="p", title="contract.pdf", state=JobState.completed, pages=3))
         s.add(PrintKey(user_id=uid, label="x", key_prefix="cpk-abcd", key_hash="h" * 64))
         set_limit(s, SubjectType.user, uid, Metric.jobs, 5, Period.weekly)
         s.commit()
@@ -461,13 +459,13 @@ async def test_delete_keeps_the_print_history_readable(admin):
     r = await admin.post(f"/admin/users/{uid}/delete", data={"csrf_token": tok, "confirm_name": "IVO"})
     assert r.status_code == 303 and user_row(admin, "ivo") is None
     with admin.sm() as s:
-        j = s.scalars(select(JobLog).where(JobLog.title == "contratto.pdf")).one()
+        j = s.scalars(select(JobLog).where(JobLog.title == "contract.pdf")).one()
         assert j.user_id is None and j.user_name == "ivo"
         assert s.scalars(select(PrintKey).where(PrintKey.user_id == uid)).first() is None
         assert s.scalars(select(PolicyRule).where(PolicyRule.subject_id == uid, PolicyRule.subject_type == SubjectType.user)).first() is None
         assert "user.delete" in [a.action for a in s.scalars(select(AdminAudit))]
     jobs_page = (await admin.get("/admin/jobs")).text
-    assert "contratto.pdf" in jobs_page and ">ivo<" in jobs_page                  # still shows who printed it
+    assert "contract.pdf" in jobs_page and ">ivo<" in jobs_page                  # still shows who printed it
     assert "ivo" in (await admin.get("/admin/jobs.csv")).text
 
 
@@ -505,8 +503,8 @@ def test_emergency_admin_has_no_group_and_no_limits(portal):
     ensure_system_groups(portal.sm)
     assert group_name(portal, uid) is None                                          # outside every group
     with portal.sm() as s:
-        from app.policy.engine import check_job, effective_rules
-        from app.db.models import Resource
+        from spoolsteward.policy.engine import check_job, effective_rules
+        from spoolsteward.db.models import Resource
         from datetime import datetime
         from zoneinfo import ZoneInfo
         u = s.get(User, uid)
@@ -534,44 +532,43 @@ async def test_emergency_admin_group_and_limits_cannot_be_set(admin):
     assert group_name(admin, other) == ADMIN_GROUP                                  # ordinary administrators stay in the group
 
 
-@pytest.mark.usefixtures("english")
 async def test_local_and_radius_users_can_be_created_in_a_chosen_group(portal, admin, monkeypatch):
-    from app.config import settings
+    from spoolsteward.config import settings
 
     monkeypatch.setattr(settings, "radius_host", "radius.test")      # the form is offered only when RADIUS is configured
     monkeypatch.setattr(settings, "radius_secret", "x")
     with portal.sm() as s:
-        s.add(Group(name="studenti"))
-        s.add(Group(name="docenti"))
+        s.add(Group(name="students"))
+        s.add(Group(name="teachers"))
         s.commit()
     csrf = await csrf_of_page(portal, "/admin/users")
     page = (await portal.get("/admin/users")).text
     forms = re.findall(r'<select name="group_id">(.*?)</select>', page, re.S)
     assert len(forms) == 2                                           # local form and RADIUS form
     for f in forms:
-        assert "studenti" in f and "docenti" in f and "administrator" not in f
+        assert "students" in f and "teachers" in f and "administrator" not in f
     with portal.sm() as s:
         gid = {g.name: g.id for g in s.scalars(select(Group))}
 
-    r = await portal.post("/admin/users/local", data=dict(csrf_token=csrf, username="loc1", group_id=gid["studenti"]))
+    r = await portal.post("/admin/users/local", data=dict(csrf_token=csrf, username="loc1", group_id=gid["students"]))
     assert r.status_code == 200 and "Temporary password" in r.text
-    r = await portal.post("/admin/users", data=dict(csrf_token=csrf, username="Rad1", group_id=gid["docenti"]))
+    r = await portal.post("/admin/users", data=dict(csrf_token=csrf, username="Rad1", group_id=gid["teachers"]))
     assert r.status_code == 303
     with portal.sm() as s:
         u = {x.username: x for x in s.scalars(select(User))}
-        assert u["loc1"].provider == "local" and u["loc1"].group_id == gid["studenti"]
-        assert u["rad1"].provider == "radius" and u["rad1"].group_id == gid["docenti"]
+        assert u["loc1"].provider == "local" and u["loc1"].group_id == gid["students"]
+        assert u["rad1"].provider == "radius" and u["rad1"].group_id == gid["teachers"]
         assert not u["rad1"].is_admin
 
     # the pre-registered person logs in through RADIUS later and keeps the group chosen for them
     # (the stub RADIUS knows "rad"/"radpw": pre-register that name, then let them in)
-    await portal.post("/admin/users", data=dict(csrf_token=csrf, username="rad", group_id=gid["docenti"]))
+    await portal.post("/admin/users", data=dict(csrf_token=csrf, username="rad", group_id=gid["teachers"]))
     await portal.post("/logout", data=dict(csrf_token=csrf))
     login = await portal_login(portal, "rad", "radpw")
     assert login.status_code in (200, 303)
     with portal.sm() as s:
         rad = s.scalars(select(User).where(User.username == "rad")).one()
-        assert rad.group_id == gid["docenti"] and rad.provider == "radius"
+        assert rad.group_id == gid["teachers"] and rad.provider == "radius"
 
     # the administrator group is not offered and not accepted
     await portal_login(portal, "boss", GOOD)

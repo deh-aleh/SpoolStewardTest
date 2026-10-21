@@ -1,6 +1,13 @@
 # Test environment only. Host CUPS already uses :631, so test CUPS -> :6310.
 # The CUPS of the tests is the one of production (the same image, the same start script, the same cupsd.conf);
 # docker/test/cupsd.conf adds only what a test on the host needs (a TCP listener) -- tests/test_cupsd_test_conf.py keeps it so.
+# Start:  mkdir -p docker/run && docker compose -f docker-compose.test.yml up -d --build --wait
+#         (returns when CUPS and FreeRADIUS answer)
+# Stop:   docker compose -f docker-compose.test.yml down
+# A project name of its own: without it, a clone in a folder called "spoolsteward" would share the project name of the
+# real stack (docker-compose.yml), and `down` here would stop that one.
+name: spoolsteward-test
+
 services:
   cups:
     image: spoolsteward/spoolsteward:test      # not ":dev": building it must not replace the image of a stack that is running
@@ -16,13 +23,33 @@ services:
     volumes:
       - ./docker/test/cupsd.conf:/etc/cups/cupsd.conf:ro
       - cups-pdf:/var/spool/cups-pdf
-      - ./docker/run:/run/cups  # exposes cups.sock to the host (tests the unix:// upstream)
+      # exposes cups.sock to the host (tests the unix:// upstream). cupsd runs as root and writes its pid file there too.
+      # The folder must exist first (mkdir -p docker/run): docker would otherwise create it owned by root, and only root
+      # could delete it. Created by you, it stays yours.
+      - type: bind
+        source: ./docker/run
+        target: /run/cups
+        bind:
+          create_host_path: false
+    # ready = the TCP listener answers (what the tests use) and the "virtual" queue exists (created by the start script
+    # after cupsd is up), reached through the unix socket
+    healthcheck:
+      test: ["CMD-SHELL", "lpstat -h 127.0.0.1:631 -r && lpstat -h /run/cups/cups.sock -p virtual >/dev/null"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
   radius:
-    image: freeradius/freeradius-server:latest
+    image: freeradius/freeradius-server:3.2.10
     ports:
       - "127.0.0.1:1812:1812/udp"
     volumes:
       - ./docker/radius/clients.conf:/etc/freeradius/clients.conf:ro
       - ./docker/radius/authorize:/etc/freeradius/mods-config/files/authorize:ro
+    # ready = a real login of a test user is accepted (radtest exits non-zero on a reject or no answer)
+    healthcheck:
+      test: ["CMD", "radtest", "mario", "mario123", "127.0.0.1", "0", "testing123"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
 volumes:
   cups-pdf:

@@ -9,9 +9,9 @@ import httpx
 import pytest
 from sqlalchemy import select
 
-from app.config import settings
-from app.db.models import AdminAudit, JobLog
-from app.escl import paper_label, parse_caps
+from spoolsteward.config import settings
+from spoolsteward.db.models import AdminAudit, JobLog
+from spoolsteward.escl import paper_label, parse_caps
 from tests.conftest import CUPS_SOCK, csrf_of_page, make_user, portal_login, requires_cups
 
 GOOD = "correct horse battery"
@@ -94,7 +94,7 @@ async def do_scan(cl, **data):
 async def test_every_scanner_is_listed_with_its_own_capabilities_and_nothing_is_hard_coded(two_scanners):
     page = (await two_scanners.get("/me/scan")).text
     assert 'id="scanner"' in page and ">Alpha 100<" not in page and ">alpha<" in page and ">beta<" in page   # a chooser, by name
-    assert "Foglio A4" not in page and "arriva a 300 dpi" not in page                                       # no fixed sentence
+    assert "A4 sheet" not in page and "up to 300 dpi" not in page                                       # no fixed sentence
     assert '"size": "A4"' in page.replace('"size":"A4"', '"size": "A4"') and '"A3"' in page and "1200" in page  # each device's own values
     assert page.count("<option value=\"adf\"") == 0                                                          # options are built per scanner (script)
 
@@ -107,7 +107,7 @@ async def test_the_scan_goes_to_the_scanner_that_was_chosen_and_uses_its_whole_s
     code, st = await do_scan(two_scanners, scanner="alpha", source="adf", dpi="300")
     assert st["state"] == "done" and two_scanners.state["jobs"] == ["scan-a"] and "<pwg:Width>2480<" in two_scanners.state["xml"]["scan-a"]
     code, st = await do_scan(two_scanners, scanner="beta", source="adf", dpi="300")                           # beta has no feeder
-    assert st["state"] == "error" and "caricatore" in st["error"]
+    assert st["state"] == "error" and "feeder" in st["error"]
     with two_scanners.sm() as s:
         rows = s.scalars(select(JobLog).order_by(JobLog.id)).all()
     assert [r.options_json["scanner"] for r in rows] == ["beta", "alpha"]                     # the refused one never reached the audit
@@ -127,13 +127,13 @@ async def test_unplugging_a_scanner_removes_it_and_plugging_it_back_restores_it(
     assert ">beta<" not in page and ">alpha</span>" in page                                           # one left: shown as a name
     assert (await two_scanners.get("/eSCL-beta/ScannerCapabilities")).status_code == 404
     code, body = await do_scan(two_scanners, scanner="beta", source="platen", dpi="300")
-    assert code == 409 and "beta" in body["error"] and "non risponde" in body["error"]
+    assert code == 409 and "beta" in body["error"] and "does not answer" in body["error"]
     two_scanners.state["down"].clear()
     two_scanners.app.state.scanners_cache = None
     assert ">beta<" in (await two_scanners.get("/me/scan")).text
     two_scanners.state["down"].update({"scan-a", "scan-b"})
     two_scanners.app.state.scanners_cache = None
-    assert "Nessuno scanner disponibile" in (await two_scanners.get("/me/scan")).text
+    assert "No scanner available" in (await two_scanners.get("/me/scan")).text
 
 
 # ---------------------------------------------------------------- printers: the cable pulled
@@ -152,20 +152,20 @@ async def stack(portal):
 
 @requires_cups
 async def test_a_printer_that_does_not_answer_is_unreachable_everywhere(stack, monkeypatch):
-    import app.admin.printers as printers_mod
-    import app.cups_client as cc
+    import spoolsteward.admin.printers as printers_mod
+    import spoolsteward.cups_client as cc
 
     async def dead(uri, usb_present=None):
         return False
     monkeypatch.setattr(cc, "is_online", dead)
     monkeypatch.setattr(printers_mod, "is_online", dead)
     page = (await stack.get("/admin/printers")).text
-    assert "NON RAGGIUNGIBILE" in page and "Il dispositivo non risponde" in page and "Inchiostro rimasto" not in page
-    assert 'name="queue" value="virtual"' not in (await stack.get("/me/print")).text and "Non raggiungibili" in (await stack.get("/me/print")).text
+    assert "NOT REACHABLE" in page and "The device does not answer" in page and "Ink left" not in page
+    assert 'name="queue" value="virtual"' not in (await stack.get("/me/print")).text and "Not reachable right now" in (await stack.get("/me/print")).text
     tok = await csrf_of_page(stack, "/me")
     r = await stack.post("/me/print", data={"queue": "virtual", "copies": "1", "csrf_token": tok},
                          files={"file": ("a.pdf", b"%PDF-1.4\n%%EOF\n", "application/pdf")})
-    assert r.status_code == 303 and "non risponde" in (await stack.get("/me/print")).text
+    assert r.status_code == 303 and "does not answer" in (await stack.get("/me/print")).text
     with stack.sm() as s:
         assert s.scalars(select(JobLog)).first() is None                                              # nothing was queued
     stack.app.state.queues_cache = None
@@ -176,7 +176,7 @@ async def test_a_printer_that_does_not_answer_is_unreachable_everywhere(stack, m
 @requires_cups
 async def test_a_printer_that_answers_is_reachable(stack):
     page = (await stack.get("/admin/printers")).text
-    assert "NON RAGGIUNGIBILE" not in page and 'value="virtual"' in (await stack.get("/me/print")).text
+    assert "NOT REACHABLE" not in page and 'value="virtual"' in (await stack.get("/me/print")).text
 
 
 # ---------------------------------------------------------------- test printers
@@ -214,7 +214,7 @@ async def test_test_printers_are_created_numbered_and_deleted(stack):
 async def test_only_virtual_printers_can_be_deleted_and_only_by_admins(stack):
     tok = await csrf_of_page(stack, "/admin/printers")
     await stack.post("/admin/printers/doesnotexist/delete", data={"csrf_token": tok})
-    assert "stampante non trovata" in (await stack.get("/admin/printers")).text
+    assert "printer not found" in (await stack.get("/admin/printers")).text
     await stack.post("/logout", data={"csrf_token": tok})
     await portal_login(stack, "ann", GOOD)
     tok = await csrf_of_page(stack, "/me")
@@ -229,7 +229,7 @@ async def test_key_page_has_a_copy_button_for_every_value(portal, monkeypatch):
     make_user(portal.sm, "pia", password=GOOD)
     await portal_login(portal, "pia", GOOD)
     tok = await csrf_of_page(portal, "/me/keys")
-    page = (await portal.post("/me/keys", data={"csrf_token": tok, "label": "portatile"})).text
+    page = (await portal.post("/me/keys", data={"csrf_token": tok, "label": "laptop"})).text
     assert 'data-copy class="secret">' in page and page.count('class="copy"') >= 1
     assert "navigator.clipboard" in (await portal.get("/admin/static/js/app.js")).text               # the script that does the copying
 
@@ -264,8 +264,8 @@ async def test_print_and_scan_forms_are_centred(portal):
 async def test_scan_without_credentials_is_refused_and_reported_once(two_scanners, monkeypatch):
     from sqlalchemy import select
 
-    from app import notices
-    from app.db.models import Notice
+    from spoolsteward import notices
+    from spoolsteward.db.models import Notice
 
     monkeypatch.setattr(settings, "escl_anonymous", False)
     monkeypatch.setattr(settings, "log_level", "INFO")

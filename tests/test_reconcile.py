@@ -7,9 +7,9 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.db.models import Base, JobKind, JobLog, JobState, User
-from app.ipp import codec as c
-from app.policy.reconcile import apply_updates, reconcile_once, release_orphans
+from spoolsteward.db.models import Base, JobKind, JobLog, JobState, User
+from spoolsteward.ipp import codec as c
+from spoolsteward.policy.reconcile import apply_updates, reconcile_once, release_orphans
 from tests.conftest import CUPS_TEST_URL, requires_cups
 
 NOW = datetime(2026, 10, 7, 12, 0, tzinfo=UTC)

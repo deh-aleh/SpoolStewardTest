@@ -1,5 +1,5 @@
-from app.ipp import codec as c
-from app.ipp.rewrite import rewrite_uris
+from spoolsteward.ipp import codec as c
+from spoolsteward.ipp.rewrite import rewrite_uris
 
 HOSTS = {"localhost"}
 
@@ -39,8 +39,8 @@ def test_rewrites_inside_collections_and_multivalue():
 
 
 def test_advertise_auth_describes_the_gateway_not_cups():
-    from app.ipp import codec
-    from app.ipp.rewrite import advertise_auth
+    from spoolsteward.ipp import codec
+    from spoolsteward.ipp.rewrite import advertise_auth
     g = codec.Group(codec.TAG_PRINTER, [
         codec.Attr("printer-uri-supported", [codec.Val(codec.TAG_URI, "ipps://h/printers/q")]),
         codec.Attr("uri-security-supported", [codec.Val(codec.TAG_KEYWORD, "none")]),

@@ -8,9 +8,9 @@ from pathlib import Path
 import pytest
 from sqlalchemy import select
 
-from app import i18n
-from app.db.models import PermissionGrant, SubjectType, User
-from app.policy import permissions
+from spoolsteward import i18n
+from spoolsteward.db.models import PermissionGrant, SubjectType, User
+from spoolsteward.policy import permissions
 from tests.conftest import csrf_of_page, make_user, portal_login
 
 GOOD = "correct horse battery"
@@ -26,7 +26,7 @@ def test_negotiation():
     assert i18n.match("EN_us") == "en" and i18n.match("xx") is None
 
 
-def test_translation_falls_back_to_english_and_formats(english):
+def test_translation_falls_back_to_english_and_formats():
     tok = i18n.set_language("it")
     try:
         assert i18n._("Save") == "Salva"
@@ -40,7 +40,7 @@ def test_translation_falls_back_to_english_and_formats(english):
     i18n.reset(tok)
 
 
-async def test_page_follows_the_browser_then_the_users_choice(portal, english):
+async def test_page_follows_the_browser_then_the_users_choice(portal):
     make_user(portal.sm, "ann", password=GOOD, group="staff")
     assert "<html lang=\"en\"" in (await portal.get("/login")).text
     r = await portal.get("/login", headers={"Accept-Language": "ru,en;q=0.5"})
@@ -61,7 +61,14 @@ async def test_page_follows_the_browser_then_the_users_choice(portal, english):
     assert (await portal.post("/me/settings/language", data={"language": "it"})).status_code == 403   # CSRF
 
 
-async def test_the_choice_follows_the_user_to_a_new_login(portal, english):
+async def test_the_installation_language_is_used_when_the_browser_asks_for_none(portal, italian):
+    assert i18n._("Save") == "Salva"                                 # no language set: the installation default
+    page = (await portal.get("/login")).text
+    assert '<html lang="it"' in page and "Accedi" in page
+    assert '<html lang="ru"' in (await portal.get("/login", headers={"Accept-Language": "ru"})).text   # the browser still wins
+
+
+async def test_the_choice_follows_the_user_to_a_new_login(portal):
     make_user(portal.sm, "ann", password=GOOD, group="staff")
     await portal_login(portal, "ann", GOOD)
     await portal.post("/me/settings/language", data={"csrf_token": await csrf_of_page(portal, "/me/settings"), "language": "zh"})
@@ -116,7 +123,7 @@ PAGES = ["/admin/jobs", "/admin/users", "/admin/groups", "/admin/groups/new", "/
 @pytest.mark.parametrize("code", sorted(i18n.LANGUAGES))
 async def test_every_page_renders_in_every_language(portal, code):
     """A text with a missing or misspelt %(name)s would raise while rendering: this walks the pages in each language."""
-    from app.db.models import Group
+    from spoolsteward.db.models import Group
 
     ann = make_user(portal.sm, "ann", password=GOOD, group="staff")
     boss = make_user(portal.sm, "boss", password=GOOD, admin=True)

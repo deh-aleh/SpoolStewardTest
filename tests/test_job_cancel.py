@@ -7,10 +7,10 @@ import httpx
 import pytest
 from sqlalchemy import select
 
-from app.auth import keys
-from app.config import settings
-from app.db.models import AdminAudit, JobLog, JobState, User
-from app.ipp import codec as c
+from spoolsteward.auth import keys
+from spoolsteward.config import settings
+from spoolsteward.db.models import AdminAudit, JobLog, JobState, User
+from spoolsteward.ipp import codec as c
 from tests.conftest import CUPS_TEST_URL, csrf_of_page, make_user, portal_login, requires_cups
 
 GOOD = "correct horse battery"
@@ -77,7 +77,6 @@ async def test_admin_cancels_a_waiting_job_and_it_is_recorded(world):
         assert s.scalars(select(JobLog)).one().state is JobState.accepted    # the audit row is left to the reconciler
 
 
-@pytest.mark.usefixtures("english")
 async def test_only_administrators_can_cancel_and_only_waiting_jobs(world):
     job_id = await create_waiting_job(world)
     await portal_login(world, "ann", GOOD)

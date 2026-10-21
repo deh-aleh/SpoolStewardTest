@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from app.ipp import codec as c
+from spoolsteward.ipp import codec as c
 
 FIX = Path(__file__).parent / "fixtures"
 
@@ -45,8 +45,8 @@ def test_collection_roundtrip():
 
 
 def test_utf8_title():
-    req = c.make_request(c.PRINT_JOB, 1, job_name="relazione è àù 日本.pdf")
-    assert c.decode(c.encode(req)).get(c.TAG_OPERATION, "job-name") == "relazione è àù 日本.pdf"
+    req = c.make_request(c.PRINT_JOB, 1, job_name="report è àù 日本.pdf")
+    assert c.decode(c.encode(req)).get(c.TAG_OPERATION, "job-name") == "report è àù 日本.pdf"
 
 
 def test_truncated_raises():

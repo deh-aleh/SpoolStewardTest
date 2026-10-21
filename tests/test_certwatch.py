@@ -4,15 +4,14 @@ import ipaddress
 import json
 from datetime import UTC, datetime, timedelta
 
-import pytest
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import NameOID
 
-from app import certwatch
-from app.config import settings
-from app.db.models import Notice
+from spoolsteward import certwatch
+from spoolsteward.config import settings
+from spoolsteward.db.models import Notice
 from tests.conftest import make_user, portal_login
 
 GOOD = "correct horse battery"
@@ -33,7 +32,7 @@ def make_cert(path, *, days_left=60, dns=("print.example.com",), ips=("192.168.1
 def test_read_and_cover_names(tmp_path):
     info = certwatch.read_cert(make_cert(tmp_path / "c.pem", dns=("print.example.com", "*.lan")))
     assert certwatch.covers(info, "192.168.1.50") and certwatch.covers(info, "PRINT.example.com")
-    assert certwatch.covers(info, "stampa.lan") and not certwatch.covers(info, "a.b.lan")   # a wildcard is one label
+    assert certwatch.covers(info, "printer.lan") and not certwatch.covers(info, "a.b.lan")   # a wildcard is one label
     assert not certwatch.covers(info, "192.168.1.77") and not certwatch.covers(info, "other.example.com")
     assert certwatch.read_cert(tmp_path / "missing.pem") is None
 
@@ -77,7 +76,6 @@ def test_parse_announce_rejects_garbage():
     assert certwatch.parse_announce("nope") is None and certwatch.parse_announce('{"names": [], "addresses": ["x"]}') is None
 
 
-@pytest.mark.usefixtures("english")
 async def test_notices_appear_in_the_portal_and_close_by_themselves(portal, tmp_path, monkeypatch):
     cert = make_cert(tmp_path / "fullchain.pem", days_left=-3)
     monkeypatch.setattr(settings, "tls_certfile", str(cert))

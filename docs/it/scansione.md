@@ -83,7 +83,7 @@ scansione nell'audit. Si regge su una cosa debole: l'indirizzo della connessione
   quello del tuo computer, e la finestra si apre per l'indirizzo del proxy. L'app di scansione di norma si collega direttamente alla
   porta 8631 con il proprio indirizzo, quindi i due non coincidono mai e la scansione è rifiutata. Il caso inverso è peggiore: se
   anche l'app di scansione passa dal proxy, tutti i dispositivi che raggiungono il server tramite il proxy hanno lo stesso indirizzo,
-  quindi durante la finestra *qualsiasi* di loro può scansionare. Il server si fida di `X-Forwarded-For` solo da `127.0.0.1` e dagli indirizzi in `FORWARDED_ALLOW_IPS` ([installazione.md](installazione.md)), perciò
+  quindi durante la finestra *qualsiasi* di loro può scansionare. Il server si fida di `X-Forwarded-For` solo da `127.0.0.1` e dagli indirizzi in `FORWARDED_ALLOW_IPS` ([certificati.md](certificati.md#41-dietro-un-reverse-proxy)), perciò
   un proxy su un'altra macchina non aiuta se non è elencato lì. Quello che funziona: premi il pulsante da una pagina aperta **direttamente** sul gateway
   (`https://<server>:8631/me/scan`, non attraverso il proxy). Il riquadro avvisa quando la richiesta portava intestazioni di proxy.
 - **Un altro dispositivo**: il pulsante va premuto dal computer su cui gira l'app di scansione. Premerlo da un telefono apre la

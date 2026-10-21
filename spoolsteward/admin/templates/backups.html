@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Backup") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/backups.css?v={{ app_version }}">{% endblock %}
+{% block scripts %}<script src="/admin/static/js/backups.js?v={{ app_version }}"></script>{% endblock %}
+{% block body %}
+{% set hl = {'ok': ('s-ok', _('succeeded')), 'stale': ('s-failed', _('too old')), 'error': ('s-failed', _('error')), 'never': ('s-pending', _('not run yet')), 'off': ('', _('suspended'))} %}
+<div class="card">
+  <h1>{{ _("Backup") }}</h1>
+  <p>{{ _("Each administrator can set up <b>their own</b> backups: destination folder, time, how many copies to keep and encryption. Each one saves the database, the audit archive and (only if encrypted) the configuration and the certificate. The <b>General</b> backup is set in the file <span class=\"mono\">.env</span>.") }}</p>
+  <p class="muted">{{ _("The folders are inside <span class=\"mono\">%(root)s</span>", root=root) }}{% if host_root %} ({{ _("on the server: <span class=\"mono\">%(path)s</span>", path=host_root) }}){% endif %}.
+    {{ _("To save to a USB disk or a network folder, mount it on the server inside that folder and restart the gateway.") }}</p>
+  {% if not root_ok %}<p class="s-failed"><b>{{ _("The backup folder is not mounted in the gateway:") }}</b> {{ _("no backup can be written.") }}</p>{% endif %}
+</div>
+<div class="card" id="update">
+  <h2>{{ _("Update") }}</h2>
+  <p>{{ _("Installed version: %(v)s", v=app_version) }}{% if upd.info %} — <b>{{ _("new test release %(v)s available (pre-release)", v=upd.info.version) if upd.info.beta else _("new version %(v)s available", v=upd.info.version) }}</b>{% if upd.info.url %} (<a href="{{ upd.info.url }}" rel="noopener noreferrer" target="_blank">{{ _("Release notes") }}</a>){% endif %}{% else %} — {{ _("up to date, or not checked yet") }}{% endif %}</p>
+  {% set st = upd.status %}
+  {% if st and st.state != 'idle' %}<p class="{{ 's-ok' if st.state == 'ok' else ('s-pending' if st.state == 'running' else 's-failed') }}">
+    {% if st.state == 'running' %}{{ _("Update to %(v)s is running…", v=st.version) }}
+    {% elif st.state == 'ok' %}{{ _("Last update: %(v)s installed.", v=st.version) }}
+    {% elif st.state == 'rolled_back' %}{{ _("Last update to %(v)s failed and the old version was put back.", v=st.version) }}
+    {% else %}{{ _("Last update to %(v)s failed.", v=st.version) }}{% endif %}
+    {% if st.backup and st.state in ('rolled_back', 'failed') %}{{ _("Backup taken just before: %(f)s", f=st.backup) }}{% endif %}</p>{% endif %}
+  {% if upd.info %}
+  {% set i = upd.info %}
+  {% if i.beta %}<p class="s-pending">{{ _("This is a test release (pre-release): it can contain bugs.") }}</p>{% endif %}
+  {% if i.breaking %}<p class="s-failed">{{ _("<b>This update contains breaking changes.</b> The installation could fail and leave SpoolSteward not working. Before updating, copy a recent backup off the server and keep a copy of the file .env and of the config folder.") }}{% if i.url %} <a href="{{ i.url }}" rel="noopener noreferrer" target="_blank">{{ _("Read the release notes") }}</a>.{% endif %}</p>{% endif %}
+  {% if upd.reason == '' %}
+  {# a beta or breaking changes: a stronger question, and its box must be ticked (the server checks it too) #}
+  {% set ask = [] %}
+  {% if i.beta %}{% set _x = ask.append(_t('%(v)s is a test release (pre-release): it can contain bugs.', v=i.version)) %}{% endif %}
+  {% if i.breaking %}{% set _x = ask.append(_t('The update to %(v)s contains breaking changes. The installation could fail and leave SpoolSteward not working.', v=i.version)) %}{% set _x = ask.append(_t('Before you go on, copy a recent backup off the server and keep a copy of the file .env and of the config folder.')) %}{% if i.url %}{% set _x = ask.append(_t('Read the release notes first: %(url)s', url=i.url)) %}{% endif %}{% endif %}
+  {% set _x = ask.append(_t('Update now? A backup is made first. The gateway restarts and printing stops for a minute or two.')) %}
+  <form method="post" action="/admin/update" data-confirm="{{ ask|join('\n\n') }}"
+    {%- if i.breaking %} data-confirm-title="{{ _t('Update with breaking changes') }}" data-confirm-danger data-confirm-check="{{ _t('I have a backup, a copy of .env and of the config folder, and I have read the release notes') }}" data-confirm-check-name="accept" data-confirm-check-required
+    {%- elif i.beta %} data-confirm-title="{{ _t('Install a test release?') }}" data-confirm-check="{{ _t('I understand that this is a test release') }}" data-confirm-check-name="accept" data-confirm-check-required{% endif %}>
+    <input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="version" value="{{ i.version }}">
+    <button>{{ _("Update to %(v)s", v=upd.info.version) }}</button>
+    <span class="muted">{{ _("A backup is made first (%(name)s).", name=upd.backup.name) }}</span>
+  </form>
+  {% else %}
+  <button disabled>{{ _("Update to %(v)s", v=upd.info.version) }}</button>
+  <p class="muted">{% if upd.reason == 'major' %}{{ _("%(v)s is a new major version: it is not installed from the portal. Read the release notes, then update from a terminal with scripts/update.sh.", v=i.version) }}
+    {% elif upd.reason == 'no_updater' %}{{ _("Updating from the portal is off: the updater container is not running. It is off on purpose: whoever controls it controls Docker, which is the same as full control (root) of this server. If you accept that, start it with “docker compose --profile autoupdate up -d”; otherwise update from a terminal with scripts/update.sh.") }}
+    {% elif upd.reason == 'no_backup' %}{{ _("Updating from the portal needs a scheduled backup that is on and worked in the last 48 hours. Set one up below.") }}
+    {% else %}{{ _("An update is already waiting for the updater.") }}{% endif %}</p>
+  {% endif %}
+  {% endif %}
+  {% if upd.updater %}<p class="muted">{{ _("The updater container is running. It controls Docker, which is the same as full control (root) of this server. If you do not need updates from the portal, stop it with “docker compose stop updater”.") }}</p>{% endif %}
+</div>
+
+{% for r in rows %}{% set t = r.t %}{% set h = hl[r.health] %}
+<div class="card">
+  <div class="row bk-head">
+    <h2 class="bk-h2">{{ t.name }}{% if t.is_global %} <span class="pill">.env</span>{% elif r.mine %} <span class="pill">{{ _("mine") }}</span>{% endif %}</h2>
+    <span class="pill {{ h[0] }}">{{ h[1] }}</span>
+  </div>
+  <dl class="kv bk-kv">
+    <dt>{{ _("Owner") }}</dt><dd>{{ t.owner_name or '—' }}</dd>
+    <dt>{{ _("Folder") }}</dt><dd class="mono">{{ root }}/{{ t.folder }}{% if t.require_marker %} <span class="muted">({{ _("only written while mounted") }})</span>{% endif %}</dd>
+    <dt>{{ _("When") }}</dt><dd>{{ _("every day at %(hour)s:00", hour='%02d' % t.hour) }}</dd>
+    <dt>{{ _("Copies kept") }}</dt><dd>{{ _("%(d)s daily · %(w)s weekly · %(m)s monthly", d=t.keep_daily, w=t.keep_weekly, m=t.keep_monthly) }}</dd>
+    <dt>{{ _("Encryption") }}</dt><dd>{% if t.mode == 'none' %}{{ _('<b>none</b> — no secrets in the file (neither the TLS key nor <span class="mono">SECRET_KEY</span>); whoever can read the folder reads users and audit') }}
+      {% elif t.mode == 'passphrase' %}{{ _("passphrase chosen by the administrator (the gateway does not keep it)") }}{% else %}{{ _('recovery key (<span class="mono">backup-key</span>)') }}{% endif %}</dd>
+    <dt>{{ _("Last result") }}</dt><dd>
+      {% if t.last_ok_at %}{{ _('succeeded on %(when)s — <span class="mono">%(file)s</span> (%(size)s MB)', when=t.last_ok_at|localtime('%Y-%m-%d %H:%M'), file=t.last_file, size='%.1f'|format((t.last_size or 0) / 1048576)) }}{% else %}{{ _("never succeeded") }}{% endif %}
+      {% if t.last_status == 'error' %}<div class="s-failed">{{ _("Last attempt failed (%(when)s): %(error)s", when=t.last_attempt_at|localtime('%Y-%m-%d %H:%M'), error=t.last_error) }}</div>{% endif %}
+      {% if r.problem %}<div class="s-failed">{{ r.problem }}</div>{% endif %}
+    </dd>
+  </dl>
+  {% if r.files %}
+  <details class="bk-det"><summary class="muted">{{ _("%(count)s copies in the folder (latest %(shown)s)", count=r.count, shown=r.files|length) }}</summary>
+    <table>{% for f in r.files %}<tr><td class="mono">{{ f.name }}</td><td>{{ f.ts|localtime('%Y-%m-%d %H:%M') }}</td><td>{{ '%.1f'|format(f.size / 1048576) }} MB</td></tr>{% endfor %}</table>
+  </details>{% endif %}
+  <div class="row bk-actions">
+    <form method="post" action="/admin/backups/{{ t.id }}/run"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button>{{ _("Run now") }}</button></form>
+    {% if r.editable %}
+    <a class="btn sec" href="/admin/backups/{{ t.id }}/edit">{{ _("Edit") }}</a>
+    <form method="post" action="/admin/backups/{{ t.id }}/toggle"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="sec">{{ _('Suspend') if t.enabled else _('Activate') }}</button></form>
+    <form method="post" action="/admin/backups/{{ t.id }}/delete" data-confirm="{{ _t('Delete this scheduled backup? The files already written stay in the folder.') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="danger">{{ _("Delete") }}</button></form>
+    {% elif not t.is_global %}<span class="muted">{{ _("belongs to %(owner)s", owner=t.owner_name) }}</span>{% else %}<span class="muted">{{ _("edited in .env") }}</span>{% endif %}
+  </div>
+</div>
+{% else %}
+<div class="card"><p class="s-failed"><b>{{ _("No backup configured.") }}</b> {{ _("If the disk breaks, users, keys, quotas and audit are lost. Create one below.") }}</p></div>
+{% endfor %}
+
+<form method="post" action="/admin/backups" class="card bk-new" data-keep>
+  <h2>{{ _("New backup") }}</h2>
+  <input type="hidden" name="csrf_token" value="{{ csrf }}">
+  <dl class="kv bk-center">
+    <dt>{{ _("Name") }}</dt><dd><input type="text" name="name" maxlength="80" required placeholder="{{ _('e.g. Office NAS') }}"></dd>
+    <dt>{{ _("Folder") }}</dt><dd><input type="text" name="folder" maxlength="200" required list="folders" placeholder="{{ _('e.g. nas/%(user)s', user=me.username) }}">
+      <datalist id="folders">{% for f in folders %}<option value="{{ f }}">{% endfor %}</datalist>
+      <div class="muted">{{ _("inside %(root)s; the gateway creates it if missing", root=root) }}</div></dd>
+    <dt>{{ _("Safety") }}</dt><dd><label><input type="checkbox" name="require_marker" value="1" checked> {{ _("The folder is a network disk or USB disk: write only if it is mounted") }}</label>
+      <div class="muted">{{ _("Leave this ticked for a network disk or USB disk, and save while the disk is mounted now. The gateway puts a small marker file in the folder and refuses to back up when it is not there, so an unmounted disk never fills the server disk with copies.") }}</div></dd>
+    <dt>{{ _("Time") }}</dt><dd><input type="number" name="hour" min="0" max="23" value="{{ defaults.hour }}" class="bk-w5"> :00</dd>
+    <dt>{{ _("Copies") }}</dt><dd>
+      <input type="number" name="keep_daily" min="1" value="{{ defaults.keep_daily }}" class="bk-w5"> {{ _("daily") }}
+      <input type="number" name="keep_weekly" min="0" value="{{ defaults.keep_weekly }}" class="bk-w5"> {{ _("weekly") }}
+      <input type="number" name="keep_monthly" min="0" value="{{ defaults.keep_monthly }}" class="bk-w5"> {{ _("monthly") }}</dd>
+    <dt>{{ _("Encryption") }}</dt><dd>
+      <label><input type="radio" name="mode" value="passphrase" checked> {{ _("Passphrase") }} <span class="muted">({{ _("recommended") }})</span></label><br>
+      <label><input type="radio" name="mode" value="key"> {{ _("Ready-made recovery key") }}</label><br>
+      <label><input type="radio" name="mode" value="none"> {{ _("None") }}</label></dd>
+  </dl>
+  <div id="m-passphrase">
+    <dl class="kv bk-center">
+      <dt>{{ _("Passphrase") }}</dt><dd><input type="password" name="passphrase" autocomplete="new-password" minlength="{{ min_pass }}"> <span class="muted">{{ _("at least %(n)s characters", n=min_pass) }}</span></dd>
+      <dt>{{ _("Repeat") }}</dt><dd><input type="password" name="passphrase2" autocomplete="new-password"></dd>
+    </dl>
+    <p class="muted">{{ _("<b>Do not use your account password:</b> the gateway does not know it (it only stores a hash), it changes over time, and for a RADIUS user it is not even theirs. Choose a dedicated one and keep it in a safe place (password manager). The gateway <b>does not store it</b>: it writes the backups without asking for it, but <b>without it nobody can open them</b>, not even another administrator.") }}</p>
+  </div>
+  <div id="m-key" hidden>
+    <dl class="kv"><dt>{{ _("Key") }}</dt><dd><input type="text" name="recipient" placeholder="cpgbk1.…" class="mono bk-full">
+      <div class="muted">{{ _('created on the server with <span class="mono">docker compose exec -it gateway spoolsteward-admin backup-key</span>: the passphrase never goes through the portal') }}</div></dd></dl>
+  </div>
+  <div id="m-none" hidden><p class="s-failed">{{ _("Without encryption the file contains the database (users, names of printed files). That is why the secrets are <b>not</b> saved: the TLS key, <span class=\"mono\">SECRET_KEY</span> and the RADIUS secret must be kept separately.") }}</p></div>
+  <div class="actions"><button>{{ _("Create backup") }}</button></div>
+</form>
+{% endblock %}

@@ -6,9 +6,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.auth.throttle import Throttle
-from app.db.models import AdminAudit, Base, Group, JobKind, JobLog, JobState, Metric, PolicyRule, User
-from app.main import app
+from spoolsteward.auth.throttle import Throttle
+from spoolsteward.db.models import AdminAudit, Base, Group, JobKind, JobLog, JobState, Metric, PolicyRule, User
+from spoolsteward.main import app
 from tests.conftest import csrf_from
 
 
@@ -86,7 +86,6 @@ async def test_post_without_csrf_rejected(env):
     assert q(env, Group, name="evil") is None
 
 
-@pytest.mark.usefixtures("english")
 async def test_group_crud_and_limits(env):
     await login(env)
     t = await token(env)
@@ -112,7 +111,7 @@ async def test_deleting_a_group_with_members_moves_them_to_the_default_group(env
     t = await token(env)
     gid = q(env, Group, name="staff").id
     page = (await env.get("/admin/groups")).text
-    assert "ha 1 utente" in page and "default" in page                            # the warning names the consequence
+    assert "has 1 user" in page and "default" in page                            # the warning names the consequence
     await env.post(f"/admin/groups/{gid}/delete", data={"csrf_token": t})
     assert q(env, Group, name="staff") is None
     default = q(env, Group, name="default")
@@ -127,16 +126,16 @@ async def test_groups_page_is_read_only_and_edit_page_does_the_rest(env):
     t = await token(env)
     gid = q(env, Group, name="staff").id
     page = (await env.get("/admin/groups")).text
-    assert 'name="jobs_limit"' not in page and f'href="/admin/groups/{gid}/edit"' in page and "Nuovo gruppo" in page
+    assert 'name="jobs_limit"' not in page and f'href="/admin/groups/{gid}/edit"' in page and "New group" in page
     edit = (await env.get(f"/admin/groups/{gid}/edit")).text
-    assert 'name="jobs_limit"' in edit and 'name="name"' in edit and "Elimina" in edit
+    assert 'name="jobs_limit"' in edit and 'name="name"' in edit and "Delete" in edit
     assert 'name="name"' in (await env.get("/admin/groups/new")).text
     await env.post("/admin/groups", data={"name": "interns", "jobs_limit": "4", "period": "monthly", "requestable": "1", "csrf_token": t})
     g = q(env, Group, name="interns")
     assert g.requestable
-    await env.post(f"/admin/groups/{g.id}", data={"name": "stagisti", "jobs_limit": "4", "period": "monthly", "csrf_token": t})
-    assert q(env, Group, name="stagisti") is not None and q(env, Group, name="interns") is None
-    await env.post(f"/admin/groups/{gid}", data={"name": "stagisti", "csrf_token": t})                 # name already taken
+    await env.post(f"/admin/groups/{g.id}", data={"name": "trainees", "jobs_limit": "4", "period": "monthly", "csrf_token": t})
+    assert q(env, Group, name="trainees") is not None and q(env, Group, name="interns") is None
+    await env.post(f"/admin/groups/{gid}", data={"name": "trainees", "csrf_token": t})                 # name already taken
     assert q(env, Group, name="staff") is not None
 
 
@@ -197,13 +196,13 @@ async def test_titles_are_escaped(env):
 
 async def test_filters_and_csv_injection(env):
     add_job(env, "=HYPERLINK(\"http://evil\")")
-    add_job(env, "relazione.pdf")
+    add_job(env, "report.pdf")
     add_job(env, "blocked.pdf", state=JobState.denied, reason="weekly job limit reached (3/3)")
     await login(env)
     html = (await env.get("/admin/jobs", params={"state": "denied"})).text
-    assert "blocked.pdf" in html and "relazione.pdf" not in html
-    assert "relazione.pdf" in (await env.get("/admin/jobs", params={"q": "relaz"})).text
-    assert "relazione.pdf" not in (await env.get("/admin/jobs", params={"user": "nobody"})).text
+    assert "blocked.pdf" in html and "report.pdf" not in html
+    assert "report.pdf" in (await env.get("/admin/jobs", params={"q": "repo"})).text
+    assert "report.pdf" not in (await env.get("/admin/jobs", params={"user": "nobody"})).text
     csv_text = (await env.get("/admin/jobs.csv")).text
     assert "'=HYPERLINK" in csv_text and ",=HYPERLINK" not in csv_text
 
@@ -244,7 +243,7 @@ async def test_root_redirects_to_the_portal(env):
 async def test_admin_without_trailing_slash_and_unknown_paths(env):
     r = await env.get("/admin")
     assert r.status_code == 307 and r.headers["location"] == "/admin/"      # was 405
-    assert (await env.get("/qualcosa")).status_code == 404                  # was 405
+    assert (await env.get("/something")).status_code == 404                  # was 405
     assert (await env.get("/favicon.ico")).status_code == 301                # redirects to the icon (was 405, then 404)
     assert (await env.get("/admin/jobs")).status_code == 303                # real pages unaffected
 

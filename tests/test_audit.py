@@ -6,8 +6,8 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.db.models import Base, Group, JobLog, JobState, PolicyRule, SubjectType, User
-from app.policy import audit
+from spoolsteward.db.models import Base, Group, JobLog, JobState, PolicyRule, SubjectType, User
+from spoolsteward.policy import audit
 
 TZ = ZoneInfo("Europe/Rome")
 
@@ -67,14 +67,14 @@ def test_attach_document_fills_untitled(sm):
     with sm() as s:
         _, i = audit.reserve(s, u, "p", "untitled", {}, TZ)
         audit.finalize(s, i, ok=True, cups_job_id=42)
-        audit.attach_document(s, u.id, 42, "contratto.pdf", "application/pdf")
+        audit.attach_document(s, u.id, 42, "contract.pdf", "application/pdf")
         row = s.get(JobLog, i)
-        assert row.title == "contratto.pdf" and row.options_json["document_name"] == "contratto.pdf"
+        assert row.title == "contract.pdf" and row.options_json["document_name"] == "contract.pdf"
 
 
 def test_independent_connections_never_overshoot(tmp_path):
     """Separate engines = what separate worker processes see. Needs the DB-level lock."""
-    from app.db.session import make_engine
+    from spoolsteward.db.session import make_engine
 
     url = f"sqlite:///{tmp_path}/q.db"
     eng = make_engine(url)

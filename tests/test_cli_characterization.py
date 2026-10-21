@@ -1,4 +1,4 @@
-"""Pins what every `python -m app.cli` command prints, returns and changes, so the command bodies can be moved around safely."""
+"""Pins what every `python -m spoolsteward.cli` command prints, returns and changes, so the command bodies can be moved around safely."""
 
 from datetime import UTC, datetime
 from pathlib import Path
@@ -6,9 +6,9 @@ from pathlib import Path
 import pytest
 from sqlalchemy import select
 
-from app import cli
-from app.config import settings
-from app.db.models import (AdminAudit, Group, JobKind, JobLog, JobState, Metric, Period, PolicyRule, SubjectType, User)
+from spoolsteward import cli
+from spoolsteward.config import settings
+from spoolsteward.db.models import (AdminAudit, Group, JobKind, JobLog, JobState, Metric, Period, PolicyRule, SubjectType, User)
 from tests.conftest import make_user
 
 
@@ -233,8 +233,8 @@ def test_backup_run_without_enabled_targets(db, capsys, monkeypatch):
 
 
 def test_backup_run_runs_the_enabled_ones_and_reports_failures(db, capsys, monkeypatch):
-    from app.backup import service
-    from app.db.models import BackupTarget
+    from spoolsteward.backup import service
+    from spoolsteward.db.models import BackupTarget
 
     with db() as s:
         s.add_all([BackupTarget(name="a", folder="a", enabled=True), BackupTarget(name="b", folder="b", enabled=False),
@@ -258,7 +258,7 @@ def test_backup_run_runs_the_enabled_ones_and_reports_failures(db, capsys, monke
 # ---------------------------------------------------------------- backup-key / verify / restore
 
 def test_backup_key_prints_the_recipient_and_a_hint(db, capsys, monkeypatch):
-    from app.backup import crypto
+    from spoolsteward.backup import crypto
 
     asked = feed(monkeypatch, "a long enough passphrase 1", "a long enough passphrase 1")
     monkeypatch.setattr(crypto, "make_recipient", lambda pw: f"RECIPIENT({pw})")
@@ -289,7 +289,7 @@ def test_backup_verify_and_restore_missing_file(db, capsys, tmp_path):
 
 
 def test_backup_verify_plain_and_encrypted(db, capsys, monkeypatch, tmp_path):
-    from app.backup import core
+    from spoolsteward.backup import core
 
     seen = []
 
@@ -309,7 +309,7 @@ def test_backup_verify_plain_and_encrypted(db, capsys, monkeypatch, tmp_path):
 
 
 def test_backup_verify_reports_backup_errors(db, capsys, monkeypatch, tmp_path):
-    from app.backup import core
+    from spoolsteward.backup import core
 
     def boom(path, pw):
         raise core.BackupError("corrupt archive")
@@ -327,7 +327,7 @@ def test_backup_restore_needs_sqlite(db, capsys, monkeypatch, tmp_path):
 
 
 def test_backup_restore_with_and_without_configuration(db, capsys, monkeypatch, tmp_path):
-    from app.backup import core
+    from spoolsteward.backup import core
 
     monkeypatch.setattr(settings, "database_url", f"sqlite:///{tmp_path / 'x.db'}")
     got = []
@@ -352,7 +352,7 @@ def test_backup_restore_with_and_without_configuration(db, capsys, monkeypatch, 
 
 
 def test_backup_restore_default_config_out(db, capsys, monkeypatch, tmp_path):
-    from app.backup import core
+    from spoolsteward.backup import core
 
     monkeypatch.setattr(settings, "database_url", f"sqlite:///{tmp_path / 'x.db'}")
     got = []

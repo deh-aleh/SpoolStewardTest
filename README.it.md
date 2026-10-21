@@ -1,11 +1,18 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="app/admin/static/icon-light.svg">
-  <img src="app/admin/static/icon-dark.svg" alt="Icona di SpoolSteward" width="96" align="right">
+  <source media="(prefers-color-scheme: dark)" srcset="spoolsteward/admin/static/icon-light.svg">
+  <img src="spoolsteward/admin/static/icon-dark.svg" alt="Icona di SpoolSteward" width="96" align="right">
 </picture>
 
 # SpoolSteward
 
 [English](README.md) · **Italiano**
+
+> [!WARNING]
+> **SpoolSteward è in beta (versioni 0.x).** Fino alla versione 1.0 un aggiornamento può contenere **modifiche incompatibili**
+> (*breaking changes*): impostazioni di `.env` rinominate o tolte, modifiche al database che una versione precedente non sa leggere,
+> una procedura di installazione o di aggiornamento diversa. Ogni release le elenca nelle sue note su GitHub. Leggi le note prima di
+> aggiornare, tieni un backup (`scripts/update.sh` ne fa uno prima di ogni aggiornamento) e non usare una beta su un server da cui
+> dipendono altre persone senza essere pronto a ripristinarlo.
 
 Su una rete condivisa, una stampante lascia stampare chiunque quanto vuole e poi nessuno sa chi ha stampato cosa. SpoolSteward si mette tra le persone e la stampante: ognuno accede con il proprio account, ogni persona o gruppo ha un limite (pagine, colore, solo fronte) e ogni stampa e scansione viene registrata. Serve a case, uffici e scuole che condividono una stampante e vogliono decidere chi stampa quanto e vedere cosa è stato stampato.
 
@@ -101,14 +108,14 @@ Se cerchi un software scritto interamente da una persona, questo non è il repos
 Cosa puoi controllare da solo: i test automatici (`tests/`), la tabella di stato delle funzioni (cosa è stato provato su hardware reale) e l'elenco dei limiti noti. Il codice non ha avuto una revisione indipendente: se lo usi dove conta, guarda con attenzione le parti che riguardano la sicurezza (autenticazione, chiavi di stampa, certificati).
 
 
-## Installazione (Docker, consigliata)
+## Installazione (Docker)
 
 Requisiti: un server **Linux**, Docker Engine con Compose, `openssl`, `curl`, `tar`, `python3`, una stampante USB o di rete e una porta TCP
 raggiungibile dai client (predefinita 8631). Sull'host non si installa nulla.
 
 ```sh
 # 0. scarica il pacchetto della release (ultima versione: https://github.com/deh-aleh/SpoolSteward/releases)
-VERSION=x.y.z
+VERSION=0.0.0-beta.1
 curl -LO https://github.com/deh-aleh/SpoolSteward/releases/download/v$VERSION/spoolsteward-$VERSION.tar.gz
 tar xzf spoolsteward-$VERSION.tar.gz && cd spoolsteward-$VERSION      # (nella guida c'è anche come controllare il download)
 
@@ -118,33 +125,23 @@ scripts/docker-init.sh print.lan 192.168.1.50      # crea .env (tutte le imposta
 # 2. impostazioni: RADIUS è facoltativo (scrivi none in host e secret per usare solo account locali)
 $EDITOR .env
 
-# 3. stampanti, in .env — USB (prima ferma ipp-usb sull'host: sudo systemctl disable --now ipp-usb && sudo systemctl mask ipp-usb)
-#       CUPS_QUEUES=HP7305=ipp://ipp-usb:60000/ipp/print
-#    oppure una stampante di rete:
-#       CUPS_QUEUES="UFFICIO=ipp://192.168.1.60/ipp/print"
-
-# 4. avvio
+# 3. stampanti: quelle USB ricevono la coda da sole (prima ferma ipp-usb sull'host, vedi la guida);
+#    una stampante di rete va in .env:  CUPS_QUEUES="UFFICIO=ipp://192.168.1.60/ipp/print"
 docker compose up -d
 
-# 5. leggi il codice monouso e scegli la password dell'amministratore "administrator"
+# 4. leggi il codice monouso e scegli la password dell'amministratore "administrator"
 docker compose logs gateway | grep "FIRST RUN"
 #    poi apri https://<server>:8631/setup
 ```
 
-Poi: crea utenti e gruppi nel portale (`https://<server>:8631/`); ogni utente crea una **chiave di stampa** in *Profilo* e
-la usa come password quando un computer o un telefono chiede le credenziali (indirizzo della stampante
-`ipps://<server>:8631/printers/<coda>`); i telefoni senza nulla di installato possono usare *Stampa* nel portale. Verifica l'installazione
-con `curl -sk https://<server>:8631/healthz`. Per usare un certificato firmato da una CA metti `fullchain.pem` e `privkey.pem` in
-`config/tls/` ed esegui `docker compose restart gateway` (per tenerne aggiornato uno rinnovato altrove: [certificati.md](docs/it/certificati.md)). Aggiorna con `scripts/update.sh` (prima fa un backup, torna indietro da solo se la nuova versione non parte; immagini per amd64 e arm64). Per provare senza stampante né RADIUS vedi la guida. Nella guida c'è anche
-l'alternativa con installazione sull'host (systemd, modifica `/etc/cups`).
-
-Guida completa: [docs/it/installazione.md](docs/it/installazione.md).
+Guida completa, con certificati, stampanti, aggiornamenti e una prova senza stampante né RADIUS: [docs/it/installazione.md](docs/it/installazione.md).
+Poi utenti e gruppi: [guida-amministratore.md](docs/it/guida-amministratore.md); collegare computer e telefoni: [stampa.md](docs/it/stampa.md).
 
 ## Documentazione
 
 | Argomento | Documento |
 |---|---|
-| **Installazione** (docker e host, stampanti USB/rete, TLS, aggiornamenti) | [installazione.md](docs/it/installazione.md) |
+| **Installazione** (Docker, stampanti, TLS, aggiornamenti) | [installazione.md](docs/it/installazione.md) |
 | **Risoluzione dei problemi** | [risoluzione-problemi.md](docs/it/risoluzione-problemi.md) |
 | Architettura e tecnologie | [architettura.md](docs/it/architettura.md) |
 | Come è fatta l'applicazione (ogni file sorgente, `.env`, script) | [funzionamento-applicazione.md](docs/it/funzionamento-applicazione.md) |

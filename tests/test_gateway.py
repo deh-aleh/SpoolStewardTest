@@ -6,11 +6,11 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.auth.throttle import Throttle
-from app.config import settings
-from app.db.models import Base
-from app.ipp import codec as c
-from app.main import app
+from spoolsteward.auth.throttle import Throttle
+from spoolsteward.config import settings
+from spoolsteward.db.models import Base
+from spoolsteward.ipp import codec as c
+from spoolsteward.main import app
 from tests.conftest import CUPS_TEST_URL, requires_cups
 
 pytestmark = requires_cups
@@ -312,16 +312,16 @@ async def test_create_job_then_send_document_records_file_name(client):
     assert out.code < 0x0100
     job_id = out.get(c.TAG_JOB, "job-id")
     sd = c.make_request(c.SEND_DOCUMENT, 2, printer_uri="ipp://gw.test:8631/printers/virtual",
-                        document_name="verbale.txt", document_format="text/plain")
+                        document_name="minutes.txt", document_format="text/plain")
     sd.group(c.TAG_OPERATION).attrs.append(c.Attr("job-id", [c.Val(c.TAG_INTEGER, job_id)]))
     sd.group(c.TAG_OPERATION).attrs.append(c.Attr("last-document", [c.Val(c.TAG_BOOLEAN, True)]))
-    sd.data = b"contenuto\n"
+    sd.data = b"content\n"
     assert c.decode((await post(client, sd)).content).code < 0x0100
     got = rows(client)
-    assert len(got) == 1 and got[0][2] == "verbale.txt"  # "untitled" at Create-Job, filled at Send-Document
+    assert len(got) == 1 and got[0][2] == "minutes.txt"  # "untitled" at Create-Job, filled at Send-Document
     with client.engine.connect() as conn:
         opts = conn.exec_driver_sql("select options_json from job_log").scalar()
-    assert "verbale.txt" in opts
+    assert "minutes.txt" in opts
 
 
 async def test_healthz_ok_and_degraded(client):
@@ -336,7 +336,7 @@ async def test_unix_socket_upstream(monkeypatch):
     """The recommended production wiring: CUPS reachable only through its unix socket."""
     import os
 
-    from app.main import make_upstream
+    from spoolsteward.main import make_upstream
     from tests.conftest import CUPS_SOCK
 
     if not os.path.exists(CUPS_SOCK):
@@ -474,7 +474,7 @@ async def test_copies_multiply_the_counted_pages(client):
 
 
 def test_page_counter_knows_the_common_formats():
-    from app.policy.pages import count_pages
+    from spoolsteward.policy.pages import count_pages
     assert count_pages(blank_pdf(7), "application/pdf") == 7
     assert count_pages(blank_pdf(3), "application/octet-stream") == 3                  # sniffed, not trusted
     assert count_pages(b"\xff\xd8\xff\xe0" + b"0" * 20, "image/jpeg") == 1

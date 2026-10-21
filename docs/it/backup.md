@@ -115,7 +115,7 @@ i backup a mano. Il ripristino è la via di ritorno dopo un aggiornamento che vu
 ## 3. Backup completo dal lato host
 
 ```sh
-scripts/backup.sh backup [CARTELLA]        # scrive CARTELLA/spoolsteward-vX.Y.Z-AAAAMMGG-HHMMSS.tar.gz  (predefinito ./backups; X.Y.Z = la versione in uso)
+scripts/backup.sh backup [CARTELLA]        # scrive CARTELLA/spoolsteward-v<versione>-AAAAMMGG-HHMMSS.tar.gz  (predefinito ./backups; <versione> = la versione in uso)
 scripts/backup.sh restore FILE.tar.gz      # ferma prima il gateway e chiede conferma
 ```
 

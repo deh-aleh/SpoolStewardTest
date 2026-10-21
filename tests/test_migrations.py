@@ -8,11 +8,11 @@ from alembic.migration import MigrationContext
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
 
-from app.backup.core import known_revisions
-from app.auth.users import resolve_user
-from app.db.migrate import upgrade
-from app.db.models import Base
-from app.db.session import make_engine
+from spoolsteward.backup.core import known_revisions
+from spoolsteward.auth.users import resolve_user
+from spoolsteward.db.migrate import upgrade
+from spoolsteward.db.models import Base
+from spoolsteward.db.session import make_engine
 
 
 def test_migrations_match_models(tmp_path):
@@ -27,7 +27,7 @@ def test_migrations_match_models(tmp_path):
 def test_upgrade_is_idempotent_and_downgrade_clean(tmp_path):
     from alembic import command
 
-    from app.db.migrate import _config
+    from spoolsteward.db.migrate import _config
 
     eng = create_engine(f"sqlite:///{tmp_path}/m.db")
     upgrade(eng)
@@ -39,7 +39,7 @@ def test_upgrade_is_idempotent_and_downgrade_clean(tmp_path):
 
 
 def _config_for(eng, conn):
-    from app.db.migrate import _config
+    from spoolsteward.db.migrate import _config
 
     cfg = _config(eng)
     cfg.attributes["connection"] = conn
@@ -106,7 +106,7 @@ def test_audit_ids_are_never_reused(tmp_path):
     """After archiving empties job_log the next row must not get id 1 again."""
     from sqlalchemy.orm import sessionmaker
 
-    from app.db.models import JobKind, JobLog, JobState
+    from spoolsteward.db.models import JobKind, JobLog, JobState
 
     eng = create_engine(f"sqlite:///{tmp_path}/ids.db")
     upgrade(eng)
@@ -134,7 +134,7 @@ FORBIDDEN = ("drop_column", "drop_table", "drop_constraint", "alter_column", "re
 
 
 def test_new_migrations_only_expand_the_schema():
-    versions = Path(__file__).resolve().parent.parent / "app" / "migrations" / "versions"
+    versions = Path(__file__).resolve().parent.parent / "spoolsteward" / "migrations" / "versions"
     bad = []
     for f in sorted(versions.glob("[0-9]*.py")):
         if f.name[:4] <= BASELINE or f.name[:4] in CONTRACTS:

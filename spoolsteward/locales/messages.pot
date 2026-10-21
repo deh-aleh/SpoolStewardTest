@@ -1,0 +1,5494 @@
+# Translations template for spoolsteward.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the spoolsteward project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: spoolsteward VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-10-21 16:54+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: spoolsteward/escl.py:576
+msgid "Scanning is not enabled on this server"
+msgstr ""
+
+#: spoolsteward/escl.py:583
+#, python-format
+msgid "%(reason)s. You can ask for more quota from your profile."
+msgstr ""
+
+#: spoolsteward/escl.py:596
+msgid "This scanner has no automatic feeder"
+msgstr ""
+
+#: spoolsteward/escl.py:596
+msgid "Source not available"
+msgstr ""
+
+#: spoolsteward/escl.py:598
+#, python-format
+msgid "With the feeder the maximum quality is %(n)s dpi"
+msgstr ""
+
+#: spoolsteward/escl.py:599
+#, python-format
+msgid "With the glass the maximum quality is %(n)s dpi"
+msgstr ""
+
+#: spoolsteward/escl.py:613
+msgid "The feeder is empty or the scanner was paused: remove and reload the sheets, then try again."
+msgstr ""
+
+#: spoolsteward/escl.py:614
+msgid "The scanner is busy: try again in a few seconds."
+msgstr ""
+
+#: spoolsteward/escl.py:615
+#, python-format
+msgid "The scanner refused the job (status %(code)s). %(hint)s"
+msgstr ""
+
+#: spoolsteward/escl.py:618
+msgid "Unexpected answer from the scanner"
+msgstr ""
+
+#: spoolsteward/escl.py:625
+msgid "The scanner delivered no page"
+msgstr ""
+
+#: spoolsteward/escl.py:629
+msgid "The scanner does not answer"
+msgstr ""
+
+#: spoolsteward/escl.py:665
+msgid "in progress"
+msgstr ""
+
+#: spoolsteward/escl.py:665
+msgid "ready"
+msgstr ""
+
+#: spoolsteward/escl.py:665
+msgid "unsuccessful"
+msgstr ""
+
+#: spoolsteward/escl.py:669
+#, python-format
+msgid "scan-%(stamp)s"
+msgstr ""
+
+#: spoolsteward/escl.py:690
+msgid "Unexpected error during the scan"
+msgstr ""
+
+#: spoolsteward/escl.py:732
+msgid "The server can not tell which address you are connecting from."
+msgstr ""
+
+#: spoolsteward/escl.py:735
+msgid "Too many scan windows are open: try again in a few minutes."
+msgstr ""
+
+#: spoolsteward/escl.py:758
+#, python-format
+msgid "The scanner “%(name)s” does not answer: refresh the page."
+msgstr ""
+
+#: spoolsteward/escl.py:758
+msgid "No scanner available."
+msgstr ""
+
+#: spoolsteward/escl.py:765
+#, python-format
+msgid "%(name)s is already scanning: wait for it to finish."
+msgstr ""
+
+#: spoolsteward/i18n.py:165
+msgid "pending"
+msgstr ""
+
+#: spoolsteward/i18n.py:165
+msgid "approved"
+msgstr ""
+
+#: spoolsteward/i18n.py:165
+msgid "rejected"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:18 spoolsteward/i18n.py:165
+msgid "expired"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:107 spoolsteward/i18n.py:165
+msgid "canceled"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:103 spoolsteward/i18n.py:166
+msgid "accepted"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:105 spoolsteward/i18n.py:166
+msgid "denied"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:104 spoolsteward/i18n.py:166
+msgid "completed"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:106 spoolsteward/i18n.py:166
+msgid "failed"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:108 spoolsteward/i18n.py:166
+msgid "held"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:20
+#: spoolsteward/admin/templates/printers.html:31
+#: spoolsteward/admin/templates/user_edit.html:26
+#: spoolsteward/admin/templates/users.html:16 spoolsteward/i18n.py:167
+msgid "active"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:17 spoolsteward/i18n.py:167
+msgid "revoked"
+msgstr ""
+
+#: spoolsteward/i18n.py:167
+msgid "ended"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:23
+#: spoolsteward/admin/templates/requests.html:64
+#: spoolsteward/admin/templates/requests.html:128 spoolsteward/i18n.py:167
+msgid "temporary"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:174 spoolsteward/admin/me.py:37
+#: spoolsteward/admin/templates/me.html:37
+#: spoolsteward/admin/templates/requests.html:14
+#: spoolsteward/admin/templates/requests.html:24
+#: spoolsteward/admin/templates/requests.html:30
+#: spoolsteward/admin/templates/requests.html:64
+#: spoolsteward/admin/templates/requests.html:86
+#: spoolsteward/admin/templates/requests.html:97
+#: spoolsteward/admin/templates/requests.html:128
+#: spoolsteward/admin/templates/user_edit.html:45 spoolsteward/i18n.py:167
+msgid "permanent"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:13
+#: spoolsteward/admin/templates/requests.html:84 spoolsteward/i18n.py:168
+msgid "jobs"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:13
+#: spoolsteward/admin/templates/requests.html:84 spoolsteward/i18n.py:168
+msgid "pages"
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:18
+#: spoolsteward/admin/templates/backups.html:102
+#: spoolsteward/admin/templates/group_edit.html:22
+#: spoolsteward/admin/templates/groups.html:16
+#: spoolsteward/admin/templates/me.html:15
+#: spoolsteward/admin/templates/request_quota.html:15
+#: spoolsteward/admin/templates/user_edit.html:37
+#: spoolsteward/admin/templates/users.html:20 spoolsteward/i18n.py:168
+msgid "weekly"
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:19
+#: spoolsteward/admin/templates/backups.html:103
+#: spoolsteward/admin/templates/group_edit.html:22
+#: spoolsteward/admin/templates/groups.html:16
+#: spoolsteward/admin/templates/me.html:15
+#: spoolsteward/admin/templates/request_quota.html:15
+#: spoolsteward/admin/templates/user_edit.html:37
+#: spoolsteward/admin/templates/users.html:20 spoolsteward/i18n.py:168
+msgid "monthly"
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:58 spoolsteward/i18n.py:168
+msgid "page"
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:58 spoolsteward/i18n.py:168
+msgid "job"
+msgstr ""
+
+#: spoolsteward/i18n.py:168
+msgid "missing"
+msgstr ""
+
+#: spoolsteward/i18n.py:168
+msgid "modified"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:40
+#, python-format
+msgid "%(used)s/%(limit)s %(metric)s (%(period)s)"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:52
+msgid "You cannot disable or demote yourself"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:54
+#, python-format
+msgid "%(user)s is the emergency administrator: it can not be disabled or demoted"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:56 spoolsteward/admin/accounts.py:459
+msgid "That is the last administrator"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:65 spoolsteward/admin/accounts.py:106
+#: spoolsteward/admin/accounts.py:113
+msgid "Invalid permission value"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:74
+#, python-format
+msgid "Invalid printer name %(name)s"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:78
+msgid "Choose at least one printer, or choose “all printers”"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:80
+#, python-format
+msgid "Too many printers in the list (at most %(max)s)"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:86
+msgid "Choose at least one day of the week for the hours"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:90
+msgid "Enter the hours as HH:MM, for example 08:00 and 17:30"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:92
+msgid "The start and the end of the hours must be different"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:153 spoolsteward/admin/accounts.py:154
+#: spoolsteward/admin/templates/_perm_fields.html:16
+#: spoolsteward/admin/templates/_perm_fields.html:20
+#: spoolsteward/admin/templates/me.html:30
+#: spoolsteward/admin/templates/me.html:31
+msgid "allowed"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:153 spoolsteward/admin/accounts.py:154
+#: spoolsteward/admin/templates/_perm_fields.html:16
+#: spoolsteward/admin/templates/_perm_fields.html:20
+msgid "not allowed"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:155
+#: spoolsteward/admin/templates/_perm_fields.html:24
+msgctxt "printers"
+msgid "all"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:155
+#: spoolsteward/admin/templates/backup_edit.html:20
+msgid "none"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:156
+#: spoolsteward/admin/templates/_perm_fields.html:35
+#: spoolsteward/admin/templates/me.html:33
+msgid "any time"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:173
+msgid "limit inherited from the group"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:174
+#, python-format
+msgid "temporary, expires on %(date)s"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:239 spoolsteward/admin/accounts.py:273
+#: spoolsteward/admin/accounts.py:303
+msgid "Unknown group"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:240
+#, python-format
+msgid "Group \"%(group)s\" is only for administrators: tick the administrator box instead"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:241
+msgid "Invalid username (letters, digits, dot, dash, underscore; max 63)"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:242 spoolsteward/admin/accounts.py:279
+#, python-format
+msgid "User %(name)s already exists"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:243 spoolsteward/admin/accounts.py:311
+#, python-format
+msgid "The name %(name)s is reserved for the emergency administrator"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:259 spoolsteward/admin/accounts.py:287
+#, python-format
+msgid "User %(name)s created"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:259 spoolsteward/admin/accounts.py:413
+#: spoolsteward/admin/accounts.py:498
+msgid "Temporary password"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:260
+msgid "Give it to the user over a safe channel. They must choose their own at first login."
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:271
+msgid "RADIUS is not configured: create a local user instead"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:275
+#, python-format
+msgid "Group \"%(group)s\" is only for administrators: make them administrator from their page"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:277
+msgid "Invalid username"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:305
+msgid "Unknown or unavailable login method"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:313
+#, python-format
+msgid "%(user)s is the emergency administrator: it must stay a local account"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:332
+#, python-format
+msgid "Group \"%(group)s\" is only for administrators"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:334
+#, python-format
+msgid "Administrators stay in \"%(group)s\": remove the admin right first"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:412
+#, python-format
+msgid "%(user)s is now a local account"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:414
+msgid "The user must choose their own at the next login. Their print keys keep working."
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:416 spoolsteward/admin/accounts.py:729
+#, python-format
+msgid "Saved %(name)s"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:455
+msgid "You cannot delete yourself"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:457
+#, python-format
+msgid "%(user)s is the emergency administrator: it can not be deleted"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:471
+msgid "The name you typed does not match: nothing was deleted"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:479
+#, python-format
+msgid "Account %(name)s deleted (%(n)s print record(s) kept in the audit)"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:490
+msgid "That account signs in through RADIUS: its password is managed there"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:497
+#, python-format
+msgid "New password for %(user)s"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:499
+msgid "The user must choose a new one at the next login. Their print keys keep working."
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:514
+#, python-format
+msgid "%(n)s key(s) of %(user)s revoked"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:539 spoolsteward/admin/me.py:138
+#, python-format
+msgid "Key %(label)s revoked"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:566
+#, python-format
+msgid "Key %(label)s switched off: its expiry date keeps running"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:578
+#, python-format
+msgid "Key %(label)s switched on"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:590 spoolsteward/auth/keys.py:179
+msgid "choose one of the validity periods in the list"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:598
+#, python-format
+msgid "Key %(label)s now expires on %(date)s"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:600
+msgid "This key can not be extended"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:608
+#, python-format
+msgid "The group “%(name)s” has %(n)s user: it will be moved to the default group “%(group)s” (with that group's limits). Delete the group?"
+msgid_plural "The group “%(name)s” has %(n)s users: they will be moved to the default group “%(group)s” (with that group's limits). Delete the group?"
+msgstr[0] ""
+msgstr[1] ""
+
+#: spoolsteward/admin/accounts.py:611
+#, python-format
+msgid "Delete the group “%(name)s”? It has no users."
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:666 spoolsteward/admin/accounts.py:711
+msgid "Invalid group name"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:668 spoolsteward/admin/accounts.py:714
+#, python-format
+msgid "Group %(name)s already exists"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:682
+#, python-format
+msgid "Group %(name)s created"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:708
+#, python-format
+msgid "\"%(name)s\" is a system group: it can not be renamed"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:740
+#, python-format
+msgid "\"%(name)s\" is a system group: it can not be deleted"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:758
+#, python-format
+msgid "Group %(name)s deleted"
+msgstr ""
+
+#: spoolsteward/admin/accounts.py:758
+#, python-format
+msgid "; %(n)s user(s) moved to %(group)s"
+msgstr ""
+
+#: spoolsteward/admin/audit_archive.py:55
+msgid "The archive file is missing on disk"
+msgstr ""
+
+#: spoolsteward/admin/audit_archive.py:85
+msgid "integrity OK (sha256 matches)"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:11 spoolsteward/admin/audit_view.py:15
+#: spoolsteward/admin/printers.py:519 spoolsteward/admin/printers.py:553
+#: spoolsteward/admin/templates/print.html:35
+#: spoolsteward/policy/keepalive.py:127
+msgid "colour"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:11 spoolsteward/admin/audit_view.py:12
+#: spoolsteward/admin/printers.py:519 spoolsteward/admin/printers.py:553
+#: spoolsteward/policy/keepalive.py:127
+msgid "black and white"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:12
+msgid "automatic"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:12
+msgid "automatic (black and white)"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:13 spoolsteward/admin/audit_view.py:34
+msgid "normal"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:13
+msgid "double-sided (long edge)"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:13
+msgid "double-sided (short edge)"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:14
+msgid "web portal"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:14
+msgid "eSCL client"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:15
+msgid "one-sided"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:16
+msgid "portrait"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:16
+msgid "landscape"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:33
+#: spoolsteward/admin/templates/_perm_fields.html:15
+#: spoolsteward/admin/templates/me.html:30
+#: spoolsteward/admin/templates/print.html:46
+#: spoolsteward/admin/templates/scan.html:28
+msgid "Colour"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:33
+msgid "printer default"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:34
+#: spoolsteward/admin/templates/print.html:48
+msgid "Sides"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:39
+#: spoolsteward/admin/templates/jobs.html:25
+#: spoolsteward/admin/templates/scan.html:22
+msgid "File name"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:41
+msgid "Document name"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:43
+#: spoolsteward/admin/templates/print.html:40
+msgid "Comment"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:45
+#: spoolsteward/admin/templates/scan.html:24
+msgid "Format"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:47
+#: spoolsteward/admin/templates/backup_edit.html:16
+#: spoolsteward/admin/templates/backups.html:100
+#: spoolsteward/admin/templates/print.html:52
+#: spoolsteward/admin/templates/print.html:53
+msgid "Copies"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:49
+msgid "Paper"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:51
+#: spoolsteward/admin/templates/print.html:44
+msgid "Orientation"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:53
+msgid "Pages chosen"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:55
+msgid "Pages counted"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:57
+msgid "Corrected by the permissions"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:58
+msgid "Sent from"
+msgstr ""
+
+#: spoolsteward/admin/audit_view.py:58
+msgid "IPP client"
+msgstr ""
+
+#: spoolsteward/admin/backups.py:40
+#, python-format
+msgid "%(label)s must be a number between %(low)s and %(high)s"
+msgstr ""
+
+#: spoolsteward/admin/backups.py:47
+msgid "Give the backup a name (up to 80 characters)"
+msgstr ""
+
+#: spoolsteward/admin/backups.py:54
+msgid "Hour"
+msgstr ""
+
+#: spoolsteward/admin/backups.py:55
+msgid "Daily copies"
+msgstr ""
+
+#: spoolsteward/admin/backups.py:55
+msgid "Weekly copies"
+msgstr ""
+
+#: spoolsteward/admin/backups.py:56
+msgid "Monthly copies"
+msgstr ""
+
+#: spoolsteward/admin/backups.py:103
+msgid "Unknown encryption mode"
+msgstr ""
+
+#: spoolsteward/admin/backups.py:108
+msgid "The two passphrases differ"
+msgstr ""
+
+#: spoolsteward/admin/backups.py:121
+#, python-format
+msgid "Backup “%(name)s” created: it runs every day at %(hour)s:00"
+msgstr ""
+
+#: spoolsteward/admin/backups.py:122
+msgid ". Write down the passphrase: the gateway does not keep it and without it the copies cannot be opened"
+msgstr ""
+
+#: spoolsteward/admin/backups.py:150
+#, python-format
+msgid "Backup “%(name)s” updated"
+msgstr ""
+
+#: spoolsteward/admin/backups.py:162
+#, python-format
+msgid "Backup “%(name)s” activated"
+msgstr ""
+
+#: spoolsteward/admin/backups.py:162
+#, python-format
+msgid "Backup “%(name)s” suspended"
+msgstr ""
+
+#: spoolsteward/admin/backups.py:178
+#, python-format
+msgid "Backup done: %(message)s"
+msgstr ""
+
+#: spoolsteward/admin/backups.py:178
+#, python-format
+msgid "Backup FAILED: %(message)s"
+msgstr ""
+
+#: spoolsteward/admin/backups.py:190
+#, python-format
+msgid "Backup “%(name)s” deleted. The files already written in the folder stay where they are"
+msgstr ""
+
+#: spoolsteward/admin/common.py:150
+#, python-format
+msgid "invalid limit %(value)s"
+msgstr ""
+
+#: spoolsteward/admin/common.py:153
+#, python-format
+msgid "limit too large (max %(max)s)"
+msgstr ""
+
+#: spoolsteward/admin/controls.py:40
+msgid "Gateway in maintenance: printing and scanning stopped for users, printers hidden from the network (within ~30 s)"
+msgstr ""
+
+#: spoolsteward/admin/controls.py:41
+msgid "Maintenance over: the gateway is operational again"
+msgstr ""
+
+#: spoolsteward/admin/controls.py:62
+#, python-format
+msgid "%(name)s blocked: nobody can print on it, not even the administrators"
+msgstr ""
+
+#: spoolsteward/admin/controls.py:63
+#, python-format
+msgid "%(name)s unblocked: usable again"
+msgstr ""
+
+#: spoolsteward/admin/controls.py:70
+#, python-format
+msgid "%(name)s will no longer be announced on the network (mDNS) within ~30 s; it stays usable by whoever knows it"
+msgstr ""
+
+#: spoolsteward/admin/controls.py:71
+#, python-format
+msgid "%(name)s will be announced on the network (mDNS) again within ~30 s"
+msgstr ""
+
+#: spoolsteward/admin/me.py:30
+msgid "Automatic (as the device)"
+msgstr ""
+
+#: spoolsteward/admin/me.py:30
+msgid "Light"
+msgstr ""
+
+#: spoolsteward/admin/me.py:30
+msgid "Dark"
+msgstr ""
+
+#: spoolsteward/admin/me.py:37
+msgid "until the end of the period"
+msgstr ""
+
+#: spoolsteward/admin/me.py:42 spoolsteward/admin/requests.py:33
+#, python-format
+msgid "move to group %(name)s"
+msgstr ""
+
+#: spoolsteward/admin/me.py:95 spoolsteward/admin/templates/keys.html:14
+#: spoolsteward/admin/templates/notices.html:25
+#: spoolsteward/admin/templates/notices.html:27
+msgid "never"
+msgstr ""
+
+#: spoolsteward/admin/me.py:104
+msgid "New print key"
+msgstr ""
+
+#: spoolsteward/admin/me.py:104
+msgid "Print key"
+msgstr ""
+
+#: spoolsteward/admin/me.py:106
+#, python-format
+msgid "Shown only now. Use it as the PASSWORD when your computer or phone asks to sign in to the printer; the user name is %(user)s. It expires on %(date)s and works only for printing. If you lose it or lose the device, revoke it here and create another."
+msgstr ""
+
+#: spoolsteward/admin/me.py:110
+#, python-format
+msgid "Shown only now. Use it as the PASSWORD when your computer or phone asks to sign in to the printer; the user name is %(user)s. It works for ONE print only, and only until %(date)s if nobody uses it. Create another one for the next print."
+msgstr ""
+
+#: spoolsteward/admin/me.py:128
+#, python-format
+msgid "%(n)s key(s) revoked"
+msgstr ""
+
+#: spoolsteward/admin/me.py:151
+msgid "Your password is managed by RADIUS, not here"
+msgstr ""
+
+#: spoolsteward/admin/me.py:171
+msgid "Theme saved"
+msgstr ""
+
+#: spoolsteward/admin/me.py:185
+msgid "Language saved"
+msgstr ""
+
+#: spoolsteward/admin/me.py:199
+#, python-format
+msgid "Enter 0 (never) or a number of minutes up to %(max)s"
+msgstr ""
+
+#: spoolsteward/admin/me.py:203
+msgid "Secondary notices are not read automatically"
+msgstr ""
+
+#: spoolsteward/admin/me.py:204
+#, python-format
+msgid "Secondary notices are read automatically after %(n)s minutes"
+msgstr ""
+
+#: spoolsteward/admin/me.py:214
+#, python-format
+msgid "Enter 0 (off) or a number of seconds between %(min)s and %(max)s"
+msgstr ""
+
+#: spoolsteward/admin/me.py:218
+msgid "Automatic refresh off"
+msgstr ""
+
+#: spoolsteward/admin/me.py:219 spoolsteward/admin/templates/autorefresh.html:5
+#, python-format
+msgid "Automatic refresh every %(n)s seconds"
+msgstr ""
+
+#: spoolsteward/admin/me.py:231
+msgid "Too many attempts, retry later"
+msgstr ""
+
+#: spoolsteward/admin/me.py:235
+msgid "The current password is wrong"
+msgstr ""
+
+#: spoolsteward/admin/me.py:237
+msgid "the two new passwords differ"
+msgstr ""
+
+#: spoolsteward/admin/me.py:238
+msgid "the new password must differ from the current one"
+msgstr ""
+
+#: spoolsteward/admin/me.py:250
+msgid "Password changed"
+msgstr ""
+
+#: spoolsteward/admin/me.py:272 spoolsteward/admin/me.py:292
+#: spoolsteward/admin/me.py:331
+msgid "Request sent: an administrator will answer it"
+msgstr ""
+
+#: spoolsteward/admin/me.py:310 spoolsteward/admin/templates/requests.html:94
+#: spoolsteward/policy/permissions.py:251
+msgid "colour printing"
+msgstr ""
+
+#: spoolsteward/admin/me.py:310 spoolsteward/admin/templates/requests.html:94
+#: spoolsteward/policy/permissions.py:251
+msgid "one-sided printing"
+msgstr ""
+
+#: spoolsteward/admin/me.py:311 spoolsteward/admin/templates/requests.html:95
+#: spoolsteward/policy/permissions.py:251
+msgid "printing outside the hours"
+msgstr ""
+
+#: spoolsteward/admin/me.py:311 spoolsteward/admin/templates/requests.html:95
+msgid "a printer"
+msgstr ""
+
+#: spoolsteward/admin/me.py:326
+msgid "that printer does not exist"
+msgstr ""
+
+#: spoolsteward/admin/me.py:342
+msgid "Request canceled"
+msgstr ""
+
+#: spoolsteward/admin/me_notices.py:47 spoolsteward/admin/notices.py:63
+#, python-format
+msgid "%(n)s notices dismissed"
+msgstr ""
+
+#: spoolsteward/admin/notices.py:21
+#, python-format
+msgid "%(n)s minute"
+msgid_plural "%(n)s minutes"
+msgstr[0] ""
+msgstr[1] ""
+
+#: spoolsteward/admin/notices.py:23
+#, python-format
+msgid "%(n)s hour"
+msgid_plural "%(n)s hours"
+msgstr[0] ""
+msgstr[1] ""
+
+#: spoolsteward/admin/notices.py:24
+#, python-format
+msgid "%(n)s day"
+msgid_plural "%(n)s days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: spoolsteward/admin/printers.py:39
+msgid "idle"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:39
+msgid "printing"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:39
+msgid "stopped"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:40
+msgid "Pages printed (total)"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:40
+msgid "of which black and white"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:41
+msgid "of which in colour"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:41
+msgid "Single-sided sheets"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:42
+msgid "Double-sided sheets"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:42
+msgid "Jams"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:42
+msgid "Paper pick failures"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:113
+msgid "Ink used (total)"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:224 spoolsteward/admin/printers.py:334
+#: spoolsteward/policy/keepalive.py:116
+msgid "CUPS does not answer"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:246
+#, python-format
+msgid "Test printer %(name)s created: it writes PDFs, it uses no paper"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:246 spoolsteward/admin/printers.py:275
+#: spoolsteward/admin/printers.py:354 spoolsteward/admin/printers.py:358
+msgid "CUPS did not accept the request"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:261 spoolsteward/admin/printers.py:309
+#: spoolsteward/admin/printers.py:337 spoolsteward/admin/printers.py:446
+#, python-format
+msgid "%(name)s: printer not found"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:264
+#, python-format
+msgid "%(name)s answers: only virtual printers and printers that do not answer can be deleted from here"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:275
+#, python-format
+msgid "%(name)s deleted"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:294
+#, python-format
+msgid "The name %(name)s is forgotten"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:294
+#, python-format
+msgid "%(name)s was not in the list"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:339
+msgid "That is already its name"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:341
+#, python-format
+msgid "A queue called %(name)s already exists"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:343
+#, python-format
+msgid "%(name)s has jobs waiting: rename it when the queue is empty"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:346
+#, python-format
+msgid "%(name)s can not be renamed: its driver is not known to the gateway"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:384
+msgid "Queue names use letters, digits and . _ @ + - only (max 127)"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:397
+#, python-format
+msgid "%(old)s is now called %(new)s. Computers and phones set up by hand with the old address must be set up again."
+msgstr ""
+
+#: spoolsteward/admin/printers.py:406
+#, python-format
+msgid "%(n)s new printer added"
+msgid_plural "%(n)s new printers added"
+msgstr[0] ""
+msgstr[1] ""
+
+#: spoolsteward/admin/printers.py:410
+msgid "No new printer found"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:416
+#, python-format
+msgid "USB printer %(model)s found, but CUPS has no driver for it: it can not be added"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:417
+#, python-format
+msgid "CUPS did not accept the new printer %(model)s"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:443
+#, python-format
+msgid "%(name)s is a virtual printer: maintenance is only for physical ones"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:470 spoolsteward/admin/printers.py:546
+#, python-format
+msgid "%(name)s does not print in colour"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:479
+#, python-format
+msgid "%(name)s: periodic print %(every)s, %(mode)s. The settings are saved; turn it on or off with the switch"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:480
+#: spoolsteward/admin/templates/printers.html:79
+msgid "in colour"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:480
+#: spoolsteward/admin/templates/printers.html:79
+msgid "in black and white"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:499
+#, python-format
+msgid "%(name)s: periodic print turned on (%(every)s)"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:499
+#, python-format
+msgid "%(name)s: periodic print turned off"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:509
+#: spoolsteward/admin/templates/printers.html:128
+msgid "NOT REACHABLE"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:509
+#: spoolsteward/admin/templates/printers.html:130
+#, python-format
+msgid "%(n)s in queue"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:510
+#: spoolsteward/admin/templates/printers.html:129
+msgid "not accepting jobs"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:511
+#, python-format
+msgid "%(jobs)s jobs, %(pages)s pages, last %(when)s"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:514
+#: spoolsteward/admin/templates/printers.html:183
+msgid "scans"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:514
+#, python-format
+msgid "%(n)s, last %(when)s"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:515
+#: spoolsteward/admin/templates/printers.html:193
+#, python-format
+msgid "%(n)s pages/min"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:515
+#: spoolsteward/admin/templates/printers.html:193
+#, python-format
+msgid "colour %(n)s"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:518
+#, python-format
+msgid "Test print · %(title)s"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:519
+#, python-format
+msgid "queue %(name)s · %(when)s · %(mode)s"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:520
+#: spoolsteward/admin/templates/printers.html:166
+msgid "Ink left"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:521 spoolsteward/admin/printers.py:527
+#: spoolsteward/admin/templates/archive.html:15
+#: spoolsteward/admin/templates/archive_view.html:12
+#: spoolsteward/admin/templates/jobs.html:36
+#: spoolsteward/admin/templates/jobs.html:69
+#: spoolsteward/admin/templates/keys.html:9
+#: spoolsteward/admin/templates/keys.html:16
+#: spoolsteward/admin/templates/me.html:64
+#: spoolsteward/admin/templates/printers.html:202
+#: spoolsteward/admin/templates/requests.html:112
+#: spoolsteward/admin/templates/requests.html:125
+#: spoolsteward/admin/templates/user_edit.html:25
+#: spoolsteward/admin/templates/users.html:10
+#: spoolsteward/admin/templates/users.html:16
+msgid "State"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:521
+#: spoolsteward/admin/templates/printers.html:174
+msgid "Printer counters"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:522
+#: spoolsteward/admin/templates/printers.html:179
+msgid "From the gateway"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:523
+#: spoolsteward/admin/templates/actions.html:12
+#: spoolsteward/admin/templates/archive_view.html:16
+#: spoolsteward/admin/templates/printers.html:188
+msgid "Details"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:523
+#: spoolsteward/admin/templates/printers.html:190
+msgid "Serial number"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:523
+#: spoolsteward/admin/templates/printers.html:192
+msgid "Model"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:524
+#: spoolsteward/admin/templates/printers.html:193
+msgid "Speed"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:524
+#: spoolsteward/admin/templates/printers.html:194
+msgid "Paper ready"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:525
+#: spoolsteward/admin/templates/printers.html:195
+msgid "Location"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:525
+#: spoolsteward/admin/templates/printers.html:196
+msgid "Connection"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:526
+msgid "Alerts"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:527
+#: spoolsteward/admin/templates/printers.html:201
+#: spoolsteward/admin/templates/scan.html:19
+msgid "Scanner"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:527
+#: spoolsteward/admin/templates/printers.html:203
+msgid "Feeder"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:528
+#: spoolsteward/admin/templates/printers.html:204
+msgid "Resolutions"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:529
+#: spoolsteward/admin/templates/printers.html:205
+msgid "Formats"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:543
+#, python-format
+msgid "%(name)s does not answer (off or unplugged?): nothing to print"
+msgstr ""
+
+#: spoolsteward/admin/printers.py:553
+#, python-format
+msgid "Test print sent to %(name)s (%(mode)s)"
+msgstr ""
+
+#: spoolsteward/admin/printing.py:143 spoolsteward/admin/printing.py:152
+#, python-format
+msgid "The file is larger than %(mb)s MB"
+msgstr ""
+
+#: spoolsteward/admin/printing.py:149
+msgid "Choose a file to print"
+msgstr ""
+
+#: spoolsteward/admin/printing.py:154
+msgid "The file is empty"
+msgstr ""
+
+#: spoolsteward/admin/printing.py:157
+msgid "Unsupported file: PDF, JPEG, PNG, GIF or plain text only"
+msgstr ""
+
+#: spoolsteward/admin/printing.py:166
+#, python-format
+msgid "%(printer)s does not answer (off or unplugged?): choose another one or try again later"
+msgstr ""
+
+#: spoolsteward/admin/printing.py:168
+msgid "Choose a printer from the list"
+msgstr ""
+
+#: spoolsteward/admin/printing.py:171
+#, python-format
+msgid "Copies must be between 1 and %(max)s"
+msgstr ""
+
+#: spoolsteward/admin/printing.py:176
+#, python-format
+msgid "The comment can be at most %(n)s characters long"
+msgstr ""
+
+#: spoolsteward/admin/printing.py:190
+msgid "Paper size not available on this printer"
+msgstr ""
+
+#: spoolsteward/admin/printing.py:211
+msgid "Landscape is available for PDF files and images, not for text files"
+msgstr ""
+
+#: spoolsteward/admin/printing.py:216
+msgid "This PDF can not be turned to landscape (protected or damaged): choose automatic orientation"
+msgstr ""
+
+#: spoolsteward/admin/printing.py:257
+#, python-format
+msgid "%(reason)s. You can ask for more quota below."
+msgstr ""
+
+#: spoolsteward/admin/printing.py:311
+#, python-format
+msgid "Sent to %(printer)s: %(title)s"
+msgstr ""
+
+#: spoolsteward/admin/printing.py:312
+#, python-format
+msgid " — %(n)s page(s)"
+msgstr ""
+
+#: spoolsteward/admin/printing.py:314
+msgid "The print server did not accept the file. Try another format (PDF works best)."
+msgstr ""
+
+#: spoolsteward/admin/reports.py:142
+msgid "The dates must look like 2026-10-31"
+msgstr ""
+
+#: spoolsteward/admin/reports.py:145
+msgid "The end of the period is before its start"
+msgstr ""
+
+#: spoolsteward/admin/reports.py:150
+#, python-format
+msgid "The number of users must be between 1 and %(max)s"
+msgstr ""
+
+#: spoolsteward/admin/requests.py:44
+msgid "choose the last day the permission is valid"
+msgstr ""
+
+#: spoolsteward/admin/requests.py:127
+msgid "Approved"
+msgstr ""
+
+#: spoolsteward/admin/requests.py:144
+msgid "Rejected"
+msgstr ""
+
+#: spoolsteward/admin/requests.py:161
+msgid "unknown user"
+msgstr ""
+
+#: spoolsteward/admin/requests.py:176 spoolsteward/policy/grants.py:272
+msgid "invalid grant"
+msgstr ""
+
+#: spoolsteward/admin/requests.py:177
+#, python-format
+msgid "Grant created for %(user)s"
+msgstr ""
+
+#: spoolsteward/admin/requests.py:193 spoolsteward/admin/requests.py:209
+msgid "Grant revoked"
+msgstr ""
+
+#: spoolsteward/admin/requests.py:220
+#, python-format
+msgid "%(n)s ended grant deleted"
+msgid_plural "%(n)s ended grants deleted"
+msgstr[0] ""
+msgstr[1] ""
+
+#: spoolsteward/admin/requests.py:220
+msgid "No ended grants to delete"
+msgstr ""
+
+#: spoolsteward/admin/routes.py:53
+msgid "Too many failed attempts, retry later"
+msgstr ""
+
+#: spoolsteward/admin/routes.py:59
+msgid "Invalid credentials"
+msgstr ""
+
+#: spoolsteward/admin/routes.py:112
+msgid "Too many wrong codes, retry later"
+msgstr ""
+
+#: spoolsteward/admin/routes.py:117
+msgid "Wrong code. It is in the portal log (docker compose logs gateway)"
+msgstr ""
+
+#: spoolsteward/admin/routes.py:120
+msgid "the two passwords differ"
+msgstr ""
+
+#: spoolsteward/admin/routes.py:141
+#, python-format
+msgid "Password set. Log in as %(name)s."
+msgstr ""
+
+#: spoolsteward/admin/routes.py:228
+msgid "From now on the names of new files are saved"
+msgstr ""
+
+#: spoolsteward/admin/routes.py:229
+msgid "From now on the names of new files are not saved"
+msgstr ""
+
+#: spoolsteward/admin/routes.py:252
+msgid "That job is not waiting in a queue"
+msgstr ""
+
+#: spoolsteward/admin/routes.py:272
+msgid "Cancel requested"
+msgstr ""
+
+#: spoolsteward/admin/routes.py:272
+msgid "CUPS did not accept the cancel (already printed?)"
+msgstr ""
+
+#: spoolsteward/admin/updates.py:47
+msgid "The update cannot start now: see the Update box on this page"
+msgstr ""
+
+#: spoolsteward/admin/updates.py:51
+msgid "The update was not started: the version on offer has changed. Look at the Update box again."
+msgstr ""
+
+#: spoolsteward/admin/updates.py:54
+msgid "The update was not started: tick the box in the confirmation to accept the warning."
+msgstr ""
+
+#: spoolsteward/admin/updates.py:59
+#, python-format
+msgid "The update was not started because the backup failed: %(error)s"
+msgstr ""
+
+#: spoolsteward/admin/updates.py:66
+#, python-format
+msgid "The update could not be handed to the updater: %(error)s"
+msgstr ""
+
+#: spoolsteward/admin/updates.py:71
+#, python-format
+msgid "Update to %(version)s requested. The gateway restarts in a minute or two; this page shows the result."
+msgstr ""
+
+#: spoolsteward/admin/templates/_docs_faq.html:3
+msgid "Found a mistake in the documentation, or something does not work as described?"
+msgstr ""
+
+#: spoolsteward/admin/templates/_docs_faq.html:5
+#, python-format
+msgid "Tell us on GitHub. Open an issue and say which page you were reading, what you expected and what happened instead: if it is a program error, add the version you run (%(version)s) and the relevant lines of the log. A look at the existing issues first may already give you the answer."
+msgstr ""
+
+#: spoolsteward/admin/templates/_docs_faq.html:8
+msgid "Report a problem"
+msgstr ""
+
+#: spoolsteward/admin/templates/_docs_faq.html:10
+msgid "Repository"
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:3
+#: spoolsteward/admin/templates/_own_notices.html:6
+#: spoolsteward/admin/templates/actions.html:12
+#: spoolsteward/admin/templates/archive_view.html:12
+#: spoolsteward/admin/templates/archive_view.html:16
+#: spoolsteward/admin/templates/backups.html:61
+#: spoolsteward/admin/templates/jobs.html:36
+#: spoolsteward/admin/templates/jobs.html:40
+#: spoolsteward/admin/templates/me.html:64
+#: spoolsteward/admin/templates/requests.html:9
+#: spoolsteward/admin/templates/requests.html:112
+msgid "When"
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:3
+#: spoolsteward/admin/templates/_own_notices.html:7
+#: spoolsteward/admin/templates/notices.html:17
+#: spoolsteward/admin/templates/notices.html:21
+msgid "What happened"
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:9
+#, python-format
+msgid "An administrator revoked your print key “%(label)s” (starts with %(prefix)s). It no longer works: create another one in your profile if you need it."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:11
+#, python-format
+msgid "An administrator revoked ALL your print keys (%(n)s). They no longer work: create new ones in your profile if you need them."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:13
+#, python-format
+msgid "An administrator switched off your print key “%(label)s” (starts with %(prefix)s). It does not work for now, and its expiry date does not change."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:15
+#, python-format
+msgid "An administrator switched your print key “%(label)s” (starts with %(prefix)s) back on. It works again."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:17
+#, python-format
+msgid "An administrator extended your print key “%(label)s” (starts with %(prefix)s). It now expires on %(date)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:19
+#, python-format
+msgid "Your print key “%(label)s” (starts with %(prefix)s) expires on %(date)s. Create a new one before then and set it up on your devices."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:21
+#, python-format
+msgid "An administrator moved you from the group “%(old)s” to the group “%(new)s”. Your limits are now those of the new group."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:23
+msgid "An administrator made you an administrator. You can now manage users, groups and printers: the menu at the top has the new pages."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:25
+#, python-format
+msgid "An administrator removed your administrator rights. You are now in the group “%(group)s”."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:27
+#, python-format
+msgid "An administrator gave you a permission: %(what)s, %(when)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:27
+#: spoolsteward/admin/templates/_own_notices.html:38
+#, python-format
+msgid "until the end of %(date)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:27
+#: spoolsteward/admin/templates/_own_notices.html:38
+msgid "with no end date"
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:27
+#: spoolsteward/admin/templates/_own_notices.html:33
+#: spoolsteward/admin/templates/_own_notices.html:39
+#: spoolsteward/admin/templates/_own_notices.html:41
+#, python-format
+msgid "Note: %(note)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:29
+#, python-format
+msgid "An administrator withdrew the permission you had been given: %(what)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:31
+#, python-format
+msgid "The permission you had been given has ended: %(what)s. You can ask for it again from your profile."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:33
+#, python-format
+msgid "An administrator gave you extra quota: %(amount)s %(metric)s, %(scope)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:35
+#, python-format
+msgid "An administrator withdrew your extra quota of %(amount)s %(metric)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:37
+#, python-format
+msgid "Your request to change group was approved: you are now in the group “%(group)s”."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:38
+#, python-format
+msgid "Your request for a permission was approved: %(what)s, %(when)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:39
+#, python-format
+msgid "Your request for more quota was approved: %(amount)s %(metric)s, %(scope)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:41
+#, python-format
+msgid "Your request for a permission was rejected: %(what)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:41
+msgid "Your request was rejected."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:44
+#, python-format
+msgid "The printer “%(printer)s” has a paper jam, and your print is waiting. Somebody has to clear it; the print will go on by itself."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:45
+#, python-format
+msgid "The printer “%(printer)s” is out of paper (or the tray is empty), and your print is waiting. When paper is loaded the print will go on by itself."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:46
+#, python-format
+msgid "The printer “%(printer)s” is out of ink or toner, and your print may not come out right or may stop. Tell whoever looks after the printer."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:47
+#, python-format
+msgid "The printer “%(printer)s” reports a problem, and your print is waiting."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:49
+msgid "An administrator changed what you may print (colour, one-sided prints, printers or hours). Your profile shows your permissions."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:52
+#, python-format
+msgid "Your print to “%(printer)s” was refused: your account is not allowed to use that printer. Your profile shows the printers you can use."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:53
+#, python-format
+msgid "Your print to “%(printer)s” was refused: printing is allowed only %(window)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:53
+#, python-format
+msgid "Your print to “%(printer)s” was refused: printing is not allowed at this hour."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:54
+#, python-format
+msgid "Your print to “%(printer)s” was refused: colour printing is not allowed for your account. Choose black and white in the print window and send it again."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:55
+#, python-format
+msgid "Your print to “%(printer)s” was refused: one-sided printing is not allowed for your account. Choose double-sided in the print window and send it again."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:56
+#, python-format
+msgid "Your print to “%(printer)s” was refused."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:59
+#, python-format
+msgid "Your print to “%(printer)s” was refused: the %(period)s %(noun)s limit is reached (%(used)s/%(limit)s). You can ask for more quota from your profile."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:62
+#, python-format
+msgid "Your print to “%(printer)s” was made in black and white: colour printing is not allowed for your account."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:62
+#, python-format
+msgid "Your print to “%(printer)s” was made double-sided: one-sided printing is not allowed for your account."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:64
+#, python-format
+msgid "Scan refused: the window was for %(expected)s, the request comes from %(got)s. Open the portal from the device that scans, or see the scanning help in the user guide."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:66
+#, python-format
+msgid "The printer “%(old)s” is now called “%(new)s”. If you had set it up by hand on a computer or phone with the old address, set it up again with the new name."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:68
+msgid "The gateway is in maintenance: printing and scanning are suspended for now. You will be able to use them again when an administrator ends the maintenance."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:70
+msgid "The maintenance is over: printing and scanning work again."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:72
+#: spoolsteward/admin/templates/notices.html:45
+msgid "<b>Save the secret key in a safe place.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in the <span class=\"mono\">.env</span> file encrypts the file names kept in the audit and signs the portal sessions. A backup without encryption does not contain it: if the server breaks and you restore the backup with a new key, the names stay unreadable (<span class=\"mono\">[encrypted]</span>) for good. Copy the line from <span class=\"mono\">.env</span> into a password manager, or make encrypted backups (they include <span class=\"mono\">.env</span>)."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:76
+msgid "dismissed"
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:77
+#: spoolsteward/admin/templates/notices.html:56
+msgid "Dismiss"
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:81
+#: spoolsteward/admin/templates/notices.html:60
+msgid "No notices."
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:84
+#: spoolsteward/admin/templates/notices.html:63
+msgid "Dismiss all"
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:7
+msgid "Advanced permissions"
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:10
+msgid "All permissions, can not be limited."
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:10
+msgid "This is the emergency administrator: colour, one-sided prints, every printer and every hour are always allowed. The quotas above still apply."
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:11
+msgid "Besides the quotas: what this user may print, and when. “As the group” follows the group's values. Scanning is not limited."
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:12
+msgid "Besides the quotas: what the members of this group may print, and when. A user can have values of their own. Scanning is not limited."
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:15
+msgid "Without it the prints come out in black and white."
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:16
+#: spoolsteward/admin/templates/_perm_fields.html:20
+#: spoolsteward/admin/templates/_perm_fields.html:24
+#: spoolsteward/admin/templates/_perm_fields.html:35
+#, python-format
+msgid "as the group (%(value)s)"
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:19
+#: spoolsteward/admin/templates/me.html:31
+#: spoolsteward/admin/templates/print.html:49
+msgid "One-sided"
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:19
+msgid "Without it the prints come out double-sided, on the printers that can."
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:23
+#: spoolsteward/admin/templates/me.html:32
+#: spoolsteward/admin/templates/printers.html:3
+#: spoolsteward/admin/templates/printers.html:5
+msgid "Printers"
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:23
+msgid "A printer added later is not allowed to someone with a list until you add it here."
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:24
+msgctxt "printers"
+msgid "only some"
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:27
+msgid "not present"
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:28
+msgid "No printer found right now."
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:30
+msgid "Tap the printers this account may use."
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:34
+#: spoolsteward/admin/templates/me.html:33
+msgid "Hours"
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:34
+msgid "Checked when the job is sent, in the gateway's time zone."
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:35
+msgid "some hours"
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:41
+msgid "from"
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:42
+msgid "to"
+msgstr ""
+
+#: spoolsteward/admin/templates/_perm_fields.html:44
+msgid "An end earlier than the start goes past midnight (22:00 to 06:00): it belongs to the day it starts. The end time itself is not included."
+msgstr ""
+
+#: spoolsteward/admin/templates/_pwfield.html:4
+msgid "Show password"
+msgstr ""
+
+#: spoolsteward/admin/templates/_pwfield.html:4
+msgid "Hide password"
+msgstr ""
+
+#: spoolsteward/admin/templates/actions.html:2
+msgid "Admin actions"
+msgstr ""
+
+#: spoolsteward/admin/templates/actions.html:6
+msgid "Administrative actions"
+msgstr ""
+
+#: spoolsteward/admin/templates/actions.html:7
+msgid "Who did what in the portal. Read only: no row is ever deleted · 30 actions per page."
+msgstr ""
+
+#: spoolsteward/admin/templates/actions.html:9
+msgid "Who (administrator)"
+msgstr ""
+
+#: spoolsteward/admin/templates/actions.html:9
+msgid "Action (e.g. user.update)"
+msgstr ""
+
+#: spoolsteward/admin/templates/actions.html:9
+#: spoolsteward/admin/templates/jobs.html:30
+msgid "Filter"
+msgstr ""
+
+#: spoolsteward/admin/templates/actions.html:12
+#: spoolsteward/admin/templates/archive_view.html:16
+msgid "Who"
+msgstr ""
+
+#: spoolsteward/admin/templates/actions.html:12
+#: spoolsteward/admin/templates/archive_view.html:16
+#: spoolsteward/admin/templates/jobs.html:36
+#: spoolsteward/admin/templates/jobs.html:62
+msgid "Action"
+msgstr ""
+
+#: spoolsteward/admin/templates/actions.html:12
+#: spoolsteward/admin/templates/archive_view.html:16
+msgid "Object"
+msgstr ""
+
+#: spoolsteward/admin/templates/actions.html:17
+msgid "No actions."
+msgstr ""
+
+#: spoolsteward/admin/templates/actions.html:21
+#: spoolsteward/admin/templates/archive_view.html:23
+#: spoolsteward/admin/templates/jobs.html:94
+msgid "Previous"
+msgstr ""
+
+#: spoolsteward/admin/templates/actions.html:22
+#: spoolsteward/admin/templates/archive_view.html:24
+#: spoolsteward/admin/templates/jobs.html:95
+#, python-format
+msgid "Page %(page)s / %(pages)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/actions.html:23
+#: spoolsteward/admin/templates/archive_view.html:25
+#: spoolsteward/admin/templates/jobs.html:96
+msgid "Next"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:2
+#: spoolsteward/admin/templates/archive.html:6
+msgid "Audit archive"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:7
+#, python-format
+msgid "The audit is never deleted. When the active tables exceed <b>%(mb)s MB</b> the oldest rows (outside the quota windows in progress) are written to compressed files and removed from here: they no longer appear in the Audit and Actions pages, but they can still be consulted and downloaded from this page."
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:8
+msgid "Folder in the container:"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:9
+msgid "Folder on the server:"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:9
+msgid "not set (by default ./data/audit-archive in the project folder)"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:10
+msgid "Current size of the active tables:"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:15
+#: spoolsteward/admin/templates/archive_view.html:12
+#: spoolsteward/admin/templates/jobs.html:36
+#: spoolsteward/admin/templates/jobs.html:71
+msgid "File"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:15
+msgid "Content"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:15
+#: spoolsteward/admin/templates/group_edit.html:21
+#: spoolsteward/admin/templates/groups.html:9
+#: spoolsteward/admin/templates/groups.html:16
+#: spoolsteward/admin/templates/me.html:11
+#: spoolsteward/admin/templates/me.html:15
+#: spoolsteward/admin/templates/user_edit.html:36
+#: spoolsteward/admin/templates/users.html:10
+#: spoolsteward/admin/templates/users.html:20
+msgid "Period"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:15
+msgid "Rows"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:15
+msgid "Size"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:20
+msgid "prints"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:20
+msgid "admin actions"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:23
+msgid "present"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:25
+msgid "Open"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:26
+#: spoolsteward/admin/templates/scan.html:58
+msgid "Download"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:27
+msgid "Verify integrity"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive.html:30
+msgid "No archive yet: one is created automatically when the audit exceeds the threshold."
+msgstr ""
+
+#: spoolsteward/admin/templates/archive_view.html:2
+#, python-format
+msgid "Archive %(name)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive_view.html:7
+#, python-format
+msgid "%(n)s rows"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive_view.html:8
+msgid "download the file"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive_view.html:8
+msgid "all archives"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive_view.html:9
+msgid "Search (user, file, state…)"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive_view.html:9
+msgid "Search"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive_view.html:9
+#, python-format
+msgid "%(n)s results"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive_view.html:12
+#: spoolsteward/admin/templates/jobs.html:24
+#: spoolsteward/admin/templates/jobs.html:36
+#: spoolsteward/admin/templates/jobs.html:41
+#: spoolsteward/admin/templates/login.html:8
+#: spoolsteward/admin/templates/report.html:36
+#: spoolsteward/admin/templates/requests.html:9
+#: spoolsteward/admin/templates/requests.html:61
+#: spoolsteward/admin/templates/requests.html:76
+#: spoolsteward/admin/templates/requests.html:112
+#: spoolsteward/admin/templates/requests.html:125
+#: spoolsteward/admin/templates/settings.html:8
+#: spoolsteward/admin/templates/users.html:10
+#: spoolsteward/admin/templates/users.html:13
+msgid "User"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive_view.html:12
+#: spoolsteward/admin/templates/request_permission.html:19
+#: spoolsteward/admin/templates/requests.html:96
+msgid "Printer"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive_view.html:12
+#: spoolsteward/admin/templates/print.html:50
+#: spoolsteward/admin/templates/printers.html:181
+#: spoolsteward/admin/templates/report.html:36
+#: spoolsteward/admin/templates/request_quota.html:15
+#: spoolsteward/admin/templates/users.html:10
+#: spoolsteward/admin/templates/users.html:19
+msgid "Pages"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive_view.html:12
+#: spoolsteward/admin/templates/jobs.html:36
+#: spoolsteward/admin/templates/jobs.html:80
+msgid "Notes"
+msgstr ""
+
+#: spoolsteward/admin/templates/archive_view.html:14
+#: spoolsteward/admin/templates/archive_view.html:18
+msgid "No rows."
+msgstr ""
+
+#: spoolsteward/admin/templates/autorefresh.html:4
+msgid "Automatic refresh"
+msgstr ""
+
+#: spoolsteward/admin/templates/autorefresh.html:4
+msgid "Reload this page by itself"
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:2
+msgid "Edit backup"
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:6
+#, python-format
+msgid "Edit backup “%(name)s”"
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:9
+#: spoolsteward/admin/templates/backups.html:93
+#: spoolsteward/admin/templates/group_edit.html:15
+msgid "Name"
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:10
+#: spoolsteward/admin/templates/backups.html:60
+#: spoolsteward/admin/templates/backups.html:94
+msgid "Folder"
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:12
+#, python-format
+msgid "inside %(root)s. Copies already written stay in the old folder."
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:13
+#: spoolsteward/admin/templates/backups.html:97
+msgid "Safety"
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:13
+#: spoolsteward/admin/templates/backups.html:97
+msgid "The folder is a network disk or USB disk: write only if it is mounted"
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:14
+#: spoolsteward/admin/templates/backups.html:98
+msgid "Leave this ticked for a network disk or USB disk, and save while the disk is mounted now. The gateway puts a small marker file in the folder and refuses to back up when it is not there, so an unmounted disk never fills the server disk with copies."
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:15
+#: spoolsteward/admin/templates/backups.html:99
+msgid "Time"
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:17
+#: spoolsteward/admin/templates/backups.html:101
+msgid "daily"
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:20
+#: spoolsteward/admin/templates/backups.html:63
+#: spoolsteward/admin/templates/backups.html:104
+msgid "Encryption"
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:20
+msgid "passphrase"
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:20
+msgid "recovery key"
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:21
+msgid "it cannot be changed from here, so you never lose the ability to open the copies: create a new backup with the encryption you want."
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:23
+#: spoolsteward/admin/templates/group_edit.html:27
+#: spoolsteward/admin/templates/printers.html:110
+#: spoolsteward/admin/templates/settings.html:14
+#: spoolsteward/admin/templates/settings.html:24
+#: spoolsteward/admin/templates/settings.html:32
+#: spoolsteward/admin/templates/settings.html:41
+#: spoolsteward/admin/templates/user_edit.html:48
+msgid "Save"
+msgstr ""
+
+#: spoolsteward/admin/templates/backup_edit.html:23
+#: spoolsteward/admin/templates/base.html:83
+#: spoolsteward/admin/templates/group_edit.html:27
+#: spoolsteward/admin/templates/jobs.html:88
+#: spoolsteward/admin/templates/me.html:69
+#: spoolsteward/admin/templates/print.html:56
+#: spoolsteward/admin/templates/printers.html:118
+#: spoolsteward/admin/templates/request_group.html:16
+#: spoolsteward/admin/templates/request_permission.html:26
+#: spoolsteward/admin/templates/request_quota.html:26
+#: spoolsteward/admin/templates/user_delete.html:12
+#: spoolsteward/admin/templates/user_edit.html:48
+msgid "Cancel"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:2
+#: spoolsteward/admin/templates/backups.html:8
+msgid "Backup"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:6
+msgid "succeeded"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:6
+msgid "too old"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:6
+msgid "error"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:6
+msgid "not run yet"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:6
+msgid "suspended"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:9
+msgid "Each administrator can set up <b>their own</b> backups: destination folder, time, how many copies to keep and encryption. Each one saves the database, the audit archive and (only if encrypted) the configuration and the certificate. The <b>General</b> backup is set in the file <span class=\"mono\">.env</span>."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:10
+#, python-format
+msgid "The folders are inside <span class=\"mono\">%(root)s</span>"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:10
+#, python-format
+msgid "on the server: <span class=\"mono\">%(path)s</span>"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:11
+msgid "To save to a USB disk or a network folder, mount it on the server inside that folder and restart the gateway."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:12
+msgid "The backup folder is not mounted in the gateway:"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:12
+msgid "no backup can be written."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:15
+msgid "Update"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:16
+#, python-format
+msgid "Installed version: %(v)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:16
+#, python-format
+msgid "new test release %(v)s available (pre-release)"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:16
+#, python-format
+msgid "new version %(v)s available"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:16
+#: spoolsteward/admin/templates/base.html:73
+msgid "Release notes"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:16
+msgid "up to date, or not checked yet"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:19
+#, python-format
+msgid "Update to %(v)s is running…"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:20
+#, python-format
+msgid "Last update: %(v)s installed."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:21
+#, python-format
+msgid "Last update to %(v)s failed and the old version was put back."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:22
+#, python-format
+msgid "Last update to %(v)s failed."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:23
+#, python-format
+msgid "Backup taken just before: %(f)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:26
+msgid "This is a test release (pre-release): it can contain bugs."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:27
+msgid "<b>This update contains breaking changes.</b> The installation could fail and leave SpoolSteward not working. Before updating, copy a recent backup off the server and keep a copy of the file .env and of the config folder."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:27
+msgid "Read the release notes"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:31
+#, python-format
+msgid "%(v)s is a test release (pre-release): it can contain bugs."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:32
+#, python-format
+msgid "The update to %(v)s contains breaking changes. The installation could fail and leave SpoolSteward not working."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:32
+msgid "Before you go on, copy a recent backup off the server and keep a copy of the file .env and of the config folder."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:32
+#, python-format
+msgid "Read the release notes first: %(url)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:33
+msgid "Update now? A backup is made first. The gateway restarts and printing stops for a minute or two."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:35
+msgid "Update with breaking changes"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:35
+msgid "I have a backup, a copy of .env and of the config folder, and I have read the release notes"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:36
+msgid "Install a test release?"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:36
+msgid "I understand that this is a test release"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:38
+#: spoolsteward/admin/templates/backups.html:42
+#, python-format
+msgid "Update to %(v)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:39
+#, python-format
+msgid "A backup is made first (%(name)s)."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:43
+#, python-format
+msgid "%(v)s is a new major version: it is not installed from the portal. Read the release notes, then update from a terminal with scripts/update.sh."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:44
+msgid "Updating from the portal is off: the updater container is not running. It is off on purpose: whoever controls it controls Docker, which is the same as full control (root) of this server. If you accept that, start it with “docker compose --profile autoupdate up -d”; otherwise update from a terminal with scripts/update.sh."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:45
+msgid "Updating from the portal needs a scheduled backup that is on and worked in the last 48 hours. Set one up below."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:46
+msgid "An update is already waiting for the updater."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:49
+msgid "The updater container is running. It controls Docker, which is the same as full control (root) of this server. If you do not need updates from the portal, stop it with “docker compose stop updater”."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:55
+msgid "mine"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:59
+msgid "Owner"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:60
+msgid "only written while mounted"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:61
+#, python-format
+msgid "every day at %(hour)s:00"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:62
+msgid "Copies kept"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:62
+#, python-format
+msgid "%(d)s daily · %(w)s weekly · %(m)s monthly"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:63
+msgid "<b>none</b> — no secrets in the file (neither the TLS key nor <span class=\"mono\">SECRET_KEY</span>); whoever can read the folder reads users and audit"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:64
+msgid "passphrase chosen by the administrator (the gateway does not keep it)"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:64
+msgid "recovery key (<span class=\"mono\">backup-key</span>)"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:65
+msgid "Last result"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:66
+#, python-format
+msgid "succeeded on %(when)s — <span class=\"mono\">%(file)s</span> (%(size)s MB)"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:66
+msgid "never succeeded"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:67
+#, python-format
+msgid "Last attempt failed (%(when)s): %(error)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:72
+#, python-format
+msgid "%(count)s copies in the folder (latest %(shown)s)"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:76
+msgid "Run now"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:78
+#: spoolsteward/admin/templates/groups.html:19
+#: spoolsteward/admin/templates/users.html:23
+msgid "Edit"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:79
+msgid "Suspend"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:79
+msgid "Activate"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:80
+msgid "Delete this scheduled backup? The files already written stay in the folder."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:81
+#: spoolsteward/admin/templates/groups.html:21
+#: spoolsteward/admin/templates/printers.html:150
+msgid "Delete"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:82
+#, python-format
+msgid "belongs to %(owner)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:82
+msgid "edited in .env"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:86
+msgid "No backup configured."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:86
+msgid "If the disk breaks, users, keys, quotas and audit are lost. Create one below."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:90
+msgid "New backup"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:93
+msgid "e.g. Office NAS"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:94
+#, python-format
+msgid "e.g. nas/%(user)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:96
+#, python-format
+msgid "inside %(root)s; the gateway creates it if missing"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:105
+#: spoolsteward/admin/templates/backups.html:111
+msgid "Passphrase"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:105
+msgid "recommended"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:106
+msgid "Ready-made recovery key"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:107
+msgid "None"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:111
+#, python-format
+msgid "at least %(n)s characters"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:112
+msgid "Repeat"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:114
+msgid "<b>Do not use your account password:</b> the gateway does not know it (it only stores a hash), it changes over time, and for a RADIUS user it is not even theirs. Choose a dedicated one and keep it in a safe place (password manager). The gateway <b>does not store it</b>: it writes the backups without asking for it, but <b>without it nobody can open them</b>, not even another administrator."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:117
+msgid "Key"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:118
+msgid "created on the server with <span class=\"mono\">docker compose exec -it gateway spoolsteward-admin backup-key</span>: the passphrase never goes through the portal"
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:120
+msgid "Without encryption the file contains the database (users, names of printed files). That is why the secrets are <b>not</b> saved: the TLS key, <span class=\"mono\">SECRET_KEY</span> and the RADIUS secret must be kept separately."
+msgstr ""
+
+#: spoolsteward/admin/templates/backups.html:121
+msgid "Create backup"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:16
+#: spoolsteward/admin/templates/settings.html:3
+#: spoolsteward/admin/templates/settings.html:7
+msgid "Settings"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:24
+msgctxt "menu"
+msgid "Audit"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:25
+msgctxt "menu"
+msgid "Users"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:26
+msgctxt "menu"
+msgid "Groups"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:27
+msgctxt "menu"
+msgid "Requests"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:28
+msgctxt "menu"
+msgid "Actions"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:29
+msgctxt "menu"
+msgid "Printers"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:30
+msgctxt "menu"
+msgid "Backup"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:31
+msgctxt "menu"
+msgid "Archive"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:34
+msgctxt "menu"
+msgid "Profile"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:35
+msgctxt "menu"
+msgid "Print"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:36
+msgctxt "menu"
+msgid "Scan"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:41
+#: spoolsteward/admin/templates/base.html:47
+#: spoolsteward/admin/templates/me_notices.html:2
+#: spoolsteward/admin/templates/me_notices.html:6
+#: spoolsteward/admin/templates/notices.html:2
+#: spoolsteward/admin/templates/notices.html:13
+msgid "Notices"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:52
+#: spoolsteward/admin/templates/docs.html:2
+#: spoolsteward/admin/templates/docs.html:7
+#: spoolsteward/admin/templates/docs.html:22
+msgid "Documentation"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:56
+msgid "Turn the gateway back on?"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:56
+msgid ""
+"Put the WHOLE gateway in maintenance?\n"
+"\n"
+"The printers disappear from the network (mDNS) and no user will be able to print or scan: only administrators."
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:56
+#: spoolsteward/admin/templates/base.html:59
+msgid "LEAVE MAINTENANCE"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:56
+#: spoolsteward/admin/templates/base.html:59
+msgid "PUT IN MAINTENANCE"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:56
+#: spoolsteward/admin/templates/printers.html:50
+msgid "Tell all users in their notices (administrators too)"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:60
+msgid "Turn the gateway back on"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:60
+msgid "Stops printing and scanning for everyone except the admins and hides the printers from the network"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:67
+msgid "Log out"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:72
+msgid "GATEWAY IN MAINTENANCE"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:72
+msgid "printing and scanning are stopped for users; administrators can still use them"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:72
+msgid "printing and scanning are temporarily suspended"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:73
+#, python-format
+msgid "A new test release (pre-release) is available: %(new)s (installed: %(old)s)."
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:73
+#, python-format
+msgid "A new version is available: %(new)s (installed: %(old)s)."
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:73
+msgid "It contains breaking changes: read the release notes before updating."
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:73
+msgid "To update, run on the server:"
+msgstr ""
+
+#: spoolsteward/admin/templates/base.html:79
+msgid "Are you sure?"
+msgstr ""
+
+#: spoolsteward/admin/templates/docs.html:8
+msgid "The documentation is not installed on this server."
+msgstr ""
+
+#: spoolsteward/admin/templates/docs.html:9
+msgid "It is the docs folder of SpoolSteward: the standard image and the host install both include it. You can also read it on GitHub:"
+msgstr ""
+
+#: spoolsteward/admin/templates/docs.html:13
+msgid "Documentation index"
+msgstr ""
+
+#: spoolsteward/admin/templates/docs.html:15
+msgid "Language of the documentation"
+msgstr ""
+
+#: spoolsteward/admin/templates/group_edit.html:3
+msgid "Edit group"
+msgstr ""
+
+#: spoolsteward/admin/templates/group_edit.html:3
+#: spoolsteward/admin/templates/group_edit.html:9
+#: spoolsteward/admin/templates/groups.html:6
+#: spoolsteward/admin/templates/request_group.html:12
+msgid "New group"
+msgstr ""
+
+#: spoolsteward/admin/templates/group_edit.html:9
+#, python-format
+msgid "Edit group %(name)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/group_edit.html:12
+msgid "System group: the name cannot be changed and the group cannot be deleted."
+msgstr ""
+
+#: spoolsteward/admin/templates/group_edit.html:13
+msgid "Only administrators belong here."
+msgstr ""
+
+#: spoolsteward/admin/templates/group_edit.html:17
+#: spoolsteward/admin/templates/group_edit.html:18
+#: spoolsteward/admin/templates/groups.html:9
+#: spoolsteward/admin/templates/groups.html:14
+#: spoolsteward/admin/templates/user_edit.html:30
+#: spoolsteward/admin/templates/user_edit.html:31
+msgid "Job limit"
+msgstr ""
+
+#: spoolsteward/admin/templates/group_edit.html:18
+#: spoolsteward/admin/templates/group_edit.html:20
+#: spoolsteward/admin/templates/groups.html:14
+#: spoolsteward/admin/templates/groups.html:15
+#: spoolsteward/admin/templates/users.html:5
+msgid "unlimited"
+msgstr ""
+
+#: spoolsteward/admin/templates/group_edit.html:19
+#: spoolsteward/admin/templates/group_edit.html:20
+#: spoolsteward/admin/templates/groups.html:9
+#: spoolsteward/admin/templates/groups.html:15
+#: spoolsteward/admin/templates/user_edit.html:33
+#: spoolsteward/admin/templates/user_edit.html:34
+msgid "Page limit"
+msgstr ""
+
+#: spoolsteward/admin/templates/group_edit.html:23
+#: spoolsteward/admin/templates/groups.html:9
+#: spoolsteward/admin/templates/groups.html:17
+msgid "Requestable"
+msgstr ""
+
+#: spoolsteward/admin/templates/group_edit.html:23
+msgid "users can ask to be moved to this group"
+msgstr ""
+
+#: spoolsteward/admin/templates/group_edit.html:24
+#: spoolsteward/admin/templates/groups.html:17
+#: spoolsteward/admin/templates/user_edit.html:28
+#: spoolsteward/admin/templates/users.html:17
+msgid "yes"
+msgstr ""
+
+#: spoolsteward/admin/templates/group_edit.html:24
+#: spoolsteward/admin/templates/user_edit.html:28
+msgid "no"
+msgstr ""
+
+#: spoolsteward/admin/templates/group_edit.html:27
+msgid "Create group"
+msgstr ""
+
+#: spoolsteward/admin/templates/group_edit.html:30
+#: spoolsteward/admin/templates/group_edit.html:31
+msgid "Delete group"
+msgstr ""
+
+#: spoolsteward/admin/templates/group_edit.html:30
+#: spoolsteward/admin/templates/group_edit.html:33
+#, python-format
+msgid "Delete %(name)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/groups.html:2
+#: spoolsteward/admin/templates/groups.html:6
+msgid "Groups"
+msgstr ""
+
+#: spoolsteward/admin/templates/groups.html:7
+msgid "Read-only values: use <b>Edit</b> to change them. Empty limit = no limit. Jobs that were refused, failed or canceled before printing do not count. The page limit is soft: the job that exceeds it is printed anyway."
+msgstr ""
+
+#: spoolsteward/admin/templates/groups.html:9
+#: spoolsteward/admin/templates/groups.html:12
+#: spoolsteward/admin/templates/report.html:36
+#: spoolsteward/admin/templates/user_edit.html:19
+#: spoolsteward/admin/templates/users.html:10
+#: spoolsteward/admin/templates/users.html:15
+msgid "Group"
+msgstr ""
+
+#: spoolsteward/admin/templates/groups.html:9
+#: spoolsteward/admin/templates/groups.html:13
+msgid "Members"
+msgstr ""
+
+#: spoolsteward/admin/templates/groups.html:12
+msgid "system group"
+msgstr ""
+
+#: spoolsteward/admin/templates/groups.html:25
+msgid "No groups."
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:2
+msgid "Audit"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:10
+#, python-format
+msgid "There is %(n)s compressed audit archive"
+msgid_plural "There are %(n)s compressed audit archives"
+msgstr[0] ""
+msgstr[1] ""
+
+#: spoolsteward/admin/templates/jobs.html:10
+#, python-format
+msgid "(from %(first)s to %(last)s):"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:11
+msgid "the oldest prints no longer appear in this table."
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:11
+msgid "View, download or verify the archives →"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:15
+msgid "Stop saving the names of the files? From now on new prints and scans will be listed without a file name. The names already saved stay. You can turn it on again at any time."
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:17
+msgid "Click to stop saving the names of new files"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:17
+msgid "Click to start saving the names of new files again"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:17
+msgid "File names are being saved"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:17
+msgid "File names are not being saved"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:19
+msgid "Print and scan audit"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:21
+msgid "change it in the settings"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:21
+msgid "30 actions per page"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:27
+msgid "All states"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:31
+msgid "Export CSV"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:32
+#: spoolsteward/admin/templates/report.html:2
+msgid "Report"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:34
+#, python-format
+msgid "The search by file name looks in the latest %(n)s actions that match the other filters."
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:36
+#: spoolsteward/admin/templates/jobs.html:39
+msgid "No."
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:36
+#: spoolsteward/admin/templates/jobs.html:61
+#: spoolsteward/admin/templates/me.html:51
+msgid "Device"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:36
+msgid "What the states mean"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:36
+#: spoolsteward/admin/templates/jobs.html:70
+msgid "Pg."
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:42
+msgid "Where the scan came from"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:44
+#, python-format
+msgid "Scan without sign-in · no. %(id)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:45
+#, python-format
+msgid "Whoever scanned did not sign in: they are recorded as “%(name)s”. This is all that is known about them."
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:46
+#: spoolsteward/admin/templates/jobs.html:57
+msgid "IP address"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:47
+#: spoolsteward/admin/templates/jobs.html:58
+msgid "Host name"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:47
+#: spoolsteward/admin/templates/jobs.html:58
+msgid "not available (no name registered in the DNS)"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:48
+#: spoolsteward/admin/templates/jobs.html:59
+#: spoolsteward/admin/templates/jobs.html:67
+#: spoolsteward/admin/templates/jobs.html:78
+#: spoolsteward/admin/templates/jobs.html:84
+#: spoolsteward/admin/templates/jobs.html:110
+#: spoolsteward/admin/templates/printers.html:42
+#: spoolsteward/admin/templates/printers.html:91
+#: spoolsteward/admin/templates/printers.html:216
+#: spoolsteward/admin/templates/printers.html:222
+#: spoolsteward/admin/templates/requests.html:49
+#: spoolsteward/admin/templates/requests.html:53
+msgid "Close"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:50
+#: spoolsteward/admin/templates/scan.html:43
+msgid "Scan window"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:52
+#, python-format
+msgid "Scan window · no. %(id)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:53
+msgid "Refused: the window was opened for one address and the request came from another."
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:54
+msgid "Address the window was for"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:55
+msgid "Address the request came from"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:56
+msgid "The person pressed the scan window button, and this scan came from the address they opened it for."
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:62
+#: spoolsteward/admin/templates/scan.html:81
+msgid "scan"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:62
+msgid "Scanned with the automatic document feeder (ADF)"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:62
+msgid "print"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:63
+msgid "Specifications of this print"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:65
+#, python-format
+msgid "Print specifications · no. %(id)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:72
+#: spoolsteward/admin/templates/jobs.html:73
+#: spoolsteward/admin/templates/jobs.html:74
+msgid "Show all"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:72
+#: spoolsteward/admin/templates/jobs.html:73
+msgid "Show the complete information of the file"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:74
+msgid "Show the complete comment"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:76
+#, python-format
+msgid "File · no. %(id)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:80
+msgid "Show and copy the whole note"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:82
+#, python-format
+msgid "Note · no. %(id)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:87
+msgid "Cancel this queued job?"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:90
+msgid "No jobs."
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:101
+msgid "States of a print or scan"
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:103
+msgid "<b>Accepted.</b> It passed the checks (identity, quota, blocks, maintenance) and was handed to CUPS or the scanner: it is printing, queued or in progress. It already counts toward the quota."
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:104
+msgid "<b>Completed.</b> Print finished (CUPS confirms it) or scan delivered. The real pages replace the estimate made before printing."
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:105
+msgid "<b>Denied.</b> The gateway refused it and nothing started: quota used up, printer blocked, gateway in maintenance, invalid file… The reason is in the Notes column. It does not count toward the quota."
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:106
+msgid "<b>Failed.</b> It had been accepted but the printer or scanner could not carry it out (CUPS reported an error, the device did not answer). It does not count toward the quota."
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:107
+msgid "<b>Canceled.</b> Stopped before printing, by the user, by an administrator (“Cancel”) or by the scanning program. The quota is freed."
+msgstr ""
+
+#: spoolsteward/admin/templates/jobs.html:108
+msgid "<b>On hold.</b> CUPS is holding it (queue paused or waiting for someone to act). Until it restarts it counts toward the quota."
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:2
+#: spoolsteward/admin/templates/keys.html:6
+#: spoolsteward/admin/templates/user_edit.html:53
+msgid "Print keys"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:6
+#, python-format
+msgid "of %(user)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:7
+#, python-format
+msgid "Each device has its own key: if you lose one, revoke only that key. User name <b>%(user)s</b>, server <b>%(server)s</b>."
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:7
+msgid "Switch a key off, extend it or revoke it: the device that uses it gets \"not authorized\" at once. A switched-off key keeps ageing: its expiry date does not move."
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:9
+#: spoolsteward/admin/templates/keys.html:12
+msgid "Label"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:9
+#: spoolsteward/admin/templates/keys.html:12
+msgid "Starts with"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:9
+#: spoolsteward/admin/templates/keys.html:13
+msgid "Created"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:9
+#: spoolsteward/admin/templates/keys.html:14
+msgid "Expires"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:9
+#: spoolsteward/admin/templates/keys.html:15
+msgid "Last used"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:15
+msgid "never used"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:19
+msgid "switched off"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:21
+msgid "single use"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:22
+#, python-format
+msgid "leaves the list on %(date)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:26
+msgid "Switch off"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:27
+msgid "Switch on"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:31
+msgid "New validity"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:32
+msgid "Extend"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:34
+#, python-format
+msgid "Revoke the key “%(label)s”?"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:34
+#: spoolsteward/admin/templates/requests.html:69
+msgid "Revoke"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:37
+msgid "No keys."
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:42
+#, python-format
+msgid "Revoke ALL the keys of %(user)s?"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:42
+msgid "Revoke ALL your keys?"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:43
+#, python-format
+msgid "Revoke all active keys (%(n)s)"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:49
+msgid "New key"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:51
+msgid "For which device? (e.g. laptop)"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:52
+msgid "Valid for"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:53
+msgid "Create a key"
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:54
+msgid "The key is shown only once, together with the ready-made address to paste when adding the printer."
+msgstr ""
+
+#: spoolsteward/admin/templates/keys.html:57
+msgid "Back to the user"
+msgstr ""
+
+#: spoolsteward/admin/templates/login.html:2
+msgid "Login"
+msgstr ""
+
+#: spoolsteward/admin/templates/login.html:9
+#: spoolsteward/admin/templates/settings.html:56
+msgid "Password"
+msgstr ""
+
+#: spoolsteward/admin/templates/login.html:10
+msgid "Log in"
+msgstr ""
+
+#: spoolsteward/admin/templates/login.html:12
+msgid "Log in with your company (RADIUS) or local account."
+msgstr ""
+
+#: spoolsteward/admin/templates/login.html:12
+msgid "Log in with your local account."
+msgstr ""
+
+#: spoolsteward/admin/templates/login.html:13
+#, python-format
+msgid "First start: set the password of <b>%(user)s</b>"
+msgstr ""
+
+#: spoolsteward/admin/templates/macros.html:4
+msgid "Copy to clipboard"
+msgstr ""
+
+#: spoolsteward/admin/templates/macros.html:4
+msgid "Copy"
+msgstr ""
+
+#: spoolsteward/admin/templates/macros.html:4
+msgid "Copied"
+msgstr ""
+
+#: spoolsteward/admin/templates/macros.html:17
+msgid "fewer"
+msgstr ""
+
+#: spoolsteward/admin/templates/macros.html:17
+msgid "more"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:2
+msgid "My profile"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:6
+#, python-format
+msgid "Hello, %(user)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:7
+#, python-format
+msgid "Group: <b>%(group)s</b>"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:7
+#: spoolsteward/admin/templates/request_group.html:7
+msgid "no group"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:7
+#: spoolsteward/admin/templates/settings.html:8
+msgid "Sign-in"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:7
+#: spoolsteward/admin/templates/settings.html:8
+msgid "local account"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:7
+#: spoolsteward/admin/templates/settings.html:8
+#, python-format
+msgid "RADIUS (%(provider)s)"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:8
+msgid "settings"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:9
+msgid "My usage"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:11
+#: spoolsteward/admin/templates/me.html:13
+#: spoolsteward/admin/templates/me.html:64
+#: spoolsteward/admin/templates/request_permission.html:13
+#: spoolsteward/admin/templates/request_quota.html:12
+#: spoolsteward/admin/templates/requests.html:61
+#: spoolsteward/admin/templates/requests.html:125
+msgid "What"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:11
+#: spoolsteward/admin/templates/me.html:13
+msgid "Used"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:11
+#: spoolsteward/admin/templates/me.html:14
+msgid "Limit"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:11
+#: spoolsteward/admin/templates/me.html:15
+msgid "Resets on"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:14
+#, python-format
+msgid "%(limit)s + %(extra)s granted"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:16
+msgid "No limit applies to you."
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:19
+#: spoolsteward/admin/templates/print.html:9
+msgid "Print a file"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:20
+#: spoolsteward/admin/templates/scan.html:3
+#: spoolsteward/admin/templates/scan.html:35
+msgid "Scan"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:21
+#: spoolsteward/admin/templates/request_quota.html:2
+#: spoolsteward/admin/templates/request_quota.html:6
+msgid "Ask for more quota"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:22
+#: spoolsteward/admin/templates/request_group.html:6
+msgid "Ask to change group"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:27
+msgid "Your permissions"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:28
+msgid "This account has all permissions and they can not be limited."
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:30
+msgid "not allowed: prints are made in black and white"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:30
+#: spoolsteward/admin/templates/me.html:31
+#: spoolsteward/admin/templates/me.html:33
+msgid "request waiting"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:30
+#: spoolsteward/admin/templates/me.html:31
+#: spoolsteward/admin/templates/me.html:33
+msgid "Ask"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:31
+msgid "not allowed: prints are made double-sided"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:32
+#: spoolsteward/admin/templates/report.html:12
+msgid "all"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:32
+msgid "none at the moment"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:32
+msgid "Ask for another printer"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:33
+msgid "not now"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:36
+msgid "Granted to you after a request:"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:37
+#: spoolsteward/admin/templates/user_edit.html:45
+#, python-format
+msgid "until %(date)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:42
+msgid "My print keys"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:43
+#, python-format
+msgid "Instead of the domain password, on the computer or phone you use a personal <b>key</b> (user name <b>%(user)s</b>, server <b>%(server)s</b>). It only works for printing and you can revoke it whenever you want."
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:44
+msgid "The domain password is <b>not</b> accepted for printing."
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:45
+#, python-format
+msgid "Active keys: <b>%(n)s</b>"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:45
+msgid "Manage keys"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:49
+msgid "How to connect a device"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:51
+msgid "What to do"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:52
+msgid "Phone or tablet"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:52
+msgid "The easiest way: <a href=\"/me/print\">Print a file</a> (PDF, photo, text) and <a href=\"/me/scan\">Scan</a>, without installing or configuring anything. Alternatively on Android: <b>Mopria Print Service</b>, which shows the printers and asks for the name and key."
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:53
+msgid "Create a key above: the next page shows the ready-made command (user name and key included), to paste just once."
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:54
+msgid "Or <span class=\"mono\">scripts/add-printer-linux.sh</span> from the project."
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:55
+#, python-format
+msgid "Settings → Printers &amp; scanners → Add device, then enter <b>%(user)s</b> and the key when you print and tick \"Remember my credentials\"."
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:55
+msgid "Step-by-step guide"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:56
+#, python-format
+msgid "Add a network printer with the address <span class=\"mono\">ipps://%(server)s/printers/&lt;name&gt;</span>; when it asks for the user name and password enter <b>%(user)s</b> and the key, and choose \"remember\"."
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:56
+msgid "Not yet tried on these systems."
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:58
+msgid "Available printers:"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:62
+msgid "My requests"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:64
+#: spoolsteward/admin/templates/request_group.html:14
+#: spoolsteward/admin/templates/request_permission.html:24
+#: spoolsteward/admin/templates/request_quota.html:24
+#: spoolsteward/admin/templates/requests.html:9
+#: spoolsteward/admin/templates/requests.html:48
+msgid "Reason"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:64
+msgid "Answer"
+msgstr ""
+
+#: spoolsteward/admin/templates/me.html:71
+msgid "No requests."
+msgstr ""
+
+#: spoolsteward/admin/templates/me_notices.html:7
+msgid "What concerns you: what the administrators did with your account (keys, group, quota, requests) and problems of the printer your print is waiting for."
+msgstr ""
+
+#: spoolsteward/admin/templates/me_notices.html:10
+#: spoolsteward/admin/templates/notices.html:65
+msgid "Hide dismissed"
+msgstr ""
+
+#: spoolsteward/admin/templates/me_notices.html:10
+#: spoolsteward/admin/templates/notices.html:65
+msgid "Show dismissed too"
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:7
+msgid "For you"
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:8
+msgid "What concerns your own account: print keys, group, quota, requests."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:14
+#, python-format
+msgid "Things the gateway noticed that administrators should know about. The same notice from the same source is reported again only after a while (now: every %(when)s), and repeats in between are counted."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:17
+#: spoolsteward/admin/templates/notices.html:20
+msgid "Last time"
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:17
+#: spoolsteward/admin/templates/notices.html:54
+msgid "Times"
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:20
+#, python-format
+msgid "first: %(t)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:23
+#, python-format
+msgid "A scan request without a user name and password from <span class=\"mono\">%(ip)s</span> was refused, because scans without login are off. If your scan app can not send credentials, set <span class=\"mono\">SPOOLSTEWARD_ESCL_ANONYMOUS=true</span> in <span class=\"mono\">.env</span> and run <span class=\"mono\">docker compose up -d</span>."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:25
+#, python-format
+msgid "<b>Backup not done: the destination folder can not be reached.</b> The latest backup of “%(name)s” was not saved, because the network disk or USB disk does not seem to be connected. Nothing was written. Check that it is switched on and mounted, then press “Run now”. Last successful backup: %(last)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:27
+#, python-format
+msgid "<b>Backup failed.</b> The latest backup of “%(name)s” was not saved. Reason: %(error)s. Last successful backup: %(last)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:29
+#, python-format
+msgid "<b>The certificate could not be updated.</b> The last run of <span class=\"mono\">scripts/cert-sync.sh</span> (%(when)s) failed: %(message)s. The certificate in use is the old one. Run the script by hand to see the error, and check the cron job."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:31
+#, python-format
+msgid "<b>The TLS certificate has expired</b> (on %(date)s). Phones and computers refuse to connect to the gateway until a valid one is in <span class=\"mono\">config/tls</span> and the gateway has been restarted."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:33
+#, python-format
+msgid "<b>The TLS certificate expires on %(date)s.</b> The last synchronisation worked, so the source has not renewed it yet: check the program that renews it (for example Nginx Proxy Manager)."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:34
+#, python-format
+msgid "<b>The TLS certificate expires on %(date)s.</b> The last synchronisation failed: see the other notice about the certificate."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:35
+#, python-format
+msgid "<b>The TLS certificate expires on %(date)s.</b> Renew it and put the new files in <span class=\"mono\">config/tls</span>, then restart the gateway."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:37
+#, python-format
+msgid "<b>The announced address is not in the TLS certificate.</b> The gateway announces itself on the network as <span class=\"mono\">%(names)s</span> at <span class=\"mono\">%(addresses)s</span>, and the certificate covers none of them: phones and computers that find the printers this way will show a certificate error. Make the certificate list the address (or give the machine a fixed address and a name that the certificate covers)."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:39
+#, python-format
+msgid "<b>Paper jam</b> on the printer “%(printer)s”. Jobs wait until somebody clears it."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:40
+#, python-format
+msgid "<b>Out of paper</b> (or empty tray) on the printer “%(printer)s”. Jobs wait until paper is loaded."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:41
+#, python-format
+msgid "<b>Ink or toner is out</b> on the printer “%(printer)s”: %(what)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:42
+#, python-format
+msgid "<b>Ink or toner is running low</b> on the printer “%(printer)s”: %(what)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:43
+#, python-format
+msgid "<b>Problem</b> on the printer “%(printer)s”: %(what)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:47
+#, python-format
+msgid "<b>The secret key has changed</b> since the previous start (<span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in <span class=\"mono\">.env</span>). %(count)s file names in the audit were encrypted with the old key and now show as <span class=\"mono\">[encrypted]</span>. If the change was not wanted (for example a restore with a new <span class=\"mono\">.env</span>), put the old key back and restart: the names become readable again."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:49
+#, python-format
+msgid "<b>No secret key is set.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> is missing from <span class=\"mono\">.env</span> or set to <span class=\"mono\">none</span>: the file names in the audit are stored without encryption and everybody has to sign in again after every restart. Write a random value (the output of <span class=\"mono\">openssl rand -hex 32</span>) after <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> in <span class=\"mono\">.env</span>, run <span class=\"mono\">docker compose up -d</span> and save the key in a safe place. <a href=\"%(url)s\">Step by step</a>."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:51
+#, python-format
+msgid "<b>Scans without login are refused: the guest name is already taken.</b> A scan app sent no user name and password, and the account “%(name)s” that would receive its scans already exists as a real account (with a password, from RADIUS, or an administrator), so it is not used. Set a name nobody uses in <span class=\"mono\">SPOOLSTEWARD_ESCL_GUEST_USERNAME</span> in <span class=\"mono\">.env</span> and restart the portal."
+msgstr ""
+
+#: spoolsteward/admin/templates/notices.html:55
+#, python-format
+msgid "dismissed by %(who)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/password.html:2
+#: spoolsteward/admin/templates/password.html:8
+#: spoolsteward/admin/templates/settings.html:47
+#: spoolsteward/admin/templates/settings.html:52
+msgid "Change password"
+msgstr ""
+
+#: spoolsteward/admin/templates/password.html:10
+msgid "Your current password is temporary: choose your own to continue."
+msgstr ""
+
+#: spoolsteward/admin/templates/password.html:12
+msgid "Current password"
+msgstr ""
+
+#: spoolsteward/admin/templates/password.html:13
+#: spoolsteward/admin/templates/setup.html:12
+msgid "New password (min. 12 characters)"
+msgstr ""
+
+#: spoolsteward/admin/templates/password.html:14
+msgid "Repeat the new password"
+msgstr ""
+
+#: spoolsteward/admin/templates/password.html:15
+msgid "Change"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:2
+#: spoolsteward/admin/templates/print.html:56
+msgid "Print"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:11
+#, python-format
+msgid "You can print %(window)s. Printing now is not possible."
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:12
+#, python-format
+msgid "Not reachable right now: %(printers)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:14
+msgid "Your account is not allowed to use any of the printers. Your profile shows what you may print on."
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:16
+msgid "No printer available at the moment. Try again shortly or tell an administrator."
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:19
+msgid "Choose the file"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:23
+msgid "Tap to choose a file"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:24
+#, python-format
+msgid "or drag it here · PDF, photo (JPEG, PNG, GIF) or text · at most %(mb)s MB"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:27
+msgid "Choose the printer"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:32
+#, python-format
+msgid "Test printer (%(name)s)"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:35
+msgid "double-sided"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:38
+msgid "Print options"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:41
+#, python-format
+msgid "What it contains (optional, max %(n)s characters)"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:42
+msgid "It stays in the print log, under the file name."
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:43
+msgid "Paper size"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:45
+msgid "Automatic"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:45
+msgid "Portrait"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:45
+msgid "Landscape"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:47
+#: spoolsteward/admin/templates/print.html:49
+#: spoolsteward/admin/templates/print.html:66
+msgid "Printer default"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:47
+#: spoolsteward/admin/templates/scan.html:29
+msgid "In colour"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:47
+#: spoolsteward/admin/templates/scan.html:29
+msgid "Black and white"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:49
+msgid "Double-sided, long edge"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:49
+msgid "Double-sided, short edge"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:51
+msgid "All — or 1,5 or 2-4"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:54
+#, python-format
+msgid "at most %(n)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:57
+msgid "It counts as a normal print: same limits and same log. The pages are counted before printing."
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:67
+msgid "(default)"
+msgstr ""
+
+#: spoolsteward/admin/templates/print.html:68
+msgid "Sending…"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:5
+msgid "data read from the printers; physical ones first, in your own order"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:8
+msgid "Test printers"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:8
+msgid "A virtual printer that writes PDFs instead of printing: it is for trying quotas, audit and blocks without paper (<span class=\"mono\">debugprinter0</span>, <span class=\"mono\">debugprinter1</span>…). Virtual ones can be deleted."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:9
+msgid "Create a test printer"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:12
+msgid "Find printers"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:12
+msgid "USB printers are added by themselves within a minute of being plugged in: through ipp-usb when the printer supports it, otherwise with a CUPS driver."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:13
+#, python-format
+msgid "A USB printer that stops answering is removed after %(hours)s hours."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:13
+msgid "Queues of unplugged printers are not removed by themselves."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:15
+msgid "Look now"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:21
+msgid "virtual"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:21
+msgid "Multifunction: prints and scans (the device also answers as an eSCL scanner)"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:21
+msgid "Connected by USB cable through the ipp-usb bridge"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:21
+msgid "Connected by USB cable, driven by CUPS with a driver"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:25
+msgid "Already first"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:25
+msgid "Move up"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:25
+#, python-format
+msgid "Move %(printer)s up"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:27
+msgid "Already last"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:27
+msgid "Move down"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:27
+#, python-format
+msgid "Move %(printer)s down"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:28
+#: spoolsteward/admin/templates/printers.html:41
+#: spoolsteward/admin/templates/printers.html:49
+msgid "Rename the queue"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:28
+#, python-format
+msgid "Rename %(printer)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:31
+msgid "Periodic print: keeps the print heads and rollers in good condition"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:31
+#, python-format
+msgid "Periodic print of %(printer)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:34
+msgid "Test print with the printer statistics"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:34
+#: spoolsteward/admin/templates/printers.html:114
+#, python-format
+msgid "Test print on %(printer)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:42
+#: spoolsteward/admin/templates/printers.html:91
+msgid "Close (changes nothing)"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:44
+msgid "The name of the queue is the last part of the printer address (…/printers/<b>name</b>). Letters, digits and . _ @ + - only."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:45
+msgid "Computers and phones where the printer was set up by hand with the old address will stop printing until they are set up again. Block, maintenance print and the places in the lists follow the queue; the audit keeps the old name for what already happened."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:48
+#, python-format
+msgid "Rename %(printer)s? Computers and phones where it was set up by hand with the old address will stop printing until they are set up again."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:49
+#: spoolsteward/admin/templates/printers.html:55
+msgid "Rename"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:52
+#, python-format
+msgid "New name for %(printer)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:62
+msgid "Names used before"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:66
+msgid "Write this name in the field"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:67
+#, python-format
+msgid "renamed on %(date)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:67
+#, python-format
+msgid "removed automatically on %(date)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:67
+#, python-format
+msgid "deleted on %(date)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:68
+#, python-format
+msgid "Forget the name %(name)s? It will no longer be offered here."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:68
+#: spoolsteward/admin/templates/printers.html:70
+msgid "Forget this name"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:68
+msgid "Forget"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:74
+msgid "A new printer that takes the name of a removed one prints again for the computers and phones set up with the old address, and the permissions given to that name apply to it again. A computer set up with the driver of the old model may need to be set up again if the new model is different."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:79
+#, python-format
+msgid "Periodic print active: %(every)s, %(mode)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:80
+#, python-format
+msgid "next %(when)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:81
+#, python-format
+msgid "last attempt failed: %(error)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:82
+msgid "printer not reachable: I will retry as soon as it answers"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:86
+msgid "Periodic print"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:89
+msgid "Turn on the periodic print"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:89
+msgid "On: click to turn off"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:89
+msgid "Off: click to turn on"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:93
+#, python-format
+msgid "A printer left idle for a long time dries its ink or sticks its rollers. With the periodic print the gateway sends <b class=\"mono\">%(printer)s</b> a maintenance page at regular intervals. It applies to all administrators."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:97
+msgid "Every"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:99
+#: spoolsteward/policy/keepalive.py:129
+msgid "Interval"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:100
+msgid "days"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:100
+msgid "hours"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:106
+msgid "Print in colour (uses a little of every ink: keeps the colour heads working too)"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:107
+msgid "This printer does not print in colour: the page will be black and white."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:108
+msgid "Between 1 hour and 90 days. “Save” records the settings without turning the program on or off: the switch at the top decides that."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:109
+#, python-format
+msgid "Last change: %(who)s, %(when)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:109
+#, python-format
+msgid "Last page printed: %(when)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:115
+msgid "Prints a page with all the statistics you see here: state, ink, counters, data from the gateway and device details."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:115
+msgid "The printer does not answer."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:119
+msgid "Print black and white"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:120
+msgid "This printer does not print in colour"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:120
+msgid "Print in colour"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:128
+msgid "The device does not answer on the network: cable unplugged or printer off? The queue still exists in CUPS"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:131
+#: spoolsteward/admin/templates/printers.html:215
+msgid "Address of the queue"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:131
+#, python-format
+msgid "Address of %(printer)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:137
+msgid "Applies to all users, also to the accounts of the administrator group"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:137
+msgid "BLOCKED FOR EVERYONE · admins included"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:138
+msgid "It is not announced on the network: still usable by whoever knows it"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:138
+msgid "hidden from the network (mDNS)"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:140
+#, python-format
+msgid "Block %(printer)s for EVERYONE, administrators included?"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:142
+msgid "If blocked nobody can print, not even the admins"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:142
+msgid "Unblock use"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:142
+msgid "Block use"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:146
+msgid "Removes (or restores) the printer from the automatic announcement on the network"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:146
+msgid "Show on mDNS"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:146
+msgid "Hide from mDNS"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:149
+#, python-format
+msgid "Delete the virtual printer %(printer)s? The PDFs already produced stay where they are."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:150
+msgid "Only virtual printers can be deleted"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:153
+#, python-format
+msgid "Delete the queue %(printer)s? The printer does not answer. Its settings (block, maintenance print) are forgotten; if it comes back it is added again as a new printer."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:154
+msgid "The printer does not answer: remove its queue now"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:154
+msgid "Delete queue"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:160
+msgid "The device does not answer (cable unplugged? printer off?): ink and counters are not shown because they would be stale data."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:162
+#, python-format
+msgid "The queue %(name)s will be removed automatically in %(time)s (%(when)s) unless the printer comes back."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:168
+msgid "almost empty"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:176
+msgid "Since the printer was born, including prints made without going through the gateway."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:181
+msgid "Queue"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:181
+#: spoolsteward/admin/templates/report.html:36
+#: spoolsteward/admin/templates/request_quota.html:15
+#: spoolsteward/admin/templates/users.html:10
+#: spoolsteward/admin/templates/users.html:18
+msgid "Jobs"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:181
+msgid "Last"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:185
+msgid "Only what went through the gateway (pages counted on successful jobs)."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:198
+#, python-format
+msgid "Alerts: %(list)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:211
+msgid "CUPS does not answer or has no queues configured."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:219
+msgid "The address to add the printer by hand on a computer. When it asks, the user enters their user name and a print key."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:220
+msgid "Address"
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:229
+#, python-format
+msgid "Used before: no queue has had this name since %(date)s. Computers set up with this address will print again."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:230
+msgid "A queue with this name already exists."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:231
+msgid "That is already its name."
+msgstr ""
+
+#: spoolsteward/admin/templates/printers.html:232
+msgid "Letters, digits and . _ @ + - only."
+msgstr ""
+
+#: spoolsteward/admin/templates/report.html:6
+msgid "Usage report"
+msgstr ""
+
+#: spoolsteward/admin/templates/report.html:7
+msgid "Who printed most in a period. It counts the prints that used paper (completed, waiting or running); scans are not included. Prints that were already moved to the compressed archive are not in the report."
+msgstr ""
+
+#: spoolsteward/admin/templates/report.html:10
+#: spoolsteward/admin/templates/requests.html:61
+#: spoolsteward/admin/templates/requests.html:125
+msgid "From"
+msgstr ""
+
+#: spoolsteward/admin/templates/report.html:11
+msgid "To (included)"
+msgstr ""
+
+#: spoolsteward/admin/templates/report.html:12
+msgid "Show the first … users"
+msgstr ""
+
+#: spoolsteward/admin/templates/report.html:14
+msgid "Detailed report: also how many prints each user made on each printer"
+msgstr ""
+
+#: spoolsteward/admin/templates/report.html:17
+msgid "Leave out these groups"
+msgstr ""
+
+#: spoolsteward/admin/templates/report.html:22
+msgid "Show"
+msgstr ""
+
+#: spoolsteward/admin/templates/report.html:23
+msgid "Download CSV"
+msgstr ""
+
+#: spoolsteward/admin/templates/report.html:24
+msgid "Download PDF"
+msgstr ""
+
+#: spoolsteward/admin/templates/report.html:26
+msgid "The PDF is in English and can only show Western letters (other characters appear as ?): the CSV has every name as it is."
+msgstr ""
+
+#: spoolsteward/admin/templates/report.html:31
+msgid "The period reaches back before the oldest row of the active audit: older prints are in the archive and are not counted here."
+msgstr ""
+
+#: spoolsteward/admin/templates/report.html:32
+#, python-format
+msgid "%(n)s user"
+msgid_plural "%(n)s users"
+msgstr[0] ""
+msgstr[1] ""
+
+#: spoolsteward/admin/templates/report.html:32
+#, python-format
+msgid "%(jobs)s jobs"
+msgstr ""
+
+#: spoolsteward/admin/templates/report.html:32
+#, python-format
+msgid "%(pages)s pages"
+msgstr ""
+
+#: spoolsteward/admin/templates/report.html:33
+#, python-format
+msgid "only the first %(top)s are listed"
+msgstr ""
+
+#: spoolsteward/admin/templates/report.html:42
+msgid "No prints in this period."
+msgstr ""
+
+#: spoolsteward/admin/templates/request_group.html:2
+msgid "Group change"
+msgstr ""
+
+#: spoolsteward/admin/templates/request_group.html:7
+#, python-format
+msgid "You are now in: <b>%(group)s</b>. The group sets your limits."
+msgstr ""
+
+#: spoolsteward/admin/templates/request_group.html:9
+msgid "No group is available for this request."
+msgstr ""
+
+#: spoolsteward/admin/templates/request_group.html:14
+#: spoolsteward/admin/templates/request_permission.html:24
+#: spoolsteward/admin/templates/request_quota.html:24
+msgid "optional"
+msgstr ""
+
+#: spoolsteward/admin/templates/request_group.html:15
+msgid "Why do you need to change group?"
+msgstr ""
+
+#: spoolsteward/admin/templates/request_group.html:16
+#: spoolsteward/admin/templates/request_permission.html:26
+#: spoolsteward/admin/templates/request_quota.html:26
+msgid "Send the request"
+msgstr ""
+
+#: spoolsteward/admin/templates/request_permission.html:2
+#: spoolsteward/admin/templates/request_permission.html:7
+msgid "Ask for a permission"
+msgstr ""
+
+#: spoolsteward/admin/templates/request_permission.html:9
+msgid "There is nothing to ask for: you already have every permission, or you are waiting for the answer to what you asked."
+msgstr ""
+
+#: spoolsteward/admin/templates/request_permission.html:12
+#, python-format
+msgid "You can have at most %(n)s open requests. An administrator will review it and choose whether it lasts for good or until a date."
+msgstr ""
+
+#: spoolsteward/admin/templates/request_permission.html:21
+msgid "Only needed when you ask for a printer."
+msgstr ""
+
+#: spoolsteward/admin/templates/request_permission.html:25
+msgid "Why do you need it? (e.g. printing the posters for the fair in colour)"
+msgstr ""
+
+#: spoolsteward/admin/templates/request_quota.html:8
+msgid "No limit applies to you: there is nothing to ask for."
+msgstr ""
+
+#: spoolsteward/admin/templates/request_quota.html:11
+#, python-format
+msgid "You can have at most %(n)s open requests. An administrator will review it and may also change the amount and the duration."
+msgstr ""
+
+#: spoolsteward/admin/templates/request_quota.html:15
+#, python-format
+msgid "%(what)s — used %(used)s of %(total)s, <b>%(period)s</b> limit (resets on %(date)s)"
+msgstr ""
+
+#: spoolsteward/admin/templates/request_quota.html:17
+msgid "How many more"
+msgstr ""
+
+#: spoolsteward/admin/templates/request_quota.html:19
+msgid "For how long"
+msgstr ""
+
+#: spoolsteward/admin/templates/request_quota.html:21
+msgid "<b>Temporary</b>: valid until the end of your period (week or month, set by the administrator), then the normal limit returns."
+msgstr ""
+
+#: spoolsteward/admin/templates/request_quota.html:23
+msgid "<b>Permanent</b>: your limit stays higher in every period, until the administrator revokes it."
+msgstr ""
+
+#: spoolsteward/admin/templates/request_quota.html:25
+msgid "Why do you need it? (e.g. printing the catalogue for the trade fair)"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:2
+msgid "Requests"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:7
+msgid "Pending requests"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:9
+#: spoolsteward/admin/templates/requests.html:112
+msgid "Request"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:9
+msgid "Decision"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:12
+#, python-format
+msgid "expires on %(date)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:14
+#: spoolsteward/admin/templates/requests.html:86
+msgid "temporary (until the end of the period)"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:15
+msgid "Show the reason"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:15
+#, python-format
+msgid "Show the reason of %(user)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:21
+msgid "Amount"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:21
+msgid "amount (you can change it)"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:22
+#: spoolsteward/admin/templates/requests.html:29
+msgid "Duration"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:31
+#: spoolsteward/admin/templates/requests.html:97
+msgid "until the end of…"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:33
+#: spoolsteward/admin/templates/requests.html:98
+msgid "last day the permission is valid"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:36
+msgid "Note for the user (optional)"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:38
+msgid "Approve"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:39
+msgid "Reject"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:44
+msgid "No pending requests."
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:58
+msgid "Active grants"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:59
+msgid "Quota added on top of the limit, and permissions (colour, one-sided, a printer, any hours) added on top of what the group allows. The print history is never modified. Temporary quota ends with the period of the user's limit."
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:61
+#: spoolsteward/admin/templates/requests.html:125
+msgid "Type"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:61
+#: spoolsteward/admin/templates/requests.html:125
+msgid "Until"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:61
+#: spoolsteward/admin/templates/requests.html:112
+#: spoolsteward/admin/templates/requests.html:125
+msgid "By"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:65
+#: spoolsteward/admin/templates/requests.html:67
+#: spoolsteward/admin/templates/requests.html:129
+#: spoolsteward/admin/templates/requests.html:131
+msgid "no expiry"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:69
+msgid "Revoke this grant?"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:70
+#: spoolsteward/admin/templates/requests.html:133
+msgid "No grants."
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:73
+msgid "Grant without a request"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:77
+msgid "What to grant"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:78
+msgid "quota"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:78
+msgid "a permission"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:81
+msgid "Quota"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:82
+msgid "This user has no quota limit (unlimited): there is nothing to add."
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:85
+msgid "amount"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:90
+msgid "Permission"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:91
+msgid "This user already has every permission: there is nothing to grant."
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:102
+msgid "note"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:103
+msgid "Grant"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:109
+msgid "History"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:109
+msgid "(decisions and grants that no longer count)"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:110
+msgid "Latest decisions"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:112
+msgid "Note"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:117
+msgid "None yet."
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:120
+msgid "Ended and revoked grants"
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:121
+msgid "Delete every ended or revoked grant? Active grants are not touched; the administrators' log keeps the history."
+msgstr ""
+
+#: spoolsteward/admin/templates/requests.html:122
+msgid "Delete ended grants"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:9
+msgid "Scan a document"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:10
+msgid "Let my scan app scan for a few minutes"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:13
+msgid "No scanner available at the moment: it is not connected, it is off, or scanning is not enabled on this server."
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:15
+msgid "Put the sheets on the glass or in the automatic feeder, choose how to scan them and press the button."
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:16
+msgid "Every scan is recorded in the audit like prints."
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:25
+msgid "PDF (one page per sheet)"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:25
+msgid "JPEG image (several sheets: ZIP file)"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:26
+msgid "Where you put the sheets"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:29
+msgid "Grayscale"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:30
+msgid "Quality"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:32
+msgid "Where to save it"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:33
+msgid "The browser saves it in the downloads folder."
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:35
+msgid "Back"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:36
+msgid "Scanning…"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:37
+msgid "Scanning… with several sheets it can take a minute. You can also leave this page: the file stays below for 15 minutes."
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:44
+msgid "Your scan app can scan now, without a password, from the address below. Only that address is accepted; any other is refused."
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:45
+msgid "Address the server sees you at"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:46
+msgid "Time left"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:48
+msgid "A scan that has already started is finished even if the time runs out. If this is not the address of the device that scans (another network, a proxy, IPv4 versus IPv6), the scan is refused: you will see it in the bell."
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:49
+msgid "Read the limits in the user guide"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:50
+msgid "Close the window"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:50
+msgid "OK"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:54
+msgid "Your recent scans"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:57
+msgid "scanning…"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:58
+#, python-format
+msgid "%(n)s page"
+msgid_plural "%(n)s pages"
+msgstr[0] ""
+msgstr[1] ""
+
+#: spoolsteward/admin/templates/scan.html:68
+msgid "The folder chooser opens when you press \"Scan\"."
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:69
+msgid "Automatic (feeder if there are sheets, otherwise glass)"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:70
+msgid "Glass (one sheet)"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:71
+msgid "Automatic feeder (all sheets)"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:72
+#, python-format
+msgid "Maximum size: %(size)s."
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:73
+msgid "Feeder: double-sided available, here it reads only the front side"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:74
+msgid "Feeder: single-sided only"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:75
+#, python-format
+msgid ", up to %(n)s dpi"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:76
+msgid "No automatic feeder."
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:77
+#, python-format
+msgid "Glass: up to %(n)s dpi."
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:78
+msgid "(recommended)"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:79
+#, python-format
+msgid "Automatic: up to %(n)s dpi (also valid for the feeder)."
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:80
+msgid "Another scan is in progress"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:82
+#, python-format
+msgid "Saved: %(name)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:83
+#, python-format
+msgid "Downloaded: %(name)s (browser downloads folder)."
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:84
+msgid "Error"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:87
+#, python-format
+msgid "%(m)s min %(s)s s"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:88
+msgid "Window ended"
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:89
+msgid "The request came through a proxy: the address above may be the proxy’s, not your device’s. If your scan app has a different address, the scan will be refused."
+msgstr ""
+
+#: spoolsteward/admin/templates/scan.html:90
+msgid "This is an IPv6 address. If your scan app connects over IPv4 (or the reverse), the addresses will not match."
+msgstr ""
+
+#: spoolsteward/admin/templates/secret_shown.html:8
+#, python-format
+msgid "<b>%(what)s</b> — copy it now: <b>it will not be shown again</b>."
+msgstr ""
+
+#: spoolsteward/admin/templates/secret_shown.html:12
+msgid "Connect the printer just once"
+msgstr ""
+
+#: spoolsteward/admin/templates/secret_shown.html:13
+msgid "The commands below already contain your key: the computer stores it in the queue and stops asking (until the key expires or is revoked). If you lose the computer, revoke the key from your profile."
+msgstr ""
+
+#: spoolsteward/admin/templates/secret_shown.html:14
+msgid "From a terminal (GNOME and any Linux)"
+msgstr ""
+
+#: spoolsteward/admin/templates/secret_shown.html:16
+msgid "The project also has <span class=\"mono\">scripts/add-printer-linux.sh</span>, which asks for the key without showing it and keeps it out of the shell history."
+msgstr ""
+
+#: spoolsteward/admin/templates/secret_shown.html:17
+msgid "From a graphical window"
+msgstr ""
+
+#: spoolsteward/admin/templates/secret_shown.html:18
+msgid "GNOME: Settings → Printers can not add an address that contains a user name and a key, so use the terminal or the script above."
+msgstr ""
+
+#: spoolsteward/admin/templates/secret_shown.html:21
+msgid "<b>KDE</b>: System Settings → Printers → Add → \"Connection: Other / URI\" → paste the address."
+msgstr ""
+
+#: spoolsteward/admin/templates/secret_shown.html:22
+msgid "<b>Any Linux/macOS</b>: open <code>http://localhost:631</code> → Administration → Add Printer → \"Internet Printing Protocol (ipps)\" → paste the address as \"Connection\"."
+msgstr ""
+
+#: spoolsteward/admin/templates/secret_shown.html:23
+msgid "If the server certificate is not recognised, install the company CA first."
+msgstr ""
+
+#: spoolsteward/admin/templates/secret_shown.html:26
+msgid "I copied the value, continue"
+msgstr ""
+
+#: spoolsteward/admin/templates/settings.html:11
+msgid "Appearance"
+msgstr ""
+
+#: spoolsteward/admin/templates/settings.html:13
+msgid "Theme"
+msgstr ""
+
+#: spoolsteward/admin/templates/settings.html:18
+#: spoolsteward/admin/templates/settings.html:20
+msgid "Language"
+msgstr ""
+
+#: spoolsteward/admin/templates/settings.html:21
+msgid "Automatic (as the browser)"
+msgstr ""
+
+#: spoolsteward/admin/templates/settings.html:28
+msgid "Secondary notices"
+msgstr ""
+
+#: spoolsteward/admin/templates/settings.html:29
+msgid "Notices about a single print that was changed for you (for example made in black and white or double-sided because your account has no permission) are marked as read by themselves after this many minutes, counted from the last one. They stay in the list under “Show dismissed too”. With 0 they stay until you dismiss them."
+msgstr ""
+
+#: spoolsteward/admin/templates/settings.html:31
+msgid "Minutes"
+msgstr ""
+
+#: spoolsteward/admin/templates/settings.html:31
+msgid "minutes"
+msgstr ""
+
+#: spoolsteward/admin/templates/settings.html:37
+msgid "Audit: automatic refresh"
+msgstr ""
+
+#: spoolsteward/admin/templates/settings.html:38
+msgid "How many seconds between the automatic reloads of the Audit page while its switch is on (it does not reload while you type in the filters or have a popup open). With 0 the switch starts off, and uses 30 seconds when you turn it on."
+msgstr ""
+
+#: spoolsteward/admin/templates/settings.html:40
+msgid "Seconds"
+msgstr ""
+
+#: spoolsteward/admin/templates/settings.html:40
+msgid "seconds"
+msgstr ""
+
+#: spoolsteward/admin/templates/settings.html:49
+msgid "current password"
+msgstr ""
+
+#: spoolsteward/admin/templates/settings.html:50
+msgid "new password (min. 12)"
+msgstr ""
+
+#: spoolsteward/admin/templates/settings.html:51
+msgid "repeat the new one"
+msgstr ""
+
+#: spoolsteward/admin/templates/settings.html:53
+msgid "Other sessions open with this account will be closed. Print keys stay valid."
+msgstr ""
+
+#: spoolsteward/admin/templates/settings.html:56
+msgid "Your password is managed by the RADIUS server: it cannot be changed here."
+msgstr ""
+
+#: spoolsteward/admin/templates/setup.html:2
+#: spoolsteward/admin/templates/setup.html:7
+msgid "First start"
+msgstr ""
+
+#: spoolsteward/admin/templates/setup.html:9
+#, python-format
+msgid "Set the password of the administrator <b>%(user)s</b>."
+msgstr ""
+
+#: spoolsteward/admin/templates/setup.html:10
+msgid "The one-time code is printed in the portal log: <code>docker compose logs gateway</code>. Whoever has no access to the server cannot complete this page."
+msgstr ""
+
+#: spoolsteward/admin/templates/setup.html:11
+msgid "One-time code"
+msgstr ""
+
+#: spoolsteward/admin/templates/setup.html:13
+msgid "Repeat the password"
+msgstr ""
+
+#: spoolsteward/admin/templates/setup.html:14
+msgid "Set password"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_delete.html:2
+#, python-format
+msgid "Delete %(user)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_delete.html:6
+#, python-format
+msgid "Delete the account %(user)s?"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_delete.html:7
+msgid "The account, its print keys, requests, grants and personal limits will be deleted. <b>This cannot be undone.</b>"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_delete.html:8
+#, python-format
+msgid "The print history stays intact (%(n)s record): it will keep showing the name “%(user)s” in the audit."
+msgid_plural "The print history stays intact (%(n)s records): it will keep showing the name “%(user)s” in the audit."
+msgstr[0] ""
+msgstr[1] ""
+
+#: spoolsteward/admin/templates/user_delete.html:9
+#, python-format
+msgid "If you only want to block access, <a href=\"%(url)s\">disable the account</a> instead of deleting it."
+msgstr ""
+
+#: spoolsteward/admin/templates/user_delete.html:11
+#, python-format
+msgid "To confirm, type the user name: <b>%(user)s</b>"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_delete.html:12
+msgid "Delete permanently"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:3
+#: spoolsteward/admin/templates/user_edit.html:10
+#, python-format
+msgid "Edit %(user)s"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:12
+#, python-format
+msgid "%(user)s is the emergency administrator: it has no group and no limits, and it cannot be disabled, demoted, deleted or moved to RADIUS."
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:15
+msgid "Origin (sign-in)"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:16
+msgid "local (password in the gateway)"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:16
+#, python-format
+msgid "%(provider)s (password on the server)"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:17
+msgid "Shown for information: the way this account signs in is set when it is created."
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:23
+#, python-format
+msgid "“%(group)s” is reserved for administrators: it changes by itself with the flag below."
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:26
+#: spoolsteward/admin/templates/users.html:16
+msgid "disabled"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:27
+msgid "Administrator"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:27
+msgid "can use the administration panel"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:31
+#: spoolsteward/admin/templates/user_edit.html:34
+msgid "inherit"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:32
+#: spoolsteward/admin/templates/user_edit.html:35
+msgid "empty = inherit from the group"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:32
+#: spoolsteward/admin/templates/user_edit.html:35
+#, python-format
+msgid "<span class=\"extra\">+%(n)s</span> granted"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:38
+#: spoolsteward/admin/templates/users.html:10
+#: spoolsteward/admin/templates/users.html:21
+msgid "Usage"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:39
+msgid "no limit"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:44
+msgid "Permissions granted after a request or directly:"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:46
+msgid "manage"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:51
+msgid "Other actions"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:55
+#, python-format
+msgid "Generate a new temporary password for %(user)s?"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:55
+#: spoolsteward/admin/templates/user_edit.html:56
+msgid "Reset password"
+msgstr ""
+
+#: spoolsteward/admin/templates/user_edit.html:58
+msgid "Delete account…"
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:2
+#: spoolsteward/admin/templates/users.html:7
+msgid "Users"
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:8
+msgid "Read-only values: use <b>Edit</b> to change them. <span class=\"inherited\">Italic</span> = inherited from the group · <span class=\"extra\">+N</span> = active grants (temporary or permanent): hover over Jobs or Pages to see which and when they expire."
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:10
+#: spoolsteward/admin/templates/users.html:17
+msgid "Admin"
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:10
+#: spoolsteward/admin/templates/users.html:22
+msgid "Keys"
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:13
+msgid "must change password"
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:13
+msgid "password not set"
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:14
+msgid "local"
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:22
+#, python-format
+msgid "%(n)s active"
+msgid_plural "%(n)s active"
+msgstr[0] ""
+msgstr[1] ""
+
+#: spoolsteward/admin/templates/users.html:25
+msgid "No users."
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:30
+msgid "New local user"
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:31
+msgid "Account managed here, without RADIUS. If you leave the password empty a temporary one is generated (you will see it only once)."
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:34
+msgid "user name"
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:35
+#: spoolsteward/admin/templates/users.html:50
+#, python-format
+msgid "Default group (%(group)s)"
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:38
+msgid "temporary password (min. 12)"
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:39
+msgid "administrator"
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:40
+#: spoolsteward/admin/templates/users.html:51
+msgid "Create"
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:45
+msgid "Pre-register a RADIUS user"
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:46
+msgid "To assign group and limits before their first sign-in."
+msgstr ""
+
+#: spoolsteward/admin/templates/users.html:49
+msgid "RADIUS username"
+msgstr ""
+
+#: spoolsteward/auth/keys.py:41
+#, python-format
+msgid "the label must be 1-%(n)s characters"
+msgstr ""
+
+#: spoolsteward/auth/keys.py:45
+#, python-format
+msgid "at most %(n)s active keys per user: revoke some first"
+msgstr ""
+
+#: spoolsteward/auth/keys.py:158
+msgid "1 month"
+msgstr ""
+
+#: spoolsteward/auth/keys.py:158
+msgid "3 months"
+msgstr ""
+
+#: spoolsteward/auth/keys.py:158
+msgid "6 months"
+msgstr ""
+
+#: spoolsteward/auth/keys.py:158
+msgid "1 year"
+msgstr ""
+
+#: spoolsteward/auth/keys.py:158
+msgid "1 year and 6 months"
+msgstr ""
+
+#: spoolsteward/auth/keys.py:159
+msgid "2 years"
+msgstr ""
+
+#: spoolsteward/auth/keys.py:159
+#, python-format
+msgid "%(n)s days"
+msgstr ""
+
+#: spoolsteward/auth/keys.py:165
+#, python-format
+msgid "one print only (void after %(h)s hours if unused)"
+msgstr ""
+
+#: spoolsteward/auth/passwords.py:31
+#, python-format
+msgid "the password must be at least %(n)s characters long"
+msgstr ""
+
+#: spoolsteward/auth/passwords.py:33
+#, python-format
+msgid "the password must be at most %(n)s characters long"
+msgstr ""
+
+#: spoolsteward/auth/passwords.py:35
+msgid "the password must not be the username"
+msgstr ""
+
+#: spoolsteward/auth/passwords.py:37
+msgid "the password is too repetitive"
+msgstr ""
+
+#: spoolsteward/backup/core.py:70
+msgid "Folder name not valid: letters, digits, space . _ - and / for sub-folders (max 4 levels)"
+msgstr ""
+
+#: spoolsteward/backup/core.py:73
+#, python-format
+msgid "Backup root %(root)s is not available: mount a folder there (see docker-compose.yml)"
+msgstr ""
+
+#: spoolsteward/backup/core.py:77
+msgid "Folder is outside the backup root"
+msgstr ""
+
+#: spoolsteward/backup/core.py:84
+#, python-format
+msgid "Folder %(folder)s is not writable by the gateway: %(error)s"
+msgstr ""
+
+#: spoolsteward/backup/core.py:100
+msgid "The backup disk is not answering (earlier requests are still waiting). Check the network disk."
+msgstr ""
+
+#: spoolsteward/backup/core.py:115
+#, python-format
+msgid "The backup disk did not answer in %(s)s seconds: is the network disk reachable?"
+msgstr ""
+
+#: spoolsteward/backup/core.py:130
+#, python-format
+msgid "Cannot write the marker file in the folder: %(error)s"
+msgstr ""
+
+#: spoolsteward/backup/core.py:135
+msgid "The marker file is missing in this folder: the network disk or USB disk may not be mounted. Nothing was written."
+msgstr ""
+
+#: spoolsteward/backup/crypto.py:51 spoolsteward/backup/crypto.py:79
+msgid "recovery key is not valid"
+msgstr ""
+
+#: spoolsteward/backup/crypto.py:56
+#, python-format
+msgid "The passphrase needs at least %(n)s characters"
+msgstr ""
+
+#: spoolsteward/backup/crypto.py:76
+msgid "recovery key is not valid (expected cpgbk1.<public>.<wrapped>)"
+msgstr ""
+
+#: spoolsteward/backup/service.py:87
+msgid "Another backup is running: try again in a minute"
+msgstr ""
+
+#: spoolsteward/backup/service.py:92
+msgid "Backup target not found"
+msgstr ""
+
+#: spoolsteward/policy/control.py:22
+msgid "printer disabled by the administrator (applies to everyone, administrators included)"
+msgstr ""
+
+#: spoolsteward/policy/control.py:23
+msgid "gateway in maintenance: only administrators can print or scan"
+msgstr ""
+
+#: spoolsteward/policy/engine.py:146
+msgid "user disabled"
+msgstr ""
+
+#: spoolsteward/policy/engine.py:153
+#, python-format
+msgid "%(period)s page limit would be exceeded (used %(used)s, this document %(pages)s, limit %(limit)s)"
+msgstr ""
+
+#: spoolsteward/policy/engine.py:159
+#, python-format
+msgid "%(period)s %(noun)s limit reached (%(used)s/%(limit)s)"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:48
+msgid "The reason is required"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:50
+#, python-format
+msgid "The reason is too long (max %(max)s characters)"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:51
+#, python-format
+msgid "The note is too long (max %(max)s characters)"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:79
+msgid "account disabled"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:81
+#, python-format
+msgid "you already have %(n)s open requests: wait for an answer or cancel one"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:95 spoolsteward/policy/grants.py:120
+msgid "invalid request"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:97 spoolsteward/policy/grants.py:228
+#: spoolsteward/policy/grants.py:274
+#, python-format
+msgid "the amount must be between 1 and %(max)s"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:99
+#, python-format
+msgid "no %(metric)s limit applies to you, there is nothing to ask for"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:107
+msgid "this account has no group"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:110
+msgid "that group can not be requested"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:112
+msgid "you are already in that group"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:125
+msgid "invalid printer name"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:136
+msgid "you already have this permission"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:141
+msgid "you already asked for this: wait for the answer"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:147
+msgid "not your request"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:153 spoolsteward/policy/grants.py:221
+#: spoolsteward/policy/grants.py:261
+msgid "the request was already decided"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:168
+#, python-format
+msgid "no %(metric)s limit applies to %(user)s any more: nothing to extend"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:196
+msgid "the end date must be in the future"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:212
+msgid "the user is disabled"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:215
+msgid "the request has expired"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:242
+msgid "the requested group no longer exists"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:288
+#, python-format
+msgid "%(user)s already has this permission"
+msgstr ""
+
+#: spoolsteward/policy/grants.py:303 spoolsteward/policy/grants.py:314
+msgid "the grant was already revoked"
+msgstr ""
+
+#: spoolsteward/policy/keepalive.py:30
+msgid "1 day"
+msgstr ""
+
+#: spoolsteward/policy/keepalive.py:30
+msgid "3 days"
+msgstr ""
+
+#: spoolsteward/policy/keepalive.py:30
+msgid "1 week (recommended)"
+msgstr ""
+
+#: spoolsteward/policy/keepalive.py:30
+msgid "2 weeks"
+msgstr ""
+
+#: spoolsteward/policy/keepalive.py:30
+msgid "30 days"
+msgstr ""
+
+#: spoolsteward/policy/keepalive.py:39
+msgid "Invalid unit of time"
+msgstr ""
+
+#: spoolsteward/policy/keepalive.py:41
+msgid "The interval must be a whole number"
+msgstr ""
+
+#: spoolsteward/policy/keepalive.py:44
+#, python-format
+msgid "The interval must be between 1 hour and %(n)s days"
+msgstr ""
+
+#: spoolsteward/policy/keepalive.py:51
+#, python-format
+msgid "every day"
+msgid_plural "every %(n)s days"
+msgstr[0] ""
+msgstr[1] ""
+
+#: spoolsteward/policy/keepalive.py:52
+#, python-format
+msgid "every hour"
+msgid_plural "every %(n)s hours"
+msgstr[0] ""
+msgstr[1] ""
+
+#: spoolsteward/policy/keepalive.py:118
+#, python-format
+msgid "CUPS refused the job (status %(code)s)"
+msgstr ""
+
+#: spoolsteward/policy/keepalive.py:118
+msgid "unknown"
+msgstr ""
+
+#: spoolsteward/policy/keepalive.py:126
+msgid "Maintenance page"
+msgstr ""
+
+#: spoolsteward/policy/keepalive.py:126
+#, python-format
+msgid "%(title)s · queue %(queue)s · %(when)s · %(mode)s"
+msgstr ""
+
+#: spoolsteward/policy/keepalive.py:128
+msgid "What it is for"
+msgstr ""
+
+#: spoolsteward/policy/keepalive.py:128
+msgid "Automatic periodic print: keeps the print heads and rollers clean."
+msgstr ""
+
+#: spoolsteward/policy/keepalive.py:129
+msgid "Schedule"
+msgstr ""
+
+#: spoolsteward/policy/pages.py:100
+#, python-format
+msgid "Invalid pages: “%(part)s”. Example: 1,5 or 2-4"
+msgstr ""
+
+#: spoolsteward/policy/pages.py:104
+#, python-format
+msgid "Invalid range: “%(part)s”"
+msgstr ""
+
+#: spoolsteward/policy/pages.py:107
+msgid "Too many page ranges"
+msgstr ""
+
+#: spoolsteward/policy/pages.py:120
+#, python-format
+msgid "The document has only %(n)s page"
+msgid_plural "The document has only %(n)s pages"
+msgstr[0] ""
+msgstr[1] ""
+
+#: spoolsteward/policy/permissions.py:43
+msgid "Mon"
+msgstr ""
+
+#: spoolsteward/policy/permissions.py:43
+msgid "Tue"
+msgstr ""
+
+#: spoolsteward/policy/permissions.py:43
+msgid "Wed"
+msgstr ""
+
+#: spoolsteward/policy/permissions.py:43
+msgid "Thu"
+msgstr ""
+
+#: spoolsteward/policy/permissions.py:43
+msgid "Fri"
+msgstr ""
+
+#: spoolsteward/policy/permissions.py:43
+msgid "Sat"
+msgstr ""
+
+#: spoolsteward/policy/permissions.py:43
+msgid "Sun"
+msgstr ""
+
+#: spoolsteward/policy/permissions.py:250
+#, python-format
+msgid "printer %(printer)s"
+msgstr ""
+
+#: spoolsteward/policy/permissions.py:365
+#, python-format
+msgid "printing on %(printer)s is not allowed for this account"
+msgstr ""
+
+#: spoolsteward/policy/permissions.py:369
+#, python-format
+msgid "printing is allowed only %(window)s"
+msgstr ""
+
+#: spoolsteward/policy/permissions.py:376
+msgid "colour printing is not allowed for this account"
+msgstr ""
+
+#: spoolsteward/policy/permissions.py:388
+msgid "one-sided printing is not allowed for this account"
+msgstr ""
+
+#: spoolsteward/policy/rules.py:19
+#, python-format
+msgid "limit must be between 0 and %(max)s"
+msgstr ""
+
+#: spoolsteward/policy/testpage.py:11
+msgid "Cyan"
+msgstr ""
+
+#: spoolsteward/policy/testpage.py:11
+msgid "Magenta"
+msgstr ""
+
+#: spoolsteward/policy/testpage.py:11
+msgid "Yellow"
+msgstr ""
+
+#: spoolsteward/policy/testpage.py:11 spoolsteward/policy/testpage.py:122
+msgid "Black"
+msgstr ""
+
+#: spoolsteward/policy/testpage.py:12
+msgid "Red"
+msgstr ""
+
+#: spoolsteward/policy/testpage.py:12
+msgid "Green"
+msgstr ""
+
+#: spoolsteward/policy/testpage.py:12
+msgid "Blue"
+msgstr ""
+
+#: spoolsteward/policy/testpage.py:122
+#, python-format
+msgid "Grey %(p)s%%"
+msgstr ""
+

@@ -8,10 +8,10 @@ import httpx
 import pytest
 from sqlalchemy import select
 
-from app.config import settings
-from app.db.models import AdminAudit, PrinterOffline
-from app.ipp import codec
-from app.policy import discovery
+from spoolsteward.config import settings
+from spoolsteward.db.models import AdminAudit, PrinterOffline
+from spoolsteward.ipp import codec
+from spoolsteward.policy import discovery
 from tests.conftest import csrf_of_page, make_user, portal_login
 
 GOOD = "correct horse battery"
@@ -73,8 +73,8 @@ class FakeCups:
 
 @pytest.fixture
 async def usb(portal, monkeypatch):
-    import app.admin.printers as printers_mod
-    import app.cups_client as cc
+    import spoolsteward.admin.printers as printers_mod
+    import spoolsteward.cups_client as cc
     state = {"down": set(), "bridge": []}
 
     async def online(uri, usb_present=None):
@@ -181,7 +181,7 @@ async def test_look_now_button(usb):
     tok = await csrf_of_page(usb, "/admin/printers")
     r = await usb.post("/admin/printers/discover", data={"csrf_token": tok})
     assert r.status_code == 303 and usb.fake.added
-    assert "1 nuova stampante" in (await usb.get("/admin/printers")).text or "Epson_L3150" in (await usb.get("/admin/printers")).text
+    assert "1 new printer added" in (await usb.get("/admin/printers")).text or "Epson_L3150" in (await usb.get("/admin/printers")).text
 
 
 # ---------------------------------------------------------------- queues that leave
@@ -225,7 +225,7 @@ async def test_the_wait_can_be_switched_off(usb, monkeypatch):
 
 
 async def test_a_usb_device_missing_from_the_bus_is_unreachable(usb, monkeypatch):
-    import app.cups_client as cc
+    import spoolsteward.cups_client as cc
     monkeypatch.undo()                                            # the real is_online: usb:// is judged by the bus listing
     assert await cc.is_online(BROTHER, {BROTHER}) and not await cc.is_online(BROTHER, set()) and await cc.is_online(BROTHER, None)
 
@@ -325,18 +325,18 @@ async def test_a_refused_device_is_not_asked_again_at_once(usb, monkeypatch):
 
 async def test_ink_levels_come_from_the_printer_when_the_new_queue_has_none(usb, monkeypatch):
     """CUPS learns the markers only after printing on a queue; a queue just created shows no ink, the printer knows."""
-    import app.admin.printers as printers_mod
+    import spoolsteward.admin.printers as printers_mod
 
     async def device(base):
         return {"ipp": {"ink": [{"name": "Black", "level": 71, "color": "#000000", "low": False}]}, "usage": [], "config": {}, "scanner": None}
     monkeypatch.setattr(printers_mod, "_device", device)
     page = (await usb.get("/admin/printers")).text
-    assert "Ink left" in page or "Inchiostro" in page
+    assert "Ink left" in page
     assert "71%" in page
 
 
 def test_ink_is_read_from_marker_attributes():
-    from app.admin.printers import _ink
+    from spoolsteward.admin.printers import _ink
     g = codec.Group(codec.TAG_PRINTER, [codec.Attr("marker-names", [codec.Val(codec.TAG_NAME, "Black"), codec.Val(codec.TAG_NAME, "Cyan")]),
                                         codec.Attr("marker-levels", [codec.Val(codec.TAG_INTEGER, 5), codec.Val(codec.TAG_INTEGER, 80)]),
                                         codec.Attr("marker-colors", [codec.Val(codec.TAG_NAME, "#000000"), codec.Val(codec.TAG_NAME, "#00ffff")]),
@@ -438,8 +438,8 @@ async def test_a_new_printer_goes_after_the_ones_already_placed(usb):
 
 
 async def test_deleting_a_user_forgets_their_order(usb):
-    from app.auth.users import delete_user
-    from app.db.models import PrinterOrder, User
+    from spoolsteward.auth.users import delete_user
+    from spoolsteward.db.models import PrinterOrder, User
     usb.fake.queues = [("a", "ipp://192.0.2.1/ipp/print"), ("b", "ipp://192.0.2.2/ipp/print")]
     tok = await csrf_of_page(usb, "/admin/printers")
     await usb.post("/admin/printers/b/move", data={"csrf_token": tok, "direction": "up"})
@@ -453,7 +453,7 @@ async def test_deleting_a_user_forgets_their_order(usb):
 # ---------------------------------------------------------------- rename
 
 async def test_a_queue_can_be_renamed_and_what_the_gateway_keeps_follows(usb):
-    from app.db.models import PrinterControl, PrinterKeepalive, PrinterOrder, PrinterSeen
+    from spoolsteward.db.models import PrinterControl, PrinterKeepalive, PrinterOrder, PrinterSeen
     tok = await csrf_of_page(usb, "/admin/printers")
     await usb.post("/admin/printers/lan/move", data={"csrf_token": tok, "direction": "up"})
     with usb.sm() as s:

@@ -6,9 +6,9 @@ import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
-from app import notices, secretcheck
-from app.config import settings
-from app.db.models import Base, GatewaySetting, JobLog, JobState, Notice
+from spoolsteward import notices, secretcheck
+from spoolsteward.config import settings
+from spoolsteward.db.models import Base, GatewaySetting, JobLog, JobState, Notice
 from tests.conftest import make_user
 
 
@@ -98,7 +98,6 @@ def test_a_failure_never_stops_the_start(sm, monkeypatch):
     secretcheck.run(sm)
 
 
-@pytest.mark.usefixtures("english")
 async def test_the_first_administrator_reads_it_in_the_bell(portal, monkeypatch):
     from tests.conftest import portal_login
     monkeypatch.setattr(settings, "secret_key", "first-key-" + "x" * 40)

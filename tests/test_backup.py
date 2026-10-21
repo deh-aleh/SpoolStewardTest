@@ -9,9 +9,9 @@ from pathlib import Path
 import pytest
 from sqlalchemy import select
 
-from app.backup import core, crypto, service
-from app.config import settings
-from app.db.models import AdminAudit, BackupTarget
+from spoolsteward.backup import core, crypto, service
+from spoolsteward.config import settings
+from spoolsteward.db.models import AdminAudit, BackupTarget
 from tests.conftest import csrf_of_page, make_user, portal_login
 
 GOOD = "correct horse battery"
@@ -72,11 +72,10 @@ def test_folder_cannot_leave_the_backup_root(dirs, tmp_path):
     for bad in ("../outside", "/etc", "a/../../x", "link", "link/sub", ".hidden", "a b\x00c", "x" * 100, ""):
         with pytest.raises(core.BackupError):
             core.resolve_folder(bad)
-    assert core.resolve_folder("nas/ufficio") == (dirs / "nas" / "ufficio").resolve()
-    assert (dirs / "nas" / "ufficio").is_dir()
+    assert core.resolve_folder("nas/office") == (dirs / "nas" / "office").resolve()
+    assert (dirs / "nas" / "office").is_dir()
 
 
-@pytest.mark.usefixtures("english")
 def test_no_root_means_a_clear_error(tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "backup_root", str(tmp_path / "missing"))
     with pytest.raises(core.BackupError, match="not available"):
@@ -214,14 +213,14 @@ async def test_admins_have_their_own_backups(portal, dirs):
     await portal_login(portal, "ada", GOOD)
     csrf = await csrf_of_page(portal, "/admin/backups")
     page = await portal.get("/admin/backups")
-    assert "Nessun backup configurato" in page.text and 'value="passphrase" checked' in page.text
+    assert "No backup configured" in page.text and 'value="passphrase" checked' in page.text
 
     bad = await portal.post("/admin/backups", data=dict(csrf_token=csrf, name="x", folder="../etc", mode="none"))
     assert bad.status_code == 303
-    assert "Nome cartella non valido" in (await portal.get("/admin/backups")).text
+    assert "Folder name not valid" in (await portal.get("/admin/backups")).text
     await portal.post("/admin/backups", data=dict(csrf_token=csrf, name="x", folder="ada", mode="passphrase",
                                                             passphrase=PASS, passphrase2="different one!!"))
-    assert "sono diverse" in (await portal.get("/admin/backups")).text
+    assert "passphrases differ" in (await portal.get("/admin/backups")).text
     with portal.sm() as s:
         assert s.scalars(select(BackupTarget)).first() is None
 
@@ -239,7 +238,7 @@ async def test_admins_have_their_own_backups(portal, dirs):
 
     run = await portal.post(f"/admin/backups/{tid}/run", data=dict(csrf_token=csrf))
     assert run.status_code == 303
-    assert "Backup eseguito" in (await portal.get("/admin/backups")).text
+    assert "Backup done" in (await portal.get("/admin/backups")).text
     files = [p for p in (dirs / "nas" / "ada").iterdir() if p.name.endswith(".tar.gz.enc")]
     assert len(files) == 1 and "-t%d-" % tid in files[0].name
     assert list((dirs / "nas" / "ada").glob("audit-archive-*/*.enc"))
@@ -249,7 +248,7 @@ async def test_admins_have_their_own_backups(portal, dirs):
     await portal_login(portal, "eli", GOOD)
     csrf2 = await csrf_of_page(portal, "/admin/backups")
     text = (await portal.get("/admin/backups")).text
-    assert "NAS ada" in text and "appartiene a ada" in text
+    assert "NAS ada" in text and "belongs to ada" in text
     assert (await portal.get(f"/admin/backups/{tid}/edit")).status_code == 403
     assert (await portal.post(f"/admin/backups/{tid}/delete", data=dict(csrf_token=csrf2))).status_code == 403
     assert (await portal.post(f"/admin/backups/{tid}/toggle", data=dict(csrf_token=csrf2))).status_code == 403
@@ -270,26 +269,25 @@ async def test_owner_can_edit_toggle_and_delete(portal, dirs):
     make_user(portal.sm, "ada", password=GOOD, admin=True)
     await portal_login(portal, "ada", GOOD)
     csrf = await csrf_of_page(portal, "/admin/backups")
-    await portal.post("/admin/backups", data=dict(csrf_token=csrf, name="uno", folder="uno", mode="none"))
+    await portal.post("/admin/backups", data=dict(csrf_token=csrf, name="one", folder="one", mode="none"))
     with portal.sm() as s:
         tid = s.scalars(select(BackupTarget)).one().id
-    assert "Modifica backup" in (await portal.get(f"/admin/backups/{tid}/edit")).text
-    await portal.post(f"/admin/backups/{tid}", data=dict(csrf_token=csrf, name="due", folder="due", hour="5",
+    assert "Edit backup" in (await portal.get(f"/admin/backups/{tid}/edit")).text
+    await portal.post(f"/admin/backups/{tid}", data=dict(csrf_token=csrf, name="two", folder="two", hour="5",
                                                          keep_daily="2", keep_weekly="0", keep_monthly="0"))
     await portal.post(f"/admin/backups/{tid}/toggle", data=dict(csrf_token=csrf))
     with portal.sm() as s:
         t = s.get(BackupTarget, tid)
-        assert (t.name, t.folder, t.hour, t.enabled) == ("due", "due", 5, False)
+        assert (t.name, t.folder, t.hour, t.enabled) == ("two", "two", 5, False)
     await portal.post(f"/admin/backups/{tid}/delete", data=dict(csrf_token=csrf))
     with portal.sm() as s:
         assert s.get(BackupTarget, tid) is None
 
 
-@pytest.mark.usefixtures("english")
 async def test_a_failing_backup_is_visible_not_silent(portal, dirs):
     make_user(portal.sm, "ada", password=GOOD, admin=True)
     with portal.sm() as s:
-        t = BackupTarget(owner_name="ada", name="rotto", folder="x/../..", mode="none")
+        t = BackupTarget(owner_name="ada", name="broken", folder="x/../..", mode="none")
         s.add(t)
         s.commit()
         tid = t.id
@@ -301,14 +299,13 @@ async def test_a_failing_backup_is_visible_not_silent(portal, dirs):
         assert service.health(t, datetime.now(UTC)) == "error"
 
 
-@pytest.mark.usefixtures("english")
 async def test_unmounted_destination_raises_a_notice_with_the_real_name_and_it_closes_when_fixed(portal, dirs):
-    from app.db.models import Notice
+    from spoolsteward.db.models import Notice
 
     make_user(portal.sm, "ada", password=GOOD, admin=True)
     (dirs / "nas").mkdir()
     with portal.sm() as s:
-        t = BackupTarget(owner_name="ada", name="NAS ufficio", folder="nas", mode="none", require_marker=True)
+        t = BackupTarget(owner_name="ada", name="NAS office", folder="nas", mode="none", require_marker=True)
         s.add(t)
         s.commit()
         tid = t.id
@@ -316,10 +313,10 @@ async def test_unmounted_destination_raises_a_notice_with_the_real_name_and_it_c
     assert not ok
     with portal.sm() as s:
         n = s.query(Notice).filter(Notice.kind == "backup_not_mounted", Notice.key == str(tid)).one()
-        assert n.dismissed_at is None and n.detail_json["name"] == "NAS ufficio"
+        assert n.dismissed_at is None and n.detail_json["name"] == "NAS office"
     await portal_login(portal, "ada", GOOD)
     page = (await portal.get("/admin/notices")).text
-    assert "NAS ufficio" in page and "can not be reached" in page
+    assert "NAS office" in page and "can not be reached" in page
 
     core.make_marker(dirs / "nas")                        # mounted again
     ok, _msg = service.run_target(portal.sm, tid)
@@ -385,7 +382,7 @@ async def test_general_backup_follows_gateway_env(portal, dirs, monkeypatch):
     make_user(portal.sm, "ada", password=GOOD, admin=True)
     await portal_login(portal, "ada", GOOD)
     text = (await portal.get("/admin/backups")).text
-    assert "si modifica in .env" in text
+    assert "edited in .env" in text
     assert (await portal.get(f"/admin/backups/{g.id}/edit")).status_code == 403
 
 
@@ -410,7 +407,7 @@ async def test_run_now_adds_a_copy_and_only_the_schedule_removes_old_ones(portal
 
 
 def test_marker_required_refuses_unmounted_folder(tmp_path):
-    from app.backup import core
+    from spoolsteward.backup import core
 
     folder = tmp_path / "nas"
     folder.mkdir()
@@ -423,7 +420,7 @@ def test_marker_required_refuses_unmounted_folder(tmp_path):
 async def test_update_button_needs_updater_and_a_working_scheduled_backup(portal, dirs, tmp_path, monkeypatch):
     import json
 
-    from app import updates
+    from spoolsteward import updates
 
     udir = tmp_path / "update"
     udir.mkdir()
@@ -461,7 +458,7 @@ async def test_update_button_needs_updater_and_a_working_scheduled_backup(portal
 
 
 def test_update_request_refuses_other_majors_and_junk(tmp_path, monkeypatch):
-    from app import updates
+    from spoolsteward import updates
 
     monkeypatch.setattr(settings, "update_dir", str(tmp_path))
     monkeypatch.setattr(updates, "app_version", lambda: "1.4.0")
@@ -476,7 +473,7 @@ def test_update_request_refuses_other_majors_and_junk(tmp_path, monkeypatch):
     assert updates.read_status() == {}
 
 
-def test_bounded_gives_up_on_a_stuck_disk_and_does_not_pile_up(english):
+def test_bounded_gives_up_on_a_stuck_disk_and_does_not_pile_up():
     import threading
     import time
 

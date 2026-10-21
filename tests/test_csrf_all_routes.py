@@ -7,9 +7,9 @@ from types import SimpleNamespace
 import pytest
 from fastapi import APIRouter, HTTPException
 
-import app.main as main
-from app.admin.common import check_csrf
-from app.netutil import client_ip
+import spoolsteward.main as main
+from spoolsteward.admin.common import check_csrf
+from spoolsteward.netutil import client_ip
 from tests.conftest import make_user, portal_login
 
 GOOD = "correct horse battery"

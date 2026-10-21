@@ -31,12 +31,12 @@ il tuo account locale.». Entrambe sono tradotte in ogni lingua; una frase nuova
 - Le risposte HTTP di protocollo (403, 404…).
 - I testi che arrivano da stampanti o CUPS (nomi degli inchiostri, firmware, avvisi del dispositivo).
 - **Le pagine PDF stampate dal gateway** (prova e manutenzione): sempre in inglese. Russo e cinese non si possono scrivere con i font
-  base dei PDF; servirebbe un font incorporato (`FONT_LANGUAGES` in `app/policy/testpage.py`).
+  base dei PDF; servirebbe un font incorporato (`FONT_LANGUAGES` in `spoolsteward/policy/testpage.py`).
 - Date e numeri non seguono la lingua (formato ISO fisso).
 
 ## 3. Aggiungere o correggere una traduzione
 
-I cataloghi sono file gettext: `app/locales/<lingua>/messages.po` (`msgid` = testo inglese, `msgstr` = traduzione). Si leggono
+I cataloghi sono file gettext: `spoolsteward/locales/<lingua>/messages.po` (`msgid` = testo inglese, `msgstr` = traduzione). Si leggono
 all'avvio e si compilano in memoria con Babel — nessun file `.mo`, nessuna compilazione. I segnaposto `%(nome)s` restano uguali e un `%`
 letterale si scrive `%%`.
 
@@ -47,11 +47,11 @@ python scripts/i18n.py check      # completezza e segnaposto
 pytest tests/test_i18n.py         # fallisce se un catalogo è incompleto o ha segnaposto sbagliati
 ```
 
-Lingua nuova: aggiungila a `LANGUAGES` in `app/i18n.py` e a `LANGS` in `scripts/i18n.py`, poi esegui `extract`.
+Lingua nuova: aggiungila a `LANGUAGES` in `spoolsteward/i18n.py` e a `LANGS` in `scripts/i18n.py`, poi esegui `extract`.
 
 ## 4. Regole per chi scrive il codice
 
-- Ogni testo visibile è inglese dentro `_("...")` (Python: `from app.i18n import _`; template: `{{ _("...") }}`).
+- Ogni testo visibile è inglese dentro `_("...")` (Python: `from spoolsteward.i18n import _`; template: `{{ _("...") }}`).
 - Le voci di menu sono corte di proposito e possono differire dai titoli delle pagine: usano `_p("menu", "Backup")` (stesso testo, contesto `menu`). Per tradurne una, dai a `scripts/i18n.py add` la chiave `"menu::Backup"`.
 - I valori sono sempre nominati (`_("Key %(label)s revoked", label=x)`), mai concatenati.
 - I plurali usano `ngettext` (il russo ha tre forme).
@@ -62,7 +62,7 @@ Lingua nuova: aggiungila a `LANGUAGES` in `app/i18n.py` e a `LANGS` in `scripts/
 
 ## 5. Come funziona
 
-`app/i18n.py` tiene la lingua della richiesta in una `ContextVar` fissata da un middleware ASGI che sta dentro quello delle sessioni. La
+`spoolsteward/i18n.py` tiene la lingua della richiesta in una `ContextVar` fissata da un middleware ASGI che sta dentro quello delle sessioni. La
 `ContextVar` segue la richiesta nei thread dei gestori sincroni e nelle attività che avvia (scansione dal portale), quindi `_()` funziona
 ovunque dentro una richiesta. Fuori da una richiesta (scheduler) vale il valore predefinito. Nei template `_()` restituisce Markup fidato;
 `_t()` restituisce testo semplice. `user.language` (migrazione 0007) si scrive al login e si riallinea se cambia da un altro dispositivo.

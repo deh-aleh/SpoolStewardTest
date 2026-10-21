@@ -1,17 +1,53 @@
-# Runs the tests on every pull request and every push to main.
+# Runs the tests on every pull request and every push to main. release.yml runs this same workflow before it builds
+# anything (workflow_call), so a release is tested exactly like a pull request.
+# The whole suite runs, including the tests that need CUPS and FreeRADIUS: they come from docker-compose.test.yml
+# (CUPS built from docker/stack/Dockerfile, the image of production). SPOOLSTEWARD_TESTS_REQUIRE_DOCKER=1 makes those
+# tests fail, not skip, when that stack is not reachable (tests/conftest.py).
+# Actions are pinned to a commit (the comment says which version it is): a moved tag can not change what runs here.
 name: CI
 on:
   pull_request:
   push:
     branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      SPOOLSTEWARD_TESTS_REQUIRE_DOCKER: "1"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
         with:
           python-version: "3.12"
-      - run: pip install ".[dev]"
-      - run: python -m pytest -q
+      - name: Install ipptool (used by the print test script)
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends cups-ipp-utils
+      # docker/run is created here, by the runner user, before docker would create it as root:
+      # the test CUPS puts its unix socket there (tests/conftest.py, CUPS_SOCK)
+      - name: Start the test stack (CUPS, FreeRADIUS) and wait until both answer
+        run: |
+          mkdir -p docker/run
+          docker compose -f docker-compose.test.yml up -d --build --wait
+      # exact versions and SHA-256 from the lock files; the project itself adds no package (--no-deps)
+      - name: Install from the lock files
+        run: |
+          python -m pip install --require-hashes -r requirements/build.txt
+          python -m pip install --require-hashes -r requirements/dev.txt
+          python -m pip install --no-deps --no-build-isolation .
+          python -m pip check
+      - name: Tests
+        run: python -m pytest -q -rs
+      - name: Logs of the test stack
+        if: failure()
+        run: |
+          docker compose -f docker-compose.test.yml ps -a
+          docker compose -f docker-compose.test.yml logs --no-color
+      - name: Stop the test stack
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v
