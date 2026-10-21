@@ -177,6 +177,9 @@ autorevole è `spoolsteward/config.py`. Riassunto:
 
 ## 4. Script
 
+Un'installazione ha gli script per il server e per i computer degli utenti. `make-release-package.sh`, `gen_dev_cert.sh` e
+`i18n.py` servono a chi sviluppa: stanno solo nel repository, non nel pacchetto della release.
+
 | Script | Scopo |
 |---|---|
 | `scripts/docker-init.sh [nomi/IP]` | Preparazione una tantum, in shell puro (servono `sed` e `openssl`): crea `.env` da `docker/env.example` (con versione, utente e un segreto generato), le cartelle `data/` e un certificato TLS autofirmato con i nomi/IP indicati. |

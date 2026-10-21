@@ -2,8 +2,10 @@
 # Build the release package that scripts/update.sh downloads (used by .github/workflows/release.yml, and by the tests).
 #   scripts/make-release-package.sh VERSION OUT_DIR
 # Writes OUT_DIR/spoolsteward-VERSION.tar.gz and OUT_DIR/SHA256SUMS. The package holds what runs on the host next to the
-# published images: docker-compose.yml, scripts/*.sh, docker/env.example, the config files the compose file mounts, the docs.
-# It never holds .env, config/ or data/: an update must not be able to touch them.
+# published images: docker-compose.yml, the scripts listed below, docker/env.example, the config files the compose file mounts,
+# the docs. It never holds .env, config/ or data/: an update must not be able to touch them.
+# Scripts are listed by name: a new one is not shipped until it is added here. Those for developers (this one,
+# gen_dev_cert.sh, i18n.py) stay in the repository; an update removes from an installation the files the new package lacks.
 set -eu
 cd "$(dirname "$0")/.."
 version="${1:?usage: $0 VERSION OUT_DIR}"; out="${2:?usage: $0 VERSION OUT_DIR}"
@@ -14,7 +16,7 @@ trap 'rm -rf "$stage"' EXIT
 mkdir -p "$stage/$top" "$out"
 {
     echo docker-compose.yml; echo LICENSE; echo NOTICE; echo README.md; echo README.it.md
-    ls scripts/*.sh
+    for s in docker-init update backup cert-sync queue-restore add-printer-linux print-test; do echo "scripts/$s.sh"; done
     echo docker/env.example; echo docker/stack/cups/cupsd.conf; echo docker/radius/clients.conf; echo docker/radius/authorize
     find docs -type f ! -path '*/.*' | sort      # pages and pictures; no hidden file (.DS_Store and the like)
 } > "$stage/list"

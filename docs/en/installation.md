@@ -21,7 +21,7 @@ Problems: [troubleshooting.md](troubleshooting.md).
 
 ```sh
 # 0. download the package of the newest release (https://github.com/deh-aleh/SpoolSteward/releases) and check it
-VERSION=0.0.0-beta.1
+VERSION=w.x.y #w.x.y-beta.z if you want to install a beta version
 curl -LO https://github.com/deh-aleh/SpoolSteward/releases/download/v$VERSION/spoolsteward-$VERSION.tar.gz
 curl -LO https://github.com/deh-aleh/SpoolSteward/releases/download/v$VERSION/SHA256SUMS
 sha256sum -c --ignore-missing SHA256SUMS            # must answer "OK"

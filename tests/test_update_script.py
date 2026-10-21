@@ -179,6 +179,11 @@ def test_the_real_release_package_is_complete_and_has_nothing_of_the_users(tmp_p
         assert needed in files, needed
     assert not any(f.startswith((".env", "config", "data", ".git")) or f.endswith(".env") for f in files)
     assert all(f"spoolsteward-3.2.1/{f}" in names for f in files)
+    # every script is either shipped or kept for developers: a new one must be put on one side on purpose
+    developers = {"scripts/make-release-package.sh", "scripts/gen_dev_cert.sh"}
+    shipped = {f for f in files if f.startswith("scripts/")}
+    assert not shipped & developers
+    assert shipped | developers == {f"scripts/{p.name}" for p in (ROOT / "scripts").glob("*.sh")}
     compose = (ROOT / "docker-compose.yml").read_text()
     for mounted in ("docker/stack/cups/cupsd.conf", "docker/radius/clients.conf", "docker/radius/authorize"):
         assert f"./{mounted}" in compose and mounted in files        # whatever the compose file mounts must come with it

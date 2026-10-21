@@ -115,7 +115,7 @@ raggiungibile dai client (predefinita 8631). Sull'host non si installa nulla.
 
 ```sh
 # 0. scarica il pacchetto della release (ultima versione: https://github.com/deh-aleh/SpoolSteward/releases)
-VERSION=0.0.0-beta.1
+VERSION=w.x.y #w.x.y-beta.z se vuoi installare una versione in beta
 curl -LO https://github.com/deh-aleh/SpoolSteward/releases/download/v$VERSION/spoolsteward-$VERSION.tar.gz
 tar xzf spoolsteward-$VERSION.tar.gz && cd spoolsteward-$VERSION      # (nella guida c'è anche come controllare il download)
 

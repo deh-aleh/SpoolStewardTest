@@ -113,7 +113,7 @@ reachable by clients (default 8631). Nothing is installed on the host.
 
 ```sh
 # 0. download the release package (newest version: https://github.com/deh-aleh/SpoolSteward/releases)
-VERSION=0.0.0-beta.1
+VERSION=w.x.y #w.x.y-beta.z if you want to install a beta version
 curl -LO https://github.com/deh-aleh/SpoolSteward/releases/download/v$VERSION/spoolsteward-$VERSION.tar.gz
 tar xzf spoolsteward-$VERSION.tar.gz && cd spoolsteward-$VERSION      # (the guide also shows how to check the download)
 

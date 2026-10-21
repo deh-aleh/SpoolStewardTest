@@ -177,6 +177,9 @@ authoritative list is `spoolsteward/config.py`. Summary:
 
 ## 4. Scripts
 
+An installation has the scripts for the server and for the users' computers. `make-release-package.sh`, `gen_dev_cert.sh` and
+`i18n.py` are for developers: they are only in the repository, not in the release package.
+
 | Script | Purpose |
 |---|---|
 | `scripts/docker-init.sh [names/IPs]` | One-time setup, in plain shell (needs `sed` and `openssl`): creates `.env` from `docker/env.example` (with version, user and a generated secret), the `data/` folders and a self-signed TLS certificate whose SAN lists the names/IPs given. |

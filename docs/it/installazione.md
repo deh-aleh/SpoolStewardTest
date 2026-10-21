@@ -21,7 +21,7 @@ installa dal pacchetto della release con le immagini pubblicate. Costruire le im
 
 ```sh
 # 0. scarica il pacchetto dell'ultima release (https://github.com/deh-aleh/SpoolSteward/releases) e controllalo
-VERSION=0.0.0-beta.1
+VERSION=w.x.y #w.x.y-beta.z se vuoi installare una versione in beta
 curl -LO https://github.com/deh-aleh/SpoolSteward/releases/download/v$VERSION/spoolsteward-$VERSION.tar.gz
 curl -LO https://github.com/deh-aleh/SpoolSteward/releases/download/v$VERSION/SHA256SUMS
 sha256sum -c --ignore-missing SHA256SUMS            # deve rispondere «OK»: il file è quello pubblicato
