@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Users") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block body %}
 {% macro lim(m) %}{% if m.limit is none %}<span class="muted">{{ _("unlimited") }}</span>{% else %}<span {% if m.tip %}title="{{ m.tip }}"{% endif %}><span class="{{ 'inherited' if m.inherited }}">{{ m.limit }}</span>{% if m.extra %} <span class="extra">+{{ m.extra }}</span>{% endif %}</span>{% endif %}{% endmacro %}
 <div class="card">
@@ -33,10 +34,10 @@
       <input type="text" name="username" placeholder="{{ _('user name') }}" required>
       <select name="group_id"><option value="0">{{ _("Default group (%(group)s)", group=default_group) }}</option>{% for g in groups if g.name != default_group %}<option value="{{ g.id }}">{{ g.name }}</option>{% endfor %}</select>
     </div>
-    <div class="row" style="margin-top:8px">
-      <div class="pwcell" style="flex:0 1 280px;min-width:200px">{% with name="password", placeholder=_t('temporary password (min. 12)'), autocomplete="new-password", optional=true %}{% include "_pwfield.html" %}{% endwith %}</div>
+    <div class="row ur-row">
+      <div class="pwcell ur-pw">{% with name="password", placeholder=_t('temporary password (min. 12)'), autocomplete="new-password", optional=true %}{% include "_pwfield.html" %}{% endwith %}</div>
       <label><input type="checkbox" name="is_admin" value="1"> {{ _("administrator") }}</label>
-      <button class="ico" style="margin-left:8px"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.4"/><path d="M3 19.5c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M19 8v6M16 11h6"/></svg>{{ _("Create") }}</button>
+      <button class="ico ur-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.4"/><path d="M3 19.5c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M19 8v6M16 11h6"/></svg>{{ _("Create") }}</button>
     </div>
   </form>
   {% if radius_enabled %}
@@ -47,7 +48,7 @@
     <div class="row">
       <input type="text" name="username" placeholder="{{ _('RADIUS username') }}" required>
       <select name="group_id"><option value="0">{{ _("Default group (%(group)s)", group=default_group) }}</option>{% for g in groups if g.name != default_group %}<option value="{{ g.id }}">{{ g.name }}</option>{% endfor %}</select>
-      <button class="ico" style="margin-left:8px"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.4"/><path d="M3 19.5c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M19 8v6M16 11h6"/></svg>{{ _("Create") }}</button>
+      <button class="ico ur-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.4"/><path d="M3 19.5c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M19 8v6M16 11h6"/></svg>{{ _("Create") }}</button>
     </div>
   </form>
   {% endif %}

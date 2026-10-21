@@ -4,12 +4,13 @@ columns, auto-refresh, sticky menu, printer block, maintenance mode, mDNS policy
 import base64
 import re
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
 from sqlalchemy import select
 
+from app.admin.accounts import ACTIONS_PAGE
 from app.admin.audit_view import COMMENT_MAX, FILE_MAX, NOTE_MAX
 from app.config import settings
 from app.db.models import (
@@ -27,13 +28,6 @@ PDF = (b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pa
        b"trailer<</Root 1 0 R/Size 4>>\n%%EOF\n")
 LONG_NAME = "relazione-trimestrale-del-reparto-amministrazione-con-allegati-e-note-finali-definitiva-v7.pdf"
 LONG_COMMENT = "da stampare fronte e retro per la riunione di giovedì in sala grande, grazie mille"
-
-
-@pytest.fixture
-async def admin(portal):
-    make_user(portal.sm, "boss", password=GOOD, admin=True)
-    await portal_login(portal, "boss", GOOD)
-    return portal
 
 
 def add_jobs(cl, n=1, **kw):
@@ -129,17 +123,17 @@ async def test_csv_uses_the_device_name_and_carries_the_print_specs(admin):
 
 async def test_auto_refresh_defaults_to_30_seconds_and_is_set_in_the_settings(admin):
     page = (await admin.get("/admin/jobs")).text
-    assert "secs = 30," in page and "def = true" in page and "ogni 30 secondi" in page
+    assert 'data-ar-secs="30"' in page and 'data-ar-on="1"' in page and "ogni 30 secondi" in page
     assert 'name="seconds"' in (await admin.get("/me/settings")).text
     tok = await csrf_of_page(admin, "/me/settings")
     await admin.post("/me/settings/refresh", data={"csrf_token": tok, "seconds": "90"})
-    assert "secs = 90," in (await admin.get("/admin/jobs")).text
+    assert 'data-ar-secs="90"' in (await admin.get("/admin/jobs")).text
     r = await admin.post("/me/settings/refresh", data={"csrf_token": tok, "seconds": "2"})            # below the minimum
     assert "tra 5 e 3600" in (await admin.get("/me/settings")).text and r.status_code == 303
-    assert "secs = 90," in (await admin.get("/admin/jobs")).text
+    assert 'data-ar-secs="90"' in (await admin.get("/admin/jobs")).text
     await admin.post("/me/settings/refresh", data={"csrf_token": tok, "seconds": "0"})
     page = (await admin.get("/admin/jobs")).text
-    assert "def = false" in page and "secs = 30," in page                      # off at first; the page's switch can still turn it on
+    assert 'data-ar-on="0"' in page and 'data-ar-secs="30"' in page                      # off at first; the page's switch can still turn it on
 
 
 async def test_only_administrators_see_the_refresh_setting(portal):
@@ -152,7 +146,8 @@ async def test_only_administrators_see_the_refresh_setting(portal):
 
 async def test_menu_is_sticky_and_the_big_red_button_is_there(admin):
     page = (await admin.get("/admin/jobs")).text
-    assert "position:sticky; top:0" in page and "METTI IN MANUTENZIONE" in page and 'class="maint ' in page
+    css = (await admin.get("/admin/static/css/app.css")).text
+    assert "position:sticky; top:0" in css and "METTI IN MANUTENZIONE" in page and 'class="maint ' in page
     assert "stack-md" in page                                         # table turns into cards on narrow screens
 
 
@@ -160,11 +155,11 @@ async def test_menu_is_sticky_and_the_big_red_button_is_there(admin):
 
 async def test_user_tooltip_shows_when_a_temporary_grant_expires(admin):
     uid = make_user(admin.sm, "gina", password=GOOD, group="staff")
-    until = datetime.now(timezone.utc) + timedelta(days=2)
+    until = datetime.now(UTC) + timedelta(days=2)
     with admin.sm() as s:
         set_limit(s, SubjectType.user, uid, Metric.jobs, 5, Period.weekly)
         set_limit(s, SubjectType.user, uid, Metric.pages, 50, Period.weekly)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         s.add_all([QuotaGrant(user_id=uid, metric=Metric.jobs, amount=3, scope=RequestScope.temporary, valid_from=now - timedelta(hours=1), valid_until=until),
                    QuotaGrant(user_id=uid, metric=Metric.jobs, amount=2, scope=RequestScope.permanent, valid_from=now - timedelta(hours=1)),
                    QuotaGrant(user_id=uid, metric=Metric.pages, amount=10, scope=RequestScope.temporary, valid_from=now - timedelta(hours=1), valid_until=until)])
@@ -359,7 +354,7 @@ async def test_header_has_brand_block_and_icon_buttons(portal):
     make_user(portal.sm, "ada", password="correct horse battery", admin=True)
     await portal_login(portal, "ada", "correct horse battery")
     page = (await portal.get("/me")).text
-    assert 'class="brand' in page and "<b>PrintMinder</b><small>(ada)</small>" in page
+    assert 'class="brand' in page and "<b>SpoolSteward</b><small>(ada)</small>" in page
     assert page.count('class="maint iconbtn') == 1 and 'class="sec iconbtn"' in page      # maintenance and log out are icons
     assert 'aria-label="METTI IN MANUTENZIONE"' in page and 'aria-label="Esci"' in page   # with their (translated) names
     assert ">Azioni<" in page and ">Azioni admin<" not in page                            # short menu labels
@@ -399,7 +394,7 @@ async def test_refused_anonymous_scans_make_one_notice_a_day_not_one_per_try(por
     make_user(sm, "pia", password="correct horse battery")
     await portal_login(portal, "ada", "correct horse battery")
     page = (await portal.get("/admin/notices")).text
-    assert "10.0.0.7" in page and "CUPSPL_ESCL_ANONYMOUS" in page
+    assert "10.0.0.7" in page and "SPOOLSTEWARD_ESCL_ANONYMOUS" in page
     assert 'class="belln"' not in page and 'class="belln"' not in (await portal.get("/me")).text   # opening the list is "seeing" it
     assert notices.report(sm, "escl_anonymous_refused", "10.0.0.9", now=time.time())                # something new happens
     assert 'class="belln">1<' in (await portal.get("/me")).text                                    # red dot again, with the count
@@ -443,3 +438,56 @@ async def test_healthz_shows_only_what_the_administrator_chose(portal, monkeypat
     r = await portal.get("/healthz")                                                           # degraded: no counts, still the version
     assert r.status_code == 503 and "printers" not in r.json()
     del portal.app.state.upstream
+
+
+# ---------------------------------------------------------------- audit numbering
+
+async def test_audit_has_a_number_column_before_the_date(admin):
+    with admin.sm() as s:
+        s.add(JobLog(user_name="zed", printer="p", title="t.pdf", state=JobState.completed))
+        s.commit()
+        n = s.scalars(select(JobLog)).first().id
+    page = (await admin.get("/admin/jobs")).text
+    head = re.search(r"<tr><th>N\.</th><th>Quando</th>", page)
+    assert head and f'data-l="N." class="mono muted">{n}</td>' in page
+    assert (await admin.get("/admin/jobs.csv")).text.splitlines()[0].startswith("n,time,user,kind")
+
+
+def _job(sm, user_id, **kw):
+    with sm() as s:
+        j = JobLog(user_id=user_id, kind=kw.pop("kind", JobKind.print), printer=kw.pop("printer", "p1"), title="a.pdf",
+                   state=kw.pop("state", JobState.completed), ts=datetime.now(UTC), **kw)
+        s.add(j)
+        s.commit()
+
+
+async def test_audit_has_stripes_state_help_and_guest_info(portal, admin):
+    with portal.sm() as s:
+        boss = s.scalars(select(User).where(User.username == "boss")).one().id
+        guest = User(username="unknown-guest", provider="local", enabled=False)
+        s.add(guest)
+        s.commit()
+        gid = guest.id
+    _job(portal.sm, gid, kind=JobKind.scan, printer="scanner",
+         options_json={"via": "escl", "guest_ip": "10.1.2.3", "guest_host": "pc-aula3.scuola.lan"})
+    _job(portal.sm, boss)
+    page = (await portal.get("/admin/jobs")).text
+    assert 'class="stack-md zebra"' in page
+    assert 'id="states-help"' in page and all(w in page for w in ("Accettato.", "Completato.", "Negato.", "Fallito.", "Annullato.", "In attesa."))
+    assert re.search(r"<th>Stato <button[^>]*info-lg", page)
+    assert "10.1.2.3" in page and "pc-aula3.scuola.lan" in page and "Scansione senza accesso" in page
+    assert page.count("Scansione senza accesso") == 1                   # only the guest row has the button
+    # no hostname known: say so instead of leaving a hole
+    _job(portal.sm, gid, kind=JobKind.scan, printer="scanner", options_json={"via": "escl", "guest_ip": "10.9.9.9"})
+    assert "non disponibile" in (await portal.get("/admin/jobs")).text
+
+
+async def test_actions_page_is_30_rows_and_roomy(portal, admin):
+    with portal.sm() as s:
+        for i in range(ACTIONS_PAGE + 5):
+            s.add(AdminAudit(actor_name="boss", action=f"test.{i}"))
+        s.commit()
+    page = (await portal.get("/admin/actions")).text
+    assert ACTIONS_PAGE == 30
+    assert page.count('<td class="mono">test.') == 30 and "Pagina 1 / 2" in page
+    assert 'class="roomy stack"' in page

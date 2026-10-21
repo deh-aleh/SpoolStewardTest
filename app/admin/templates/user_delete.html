@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Delete %(user)s", user=u.username) }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block body %}
-<form class="card" method="post" action="/admin/users/{{ u.id }}/delete" style="max-width:640px">
+<form class="card ud-card" method="post" action="/admin/users/{{ u.id }}/delete">
   <h1>{{ _("Delete the account %(user)s?", user=u.username) }}</h1>
   <p>{{ _("The account, its print keys, requests, grants and personal limits will be deleted. <b>This cannot be undone.</b>") }}</p>
   <p class="muted">{{ ngettext("The print history stays intact (%(n)s record): it will keep showing the name “%(user)s” in the audit.", "The print history stays intact (%(n)s records): it will keep showing the name “%(user)s” in the audit.", jobs, user=u.username) }}
     {{ _('If you only want to block access, <a href="%(url)s">disable the account</a> instead of deleting it.', url="/admin/users/%d/edit" % u.id) }}</p>
   <input type="hidden" name="csrf_token" value="{{ csrf }}">
   <p>{{ _("To confirm, type the user name: <b>%(user)s</b>", user=u.username) }}</p>
-  <div class="row" style="margin-top:12px"><input type="text" name="confirm_name" autocomplete="off" required placeholder="{{ u.username }}"><button class="danger">{{ _("Delete permanently") }}</button><a class="btn sec" href="/admin/users/{{ u.id }}/edit">{{ _("Cancel") }}</a></div>
+  <div class="row ud-row"><input type="text" name="confirm_name" autocomplete="off" required placeholder="{{ u.username }}"><button class="danger">{{ _("Delete permanently") }}</button><a class="btn sec" href="/admin/users/{{ u.id }}/edit">{{ _("Cancel") }}</a></div>
 </form>
 {% endblock %}

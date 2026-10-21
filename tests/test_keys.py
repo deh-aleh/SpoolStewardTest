@@ -2,13 +2,14 @@
 
 import base64
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
 from sqlalchemy import select
 
 from app.auth import keys
+from app.auth import keys as keylib
 from app.config import settings
 from app.db.models import AdminAudit, JobLog, PrintKey, User
 from app.ipp import codec as c
@@ -17,7 +18,7 @@ from tests.conftest import (
 )
 
 GOOD = "correct horse battery"
-NOW = datetime(2026, 10, 7, 12, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 7, 12, 0, tzinfo=UTC)
 
 
 def basic(u, p):
@@ -114,7 +115,7 @@ async def test_key_is_shown_once_with_the_suggested_lifetime_per_kind_of_account
     assert plain not in page and plain[:8] in page and "my laptop" in page            # only the prefix is listed
     with portal.sm() as s:
         row = s.scalars(select(PrintKey)).one()
-        assert abs((row.expires_at.replace(tzinfo=timezone.utc) - row.created_at.replace(tzinfo=timezone.utc)).days
+        assert abs((row.expires_at.replace(tzinfo=UTC) - row.created_at.replace(tzinfo=UTC)).days
                    - 365) <= 1                                                          # the menu suggests one year
     await portal.post("/logout", data={"csrf_token": token})
     await portal_login(portal, "rad", "radpw")                                         # RADIUS-backed: the longest allowed is 90
@@ -122,7 +123,7 @@ async def test_key_is_shown_once_with_the_suggested_lifetime_per_kind_of_account
     await portal.post("/me/keys", data={"label": "phone", "csrf_token": token})
     with portal.sm() as s:
         row = s.scalars(select(PrintKey).join(User).where(User.username == "rad")).one()
-        assert abs((row.expires_at.replace(tzinfo=timezone.utc) - row.created_at.replace(tzinfo=timezone.utc)).days
+        assert abs((row.expires_at.replace(tzinfo=UTC) - row.created_at.replace(tzinfo=UTC)).days
                    - settings.key_ttl_days_radius) <= 1
 
 
@@ -306,7 +307,7 @@ def test_extending_gives_a_new_date_and_rearms_the_warning(portal):
         row = s.get(PrintKey, kid)
         row.expiry_notified_at = NOW
         assert keys.extend_key(s, row, 90, NOW + timedelta(days=5))
-        assert abs((row.expires_at.replace(tzinfo=timezone.utc) - (NOW + timedelta(days=95))).total_seconds()) < 1
+        assert abs((row.expires_at.replace(tzinfo=UTC) - (NOW + timedelta(days=95))).total_seconds()) < 1
         assert row.expiry_notified_at is None
         keys.revoke_key(s, row, NOW)
         assert not keys.extend_key(s, row, 30)                                              # a revoked key stays revoked
@@ -317,7 +318,7 @@ def test_a_single_use_key_is_spent_once_and_the_race_has_one_winner(portal):
     with portal.sm() as s:
         user = s.scalars(select(User).where(User.username == "ann")).one()
         row, plain = keys.create_key(s, user, "once", None, NOW, once=True)
-        assert row.single_use and (row.expires_at.replace(tzinfo=timezone.utc) - NOW) == timedelta(hours=settings.key_once_hours)
+        assert row.single_use and (row.expires_at.replace(tzinfo=UTC) - NOW) == timedelta(hours=settings.key_once_hours)
         assert keys.verify_key(s, user, plain, now=NOW)
         assert keys.consume(s, row, NOW) and not keys.consume(s, row, NOW)                  # the second caller loses
         assert keys.key_state(row, NOW) == "used"
@@ -415,3 +416,54 @@ async def test_two_prints_racing_with_one_single_use_key_have_one_winner(ipp):
     with ipp.sm() as s:
         done = [r for r in s.scalars(select(JobLog)) if r.state.value == "accepted"]
         assert len(done) == 1                                                            # the loser's reservation was closed as failed
+
+
+# ---------------------------------------------------------------- keys
+
+async def _two_keys(portal, uid):
+    with portal.sm() as s:
+        u = s.get(User, uid)
+        a, _ = keylib.create_key(s, u, "phone", 30)
+        b, _ = keylib.create_key(s, u, "laptop", 30)
+        return a.id, b.id
+
+
+async def test_admin_can_revoke_one_key_or_all(admin):
+    uid = make_user(admin.sm, "kim", password=GOOD)
+    k1, k2 = await _two_keys(admin, uid)
+    page = (await admin.get(f"/admin/users/{uid}/keys")).text
+    assert "phone" in page and "laptop" in page and "Revoca tutte" in page
+    tok = await csrf_of_page(admin, f"/admin/users/{uid}/keys")
+    await admin.post(f"/admin/users/{uid}/keys/{k1}/revoke", data={"csrf_token": tok})
+    with admin.sm() as s:
+        assert s.get(PrintKey, k1).revoked_at is not None and s.get(PrintKey, k2).revoked_at is None
+    await admin.post(f"/admin/users/{uid}/revoke-keys", data={"csrf_token": tok})
+    with admin.sm() as s:
+        assert s.get(PrintKey, k2).revoked_at is not None
+
+
+async def test_admin_cannot_revoke_a_key_through_another_users_url(admin):
+    a, b = make_user(admin.sm, "lia", password=GOOD), make_user(admin.sm, "max", password=GOOD)
+    k, _ = await _two_keys(admin, a)
+    tok = await csrf_of_page(admin, "/admin/users")
+    r = await admin.post(f"/admin/users/{b}/keys/{k}/revoke", data={"csrf_token": tok})
+    assert r.status_code == 404
+    with admin.sm() as s:
+        assert s.get(PrintKey, k).revoked_at is None
+
+
+async def test_user_manages_own_keys_one_by_one_or_all(portal):
+    uid = make_user(portal.sm, "nina", password=GOOD)
+    other = make_user(portal.sm, "omar", password=GOOD)
+    k1, k2 = await _two_keys(portal, uid)
+    foreign, _ = await _two_keys(portal, other)
+    await portal_login(portal, "nina", GOOD)
+    assert "laptop" in (await portal.get("/me/keys")).text
+    tok = await csrf_of_page(portal, "/me/keys")
+    assert (await portal.post(f"/me/keys/{foreign}/revoke", data={"csrf_token": tok})).status_code == 404
+    await portal.post(f"/me/keys/{k1}/revoke", data={"csrf_token": tok})
+    with portal.sm() as s:
+        assert s.get(PrintKey, k1).revoked_at and not s.get(PrintKey, k2).revoked_at
+    await portal.post("/me/keys/revoke-all", data={"csrf_token": tok})
+    with portal.sm() as s:
+        assert s.get(PrintKey, k2).revoked_at

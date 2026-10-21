@@ -33,7 +33,7 @@ PREFIX = "cpgbk1"
 CHUNK = 1 << 20
 MIN_PASSPHRASE = 12
 _SCRYPT = dict(length=32, n=2**15, r=8, p=1)
-_INFO = b"cupspl-backup-v1"
+_INFO = b"spoolsteward-backup-v1"
 
 
 class CryptoError(ValueError):

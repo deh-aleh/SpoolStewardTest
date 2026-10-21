@@ -1,5 +1,5 @@
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
@@ -7,12 +7,12 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.db.models import Base, Group, JobKind, JobLog, JobState, User
+from app.db.models import Base, JobKind, JobLog, JobState, User
 from app.ipp import codec as c
 from app.policy.reconcile import apply_updates, reconcile_once, release_orphans
 from tests.conftest import CUPS_TEST_URL, requires_cups
 
-NOW = datetime(2026, 10, 7, 12, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 7, 12, 0, tzinfo=UTC)
 
 
 @pytest.fixture
@@ -74,8 +74,8 @@ async def test_reconcile_against_real_cups(sm):
         cancel.group(c.TAG_OPERATION).attrs.append(c.Attr("job-id", [c.Val(c.TAG_INTEGER, held)]))
         await up.post("/printers/virtual", content=c.encode(cancel), headers={"Content-Type": "application/ipp", "Host": "localhost"})
         with sm() as s:
-            _row(s, printed, ts=datetime.now(timezone.utc)).printer = "virtual"
-            _row(s, held, ts=datetime.now(timezone.utc))
+            _row(s, printed, ts=datetime.now(UTC)).printer = "virtual"
+            _row(s, held, ts=datetime.now(UTC))
             s.query(JobLog).update({"printer": "virtual"}); s.commit()
         await asyncio.sleep(3)
         assert await reconcile_once(sm, up) == 2

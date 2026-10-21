@@ -1,10 +1,20 @@
 # Test environment only. Host CUPS already uses :631, so test CUPS -> :6310.
+# The CUPS of the tests is the one of production (the same image, the same start script, the same cupsd.conf);
+# docker/test/cupsd.conf adds only what a test on the host needs (a TCP listener) -- tests/test_cupsd_test_conf.py keeps it so.
 services:
   cups:
-    build: ./docker/cups
+    image: spoolsteward/spoolsteward:test      # not ":dev": building it must not replace the image of a stack that is running
+    build:
+      context: .
+      dockerfile: docker/stack/Dockerfile
+    command: ["/usr/local/lib/spoolsteward/cups.sh"]
+    user: "0:0"                                # cupsd runs as root and drops privileges for the filters itself
+    environment:
+      CUPS_VIRTUAL_QUEUE: "1"                  # the "virtual" queue that writes PDFs
     ports:
       - "127.0.0.1:6310:631"
     volumes:
+      - ./docker/test/cupsd.conf:/etc/cups/cupsd.conf:ro
       - cups-pdf:/var/spool/cups-pdf
       - ./docker/run:/run/cups  # exposes cups.sock to the host (tests the unix:// upstream)
   radius:

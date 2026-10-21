@@ -8,7 +8,6 @@
 """
 
 import logging
-from datetime import datetime, timezone
 
 from starlette.concurrency import run_in_threadpool
 
@@ -101,7 +100,3 @@ async def print_login(app, username: str, secret: str, ip: str | None = None) ->
     if key is not None and key.used_at is not None:
         return None
     return user
-
-
-def utcnow() -> datetime:
-    return datetime.now(timezone.utc)

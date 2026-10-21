@@ -20,8 +20,7 @@ ha registrato. Tutto si legge dal vivo e al meglio: una stampante che non offre 
 - Stato e capacità dello **scanner** (eSCL), con un badge *MFP* per i multifunzione.
 - Accanto, ciò che il gateway ha registrato: job, pagine, scansioni, ultimo job.
 
-Le letture sono parallele, tolleranti ai guasti e in cache per `CUPSPL_PRINTERS_REFRESH_SECONDS` secondi (predefinito 15; 0 o un valore non
-valido significa 15; minimo 5, massimo 3600 — più basso significa interrogare le stampanti più spesso). L'interruttore **Aggiornamento automatico**
+Le letture sono parallele, tolleranti ai guasti e in cache per `SPOOLSTEWARD_PRINTERS_REFRESH_SECONDS` secondi (predefinito 15, da 5 a 3600: più è basso, più spesso si interrogano le stampanti). L'interruttore **Aggiornamento automatico**
 sotto il titolo ricarica la pagina da solo ogni tanti secondi, così una stampante scollegata compare senza premere F5. Parte spento, lo ricorda il
 browser e la pagina non si ricarica mentre c'è un popup aperto o si sta scrivendo. Nulla è legato a un modello: supporto al colore, nome,
 inchiostri e contatori si leggono dal dispositivo. I testi che arrivano dal dispositivo (nomi degli inchiostri, firmware, avvisi) si
@@ -29,11 +28,11 @@ mostrano come ricevuti.
 
 ## 2. Stampanti USB nuove e scollegate
 
-**Le stampanti nuove compaiono da sole.** Ogni `CUPSPL_DISCOVERY_INTERVAL` secondi (30) il gateway guarda il lato USB e crea la coda CUPS
+**Le stampanti nuove compaiono da sole.** Ogni `SPOOLSTEWARD_DISCOVERY_INTERVAL` secondi (30) il gateway guarda il lato USB e crea la coda CUPS
 di ogni dispositivo nuovo — entro circa un minuto dal collegamento. Due strade, in quest'ordine di priorità:
 
 1. **ipp-usb** (preferita): una stampante con IPP-su-USB (la maggior parte delle recenti) è servita dal contenitore `ipp-usb` su una
-   porta di `CUPSPL_USB_BRIDGE_PORTS`; la sua coda punta a `ipp://ipp-usb:<porta>/ipp/print` e non richiede driver.
+   porta di `SPOOLSTEWARD_USB_BRIDGE_PORTS`; la sua coda punta a `ipp://ipp-usb:<porta>/ipp/print` e non richiede driver.
 2. **Backend usb di CUPS**: per le stampanti senza IPP-su-USB (molte laser vecchie, per esempio la Brother DCP-7055): la coda punta a
    `usb://Marca/Modello?serial=…` e a CUPS serve un driver. L'immagine include brlaser, gutenprint, splix e foo2zjs; se CUPS non ne ha
    uno per quel modello la pagina Stampanti lo dice ("trovata, ma CUPS non ha un driver"). Un dispositivo servito da ipp-usb non viene
@@ -51,7 +50,7 @@ codice tra parentesi quadre, "Hewlett-Packard" diventa "HP", e un nome ancora tr
 stampante dichiara da sé (per la serie 7300 di HP dice "Smart Tank 7300 series", non il nome commerciale né lo SKU), quindi il gateway non
 può conoscere un nome più preciso. Ogni stampante collegata via USB mostra un badge accanto al nome: **IPP-USB** (servita dal ponte
 ipp-usb) oppure **USB** (pilotata direttamente da CUPS). Il pulsante **Cerca ora** nella pagina Stampanti esegue subito una ricerca.
-`CUPSPL_AUTO_DISCOVER=false` spegne tutto; `CUPSPL_USB_DIRECT=false` salta la strada 2.
+`SPOOLSTEWARD_AUTO_DISCOVER=false` spegne tutto; `SPOOLSTEWARD_USB_DIRECT=false` salta la strada 2.
 
 **Stampanti scollegate.** Una coda sopravvive al cavo, quindi la scheda mostra **NON RAGGIUNGIBILE**, un avviso rosso e:
 
@@ -60,7 +59,7 @@ ipp-usb) oppure **USB** (pilotata direttamente da CUPS). Il pulsante **Cerca ora
 - per le **code USB** (ipp-usb o `usb://`), un **conto alla rovescia** ("verrà rimossa automaticamente tra 7:41:23 (2026-10-13 04:12) se
   la stampante non torna"). A zero il gateway elimina la coda da solo e scrive `printer.auto_remove` nell'audit degli amministratori
   (autore `system`); i dispositivi nuovi sono registrati come `printer.auto_add`. Se la stampante risponde di nuovo prima della fine il
-  conto alla rovescia sparisce. L'attesa è `CUPSPL_OFFLINE_REMOVE_HOURS` (predefinito 8; `0` = mai).
+  conto alla rovescia sparisce. L'attesa è `SPOOLSTEWARD_OFFLINE_REMOVE_HOURS` (predefinito 8; `0` = mai).
 - **le code di rete non vengono mai rimosse da sole**: una stampante spenta per il fine settimana deve ritrovarsi com'era.
 
 Se la stampante viene ricollegata più tardi, viene semplicemente aggiunta di nuovo come stampante nuova.
@@ -76,7 +75,7 @@ vedere la B prima della A. Lo stesso ordine vale nel tuo modulo di stampa (*Stam
 stampante è già a quel capo. Una stampante si muove solo dentro il suo gruppo: le fisiche restano sopra le virtuali. Dopo che hai spostato
 una stampante il suo posto nel tuo elenco è fisso; una stampante collegata dopo va dopo quelle che hai già sistemato (nel suo gruppo). Gli
 spostamenti sono registrati nell'audit degli amministratori (`printer.move`). Una stampante che non hai mai spostato segue l'ordine
-predefinito descritto sotto.
+predefinito descritto sopra.
 
 **Rinominare una coda.** Il pulsante con la matita apre una finestra con un campo vuoto per il nuovo nome (il nome attuale compare
 in grigio come segnaposto). Il nome è l'ultima parte dell'indirizzo, `…/printers/<nome>`: lettere, cifre e `. _ @ + -`. CUPS non sa rinominare una coda, quindi il gateway crea la nuova sullo stesso dispositivo
@@ -91,8 +90,7 @@ le richieste per essa ancora in attesa seguono il nuovo nome.
 Registrata come `printer.rename`.
 
 **Nomi usati in passato.** Il gateway ricorda i nomi che le code hanno avuto: una coda eliminata dalla pagina Stampanti, una coda USB
-tolta perché il dispositivo è rimasto assente, e il vecchio nome di una coda rinominata (ci sono anche i nomi trovati nell'audit prima di
-questa funzione). Nella finestra di rinomina:
+tolta perché il dispositivo è rimasto assente, e il vecchio nome di una coda rinominata. Nella finestra di rinomina:
 
 - **Mentre scrivi**, se un nome usato in passato comincia con le lettere scritte fin lì, il resto compare in grigio dentro il campo, come
   il suggerimento di un motore di ricerca. È solo un promemoria: il nome va comunque scritto per intero, e la parte grigia sparisce appena
@@ -145,7 +143,7 @@ sempre in inglese ([lingue.md](lingue.md)).
 - **Manutenzione del gateway** (pulsante rosso con il cono stradale, in alto) — ferma stampa **e scansione** per tutti tranne gli amministratori e ritira ogni
   annuncio mDNS. Un banner rosso mostra lo stato su ogni pagina. La finestra di conferma ha una spunta, attiva di default, per **avvisare tutti gli utenti nelle loro notifiche** (amministratori compresi, tranne chi agisce) che la stampa è sospesa o che funziona di nuovo; uscendo dalla manutenzione l'avviso «in manutenzione» precedente viene chiuso.
 
-L'annunciatore mDNS interroga il gateway (`/mdns/policy`, autenticato da un codice derivato da `CUPSPL_SECRET_KEY`).
+L'annunciatore mDNS interroga il gateway (`/mdns/policy`, autenticato da un codice derivato da `SPOOLSTEWARD_SECRET_KEY`).
 
 ## 7. Stampanti di prova
 

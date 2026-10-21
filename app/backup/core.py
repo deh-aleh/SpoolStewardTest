@@ -1,9 +1,9 @@
 """Making, checking, pruning and restoring backups. No database models here: the scheduler (service.py) and the CLI
 use these functions; the folder, the encryption and the retention are decided by the caller.
 
-A backup is one file `printgw-<instance>-t<target>-<UTC stamp>.tar.gz` (plus `.enc` when encrypted) holding:
+A backup is one file `spoolsteward-<instance>-t<target>-<UTC stamp>.tar.gz` (plus `.enc` when encrypted) holding:
   MANIFEST.json   what is inside, with sha256 and size of each part, app version, schema revision
-  gateway.db      a consistent snapshot of the database (SQLite's own backup call: safe while people are printing)
+  spoolsteward.db      a consistent snapshot of the database (SQLite's own backup call: safe while people are printing)
   config/...      .env (all the settings) and the TLS certificate+key, ONLY when the backup is encrypted (they are secrets)
 The compressed audit files are immutable and can be large, so they are not repeated in every backup: they are
 copied once into `audit-archive-<instance>/` next to the backups (encrypted the same way).
@@ -22,20 +22,21 @@ import sqlite3
 import tarfile
 import tempfile
 import threading
+from contextlib import nullcontext
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from importlib import metadata
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from app.i18n import _
 from app.backup.crypto import CHUNK, MAGIC, CryptoError, DecryptReader, EncryptWriter
-from app.config import settings
+from app.config import BACKUP_FOLDER_RE, settings
 
 log = logging.getLogger(__name__)
 
-NAME_RE = re.compile(r"^printgw-(?P<inst>[0-9a-f]{8})-t(?P<tid>\d+)-(?P<ts>\d{8}-\d{6})\.tar\.gz(?P<enc>\.enc)?$")
-FOLDER_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._ -]{0,63}(/[A-Za-z0-9][A-Za-z0-9._ -]{0,63}){0,3}$")
+NAME_RE = re.compile(r"^spoolsteward-(?P<inst>[0-9a-f]{8})-t(?P<tid>\d+)-(?P<ts>\d{8}-\d{6})\.tar\.gz(?P<enc>\.enc)?$")
+FOLDER_RE = BACKUP_FOLDER_RE   # one rule, also checked for SPOOLSTEWARD_BACKUP_DIR at start (app/config.py)
 MAX_CONFIG_FILE = 1 << 20
 MAX_CONFIG_FILES = 50
 MANIFEST = "MANIFEST.json"
@@ -58,7 +59,7 @@ class Result:
 
 
 def tag(instance: str, target_id: int) -> str:
-    return f"printgw-{instance}-t{target_id}"
+    return f"spoolsteward-{instance}-t{target_id}"
 
 
 def resolve_folder(sub: str, create: bool = True) -> Path:
@@ -118,13 +119,13 @@ def bounded(fn, *args, timeout: float = 6.0):
     raise value
 
 
-MARKER = ".printminder-destination"
+MARKER = ".spoolsteward-destination"
 
 
 def make_marker(folder: Path) -> None:
     """Called while the destination is known to be mounted: from now on a backup refuses to write if the file is gone."""
     try:
-        (folder / MARKER).write_text("PrintMinder backup destination. Do not delete: backups refuse to run without it.\n")
+        (folder / MARKER).write_text("SpoolSteward backup destination. Do not delete: backups refuse to run without it.\n")
     except OSError as exc:
         raise BackupError(_("Cannot write the marker file in the folder: %(error)s", error=exc.strerror or exc)) from exc
 
@@ -152,7 +153,7 @@ def existing_folders() -> list[str]:
 
 def app_version() -> str:
     try:
-        return metadata.version("cups-policy-gateway")
+        return metadata.version("spoolsteward")
     except metadata.PackageNotFoundError:
         return "unknown"
 
@@ -213,7 +214,7 @@ def _config_files() -> list[tuple[str, Path]]:
 
 def _add(tf: tarfile.TarFile, arcname: str, path: Path | None = None, data: bytes | None = None) -> None:
     info = tarfile.TarInfo(arcname)
-    info.mtime, info.mode = int(datetime.now(timezone.utc).timestamp()), 0o600
+    info.mtime, info.mode = int(datetime.now(UTC).timestamp()), 0o600
     if data is not None:
         info.size = len(data)
         tf.addfile(info, io.BytesIO(data))
@@ -225,21 +226,21 @@ def _add(tf: tarfile.TarFile, arcname: str, path: Path | None = None, data: byte
 
 def _safe_name(name: str) -> bool:
     parts = name.split("/")
-    return (name == "gateway.db" or (parts[0] == "config" and len(parts) > 1)) and ".." not in parts and not name.startswith("/")
+    return (name == "spoolsteward.db" or (parts[0] == "config" and len(parts) > 1)) and ".." not in parts and not name.startswith("/")
 
 
 def create_backup(sm, folder: Path, tag_: str, *, recipient: str | None, target_name: str, instance: str,
                   now: datetime | None = None) -> Result:
     """Write and verify one backup file into `folder`. `recipient` set = encrypted, and then the secrets are included."""
-    now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    now = (now or datetime.now(UTC)).astimezone(UTC)
     name = f"{tag_}-{now:%Y%m%d-%H%M%S}.tar.gz" + (".enc" if recipient else "")
     with tempfile.TemporaryDirectory(prefix="backup-") as tmp:
-        snap = Path(tmp) / "gateway.db"
+        snap = Path(tmp) / "spoolsteward.db"
         schema = snapshot_db(sm, snap)
         need = snap.stat().st_size * 2 + (16 << 20)
         if shutil.disk_usage(folder).free < need:
             raise BackupError(f"Not enough free space in the destination (need about {need >> 20} MB)")
-        parts: list[tuple[str, Path]] = [("gateway.db", snap)]
+        parts: list[tuple[str, Path]] = [("spoolsteward.db", snap)]
         if recipient:
             parts += _config_files()
         manifest = {
@@ -253,12 +254,11 @@ def create_backup(sm, folder: Path, tag_: str, *, recipient: str | None, target_
         try:
             with open(partial, "wb") as f:
                 sink = EncryptWriter(f, recipient) if recipient else f
-                tf = tarfile.open(fileobj=sink, mode="w|gz")
-                _add(tf, MANIFEST, data=json.dumps(manifest, indent=1).encode())
-                for arc, p in parts:
-                    _add(tf, arc, path=p)
-                tf.close()
-                if recipient:
+                with tarfile.open(fileobj=sink, mode="w|gz") as tf:
+                    _add(tf, MANIFEST, data=json.dumps(manifest, indent=1).encode())
+                    for arc, p in parts:
+                        _add(tf, arc, path=p)
+                if recipient:  # after the tar is closed: it writes its tail into the sink, then the sink seals the stream
                     sink.close()
                     key = sink.key
                 f.flush()
@@ -280,35 +280,31 @@ def _walk(path: Path, passphrase: str | None, key: bytes | None, dest: Path | No
         raw.seek(0)
         src = DecryptReader(raw, passphrase, key) if encrypted else raw
         try:
-            tf = tarfile.open(fileobj=src, mode="r|gz")
-            manifest, seen = None, set()
-            for member in tf:
-                fh = tf.extractfile(member)
-                if member.name == MANIFEST:
-                    manifest = json.loads(fh.read(1 << 20))
-                    continue
-                if manifest is None:
-                    raise BackupError("Backup has no manifest first: not a backup of this gateway")
-                if not member.isfile() or not _safe_name(member.name) or member.name not in manifest["files"]:
-                    raise BackupError(f"Unexpected item in the backup: {member.name}")
-                h, size, out = hashlib.sha256(), 0, None
-                if dest is not None:
-                    target = dest / member.name
-                    target.parent.mkdir(parents=True, exist_ok=True)
-                    out = open(target, "wb")
-                try:
-                    for block in iter(lambda: fh.read(1 << 20), b""):
-                        h.update(block)
-                        size += len(block)
-                        if out:
-                            out.write(block)
-                finally:
-                    if out:
-                        out.close()
-                want = manifest["files"][member.name]
-                if h.hexdigest() != want["sha256"] or size != want["size"]:
-                    raise BackupError(f"{member.name} does not match its checksum: the backup is damaged")
-                seen.add(member.name)
+            with tarfile.open(fileobj=src, mode="r|gz") as tf:
+                manifest, seen = None, set()
+                for member in tf:
+                    fh = tf.extractfile(member)
+                    if member.name == MANIFEST:
+                        manifest = json.loads(fh.read(1 << 20))
+                        continue
+                    if manifest is None:
+                        raise BackupError("Backup has no manifest first: not a backup of this gateway")
+                    if not member.isfile() or not _safe_name(member.name) or member.name not in manifest["files"]:
+                        raise BackupError(f"Unexpected item in the backup: {member.name}")
+                    h, size = hashlib.sha256(), 0
+                    if dest is not None:
+                        target = dest / member.name
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                    with (open(target, "wb") if dest is not None else nullcontext()) as out:
+                        for block in iter(lambda: fh.read(1 << 20), b""):
+                            h.update(block)
+                            size += len(block)
+                            if out is not None:
+                                out.write(block)
+                    want = manifest["files"][member.name]
+                    if h.hexdigest() != want["sha256"] or size != want["size"]:
+                        raise BackupError(f"{member.name} does not match its checksum: the backup is damaged")
+                    seen.add(member.name)
         except (tarfile.TarError, EOFError, OSError, ValueError) as exc:
             if isinstance(exc, CryptoError):
                 raise
@@ -363,7 +359,7 @@ def list_backups(folder: Path, instance: str, target_id: int) -> list[dict]:
         if m and m["inst"] == instance and int(m["tid"]) == target_id and p.is_file():
             st = p.stat()
             out.append({"name": p.name, "size": st.st_size, "encrypted": bool(m["enc"]),
-                        "ts": datetime.strptime(m["ts"], "%Y%m%d-%H%M%S").replace(tzinfo=timezone.utc)})
+                        "ts": datetime.strptime(m["ts"], "%Y%m%d-%H%M%S").replace(tzinfo=UTC)})
     return sorted(out, key=lambda b: b["ts"], reverse=True)
 
 
@@ -408,11 +404,15 @@ def restore_audit(mirror: Path, dest: Path, passphrase: str | None) -> int:
         if out.exists():
             continue
         partial = dest / (name + ".pending-restore")
-        with open(f, "rb") as r, open(partial, "wb") as w:
-            src = DecryptReader(r, passphrase) if f.name.endswith(".enc") else r
-            for block in iter(lambda: src.read(1 << 20), b""):
-                w.write(block)
-        os.replace(partial, out)
+        try:
+            with open(f, "rb") as r, open(partial, "wb") as w:
+                src = DecryptReader(r, passphrase) if f.name.endswith(".enc") else r
+                for block in iter(lambda: src.read(1 << 20), b""):
+                    w.write(block)
+            os.replace(partial, out)
+        except BaseException:
+            partial.unlink(missing_ok=True)  # a wrong passphrase must not leave half a file behind
+            raise
         count += 1
     return count
 
@@ -426,14 +426,14 @@ def restore(path: Path, passphrase: str | None, *, db_path: Path, config_out: Pa
         rev = manifest.get("schema")
         if rev and rev not in known_revisions():
             raise BackupError(f"This backup comes from a newer version (schema {rev}): update the gateway first")
-        if not (Path(tmp) / "gateway.db").is_file():  # checked before anything is moved: a backup without a database changes nothing
-            raise BackupError("This backup holds no database (gateway.db): nothing was restored")
+        if not (Path(tmp) / "spoolsteward.db").is_file():  # checked before anything is moved: a backup without a database changes nothing
+            raise BackupError("This backup holds no database (spoolsteward.db): nothing was restored")
         if db_path.exists():
             keep = db_path.with_name(f"{db_path.name}.before-restore-{datetime.now():%Y%m%d-%H%M%S}")
             shutil.move(db_path, keep)
         for suffix in ("-wal", "-shm"):
             Path(str(db_path) + suffix).unlink(missing_ok=True)
-        shutil.move(str(Path(tmp) / "gateway.db"), db_path)
+        shutil.move(str(Path(tmp) / "spoolsteward.db"), db_path)
         os.chmod(db_path, 0o600)
         has_config = (Path(tmp) / "config").is_dir()
         if has_config:

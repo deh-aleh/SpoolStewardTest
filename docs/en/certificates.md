@@ -13,21 +13,21 @@ A client validates three things before it sends anything; if one fails it refuse
 2. **Name**: the host the client connects to appears in the Subject Alternative Name (SAN) of the certificate, as a DNS name or an IP address.
 3. **Validity**: `notAfter` is in the future.
 
-The announcer (mDNS) publishes the IP address of the default route, or `CUPSPL_MDNS_ADDRESSES`, and the host name from `CUPSPL_MDNS_HOSTNAME`
-(default: the host part of `CUPSPL_PORTAL_URL`, otherwise the machine name). Clients that discover the printer through mDNS connect to that
+The announcer (mDNS) publishes the IP address of the default route, or `SPOOLSTEWARD_MDNS_ADDRESSES`, and the host name from `SPOOLSTEWARD_MDNS_HOSTNAME`
+(default: the host part of `SPOOLSTEWARD_PORTAL_URL`, otherwise the machine name). Clients that discover the printer through mDNS connect to that
 address, so it must be in the SAN. If the address changes (DHCP), the certificate no longer matches: give the server a fixed address.
 
 ## 2. Notices in the portal (the bell)
 
-The gateway never replaces the certificate. `app/certwatch.py` reads `CUPSPL_TLS_CERTFILE` and `config/tls/sync-status.json` every 6 hours and
+The gateway never replaces the certificate. It reads `SPOOLSTEWARD_TLS_CERTFILE` and `config/tls/sync-status.json` every 6 hours and
 opens or closes notices for administrators. A notice closes by itself when its cause is gone.
 
 | Notice (title in the bell) | Condition | Switch |
 |---|---|---|
 | **The TLS certificate has expired** | `notAfter` is in the past | always on |
 | **The certificate could not be updated** | the last run of `scripts/cert-sync.sh` wrote `"ok": false` in `sync-status.json` (its message is in the notice) | only appears if the script is used |
-| **The announced address is not in the TLS certificate** | none of the announced addresses/names (mDNS) is in the SAN; wildcards (`*.example.com`) cover one label | `CUPSPL_CERT_NAME_CHECK=false` turns it off |
-| **The TLS certificate expires on DATE** | fewer than `CUPSPL_CERT_EXPIRY_WARN_DAYS` days left | **off by default**: `CUPSPL_CERT_EXPIRY_WARN_ENABLED=true` |
+| **The announced address is not in the TLS certificate** | none of the announced addresses/names (mDNS) is in the SAN; wildcards (`*.example.com`) cover one label | `SPOOLSTEWARD_CERT_NAME_CHECK=false` turns it off |
+| **The TLS certificate expires on DATE** | fewer than `SPOOLSTEWARD_CERT_EXPIRY_WARN_DAYS` days left | **off by default**: `SPOOLSTEWARD_CERT_EXPIRY_WARN_ENABLED=true` |
 
 The expiry notice adds a hint based on the last synchronisation: if it succeeded, the source has not renewed (check the renewing program);
 if it failed, it points to the other notice; if the script is not used, it asks to renew and put the files in `config/tls`.
@@ -106,7 +106,7 @@ The number in `npm-3` is different on every installation: look at which folder i
 The private key is a secret, so the script does not use an administrator's account: a stolen ssh key would give full access to the source machine.
 Create a separate user that can only read the certificates.
 
-In the example the NPM machine is called `npm.lan`, the PrintMinder one `print.lan` (IP `192.168.1.50`), the user is called `certsync`.
+In the example the NPM machine is called `npm.lan`, the SpoolSteward one `print.lan` (IP `192.168.1.50`), the user is called `certsync`.
 
 **Step 1 — on `npm.lan`: create the user** (no password: it is entered only with the key).
 
@@ -119,18 +119,18 @@ sudo apt install rsync acl          # if missing: rsync does the copying, acl is
 `rsync` and `ssh` are needed on this machine too (`sudo apt install rsync openssh-client` if missing).
 
 ```sh
-ssh-keygen -t ed25519 -N "" -C "printminder cert-sync" -f ~/.ssh/printminder_certsync
-cat ~/.ssh/printminder_certsync.pub          # one line starting with ssh-ed25519: we use it in step 3
+ssh-keygen -t ed25519 -N "" -C "spoolsteward cert-sync" -f ~/.ssh/spoolsteward_certsync
+cat ~/.ssh/spoolsteward_certsync.pub          # one line starting with ssh-ed25519: we use it in step 3
 ```
 
-The private key (`printminder_certsync`, without `.pub`) must not leave this machine. Its full path (for example `/home/you/.ssh/printminder_certsync`)
+The private key (`spoolsteward_certsync`, without `.pub`) must not leave this machine. Its full path (for example `/home/you/.ssh/spoolsteward_certsync`)
 goes into `CERT_SYNC_KEY`.
 
 **Step 3 — on `npm.lan`: authorise the key, with limits.** Replace `192.168.1.50` with the IP of `print.lan` and the `ssh-ed25519 AAAA…` part with the line printed in step 2.
 
 ```sh
 sudo -u certsync mkdir -p -m 700 /home/certsync/.ssh
-echo 'restrict,from="192.168.1.50" ssh-ed25519 AAAA… printminder cert-sync' | sudo -u certsync tee -a /home/certsync/.ssh/authorized_keys
+echo 'restrict,from="192.168.1.50" ssh-ed25519 AAAA… spoolsteward cert-sync' | sudo -u certsync tee -a /home/certsync/.ssh/authorized_keys
 sudo chmod 600 /home/certsync/.ssh/authorized_keys
 ```
 
@@ -163,7 +163,7 @@ sudo -u certsync touch /home/you/npm/data/letsencrypt/live/npm-3/test           
 ```sh
 CERT_SYNC_HOST=npm.lan
 CERT_SYNC_USER=certsync
-CERT_SYNC_KEY=/home/you/.ssh/printminder_certsync
+CERT_SYNC_KEY=/home/you/.ssh/spoolsteward_certsync
 CERT_SYNC_REMOTE_DIR=/home/you/npm/data/letsencrypt/live/npm-3
 ```
 
@@ -183,10 +183,10 @@ Then the real test: `scripts/cert-sync.sh`. Open the portal: no notice about the
 crontab -e
 ```
 
-and add a line (change the path of the PrintMinder folder):
+and add a line (change the path of the SpoolSteward folder):
 
 ```
-17 4 * * *  cd /home/you/printminder && scripts/cert-sync.sh >> data/cert-sync.log 2>&1
+17 4 * * *  cd /home/you/spoolsteward && scripts/cert-sync.sh >> data/cert-sync.log 2>&1
 ```
 
 This runs daily at 4:17 and appends the output to `data/cert-sync.log`. Once a day is enough: if the certificate is unchanged nothing is installed and nothing restarts.

@@ -1,5 +1,4 @@
-import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 import pytest
@@ -10,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 from app.auth.throttle import Throttle
 from app.db.models import AdminAudit, Base, Group, JobKind, JobLog, JobState, Metric, PolicyRule, User
 from app.main import app
+from tests.conftest import csrf_from
 
 
 class StubAuth:
@@ -41,12 +41,8 @@ async def login(cl, user="boss", pw="pw"):
     return r
 
 
-def csrf_of(html: str) -> str:
-    return re.search(r'name="csrf_token" value="([^"]+)"', html).group(1)
-
-
 async def token(cl):
-    return csrf_of((await cl.get("/admin/users")).text)
+    return csrf_from((await cl.get("/admin/users")).text)
 
 
 def q(cl, model, **kw):
@@ -66,7 +62,7 @@ async def test_login_rules(env):
     assert r.headers["location"] == "/me"                                              # he gets his own page...
     assert (await env.get("/admin/jobs")).status_code == 403                           # ...and not the admin ones
     assert (await env.get("/admin/users")).status_code == 403
-    await env.post("/logout", data={"csrf_token": csrf_of((await env.get("/me")).text)})
+    await env.post("/logout", data={"csrf_token": csrf_from((await env.get("/me")).text)})
     assert (await login(env, "ghost", "x")).headers["location"] == "/login"
     assert (await env.get("/admin/jobs")).status_code == 303
     assert (await login(env)).headers["location"] == "/admin/"
@@ -103,7 +99,7 @@ async def test_group_crud_and_limits(env):
     await env.post(f"/admin/groups/{g.id}", data={"jobs_limit": "", "pages_limit": "5", "period": "weekly", "csrf_token": t})
     with env.sm() as s:
         assert [(r.metric, r.limit) for r in s.query(PolicyRule).filter_by(subject_id=g.id)] == [(Metric.pages, 5)]
-    r = await env.post(f"/admin/groups/{g.id}", data={"jobs_limit": "abc", "csrf_token": t})
+    await env.post(f"/admin/groups/{g.id}", data={"jobs_limit": "abc", "csrf_token": t})
     assert "invalid limit" in (await env.get("/admin/groups")).text
     await env.post(f"/admin/groups/{g.id}/delete", data={"csrf_token": t})
     assert q(env, Group, name="interns") is None
@@ -187,7 +183,7 @@ async def test_create_user_normalizes_and_rejects_duplicates(env):
 def add_job(cl, title, user="mario", state=JobState.completed, reason=None):
     with cl.sm() as s:
         uid = s.query(User).filter_by(username=user).one().id
-        s.add(JobLog(ts=datetime.now(timezone.utc), user_id=uid, kind=JobKind.print, printer="p",
+        s.add(JobLog(ts=datetime.now(UTC), user_id=uid, kind=JobKind.print, printer="p",
                      title=title, state=state, denied_reason=reason, pages=2))
         s.commit()
 

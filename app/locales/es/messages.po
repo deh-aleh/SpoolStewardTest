@@ -1,13 +1,13 @@
-# Spanish translations for cups-policy-gateway.
+# Spanish translations for spoolsteward.
 # Copyright (C) 2026 ORGANIZATION
-# This file is distributed under the same license as the cups-policy-gateway project.
+# This file is distributed under the same license as the spoolsteward project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: cups-policy-gateway VERSION\n"
+"Project-Id-Version: spoolsteward VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-17 18:28+0200\n"
+"POT-Creation-Date: 2026-10-19 19:33+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -18,97 +18,97 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: app/escl.py:513
+#: app/escl.py:525
 msgid "Scanning is not enabled on this server"
 msgstr "El escaneo no está habilitado en este servidor"
 
-#: app/escl.py:518
+#: app/escl.py:530
 msgid "This scanner has no automatic feeder"
 msgstr "Este escáner no tiene alimentador automático"
 
-#: app/escl.py:518
+#: app/escl.py:530
 msgid "Source not available"
 msgstr "Fuente no disponible"
 
-#: app/escl.py:520
+#: app/escl.py:532
 #, python-format
 msgid "With the feeder the maximum quality is %(n)s dpi"
 msgstr "Con el alimentador la calidad máxima es de %(n)s ppp"
 
-#: app/escl.py:521
+#: app/escl.py:533
 #, python-format
 msgid "With the glass the maximum quality is %(n)s dpi"
 msgstr "Con el cristal la calidad máxima es de %(n)s ppp"
 
-#: app/escl.py:527
+#: app/escl.py:539
 #, python-format
 msgid "%(reason)s. You can ask for more quota from your profile."
 msgstr "%(reason)s. Puedes pedir más cuota desde tu perfil."
 
-#: app/escl.py:538
+#: app/escl.py:550
 msgid "The feeder is empty or the scanner was paused: remove and reload the sheets, then try again."
 msgstr "El alimentador está vacío o el escáner estaba en pausa: quita y vuelve a colocar las hojas y vuelve a intentarlo."
 
-#: app/escl.py:539
+#: app/escl.py:551
 msgid "The scanner is busy: try again in a few seconds."
 msgstr "El escáner está ocupado: inténtalo de nuevo en unos segundos."
 
-#: app/escl.py:540
+#: app/escl.py:552
 #, python-format
 msgid "The scanner refused the job (status %(code)s). %(hint)s"
 msgstr "El escáner rechazó el trabajo (estado %(code)s). %(hint)s"
 
-#: app/escl.py:543
+#: app/escl.py:555
 msgid "Unexpected answer from the scanner"
 msgstr "Respuesta inesperada del escáner"
 
-#: app/escl.py:550
+#: app/escl.py:562
 msgid "The scanner delivered no page"
 msgstr "El escáner no entregó ninguna página"
 
-#: app/escl.py:554
+#: app/escl.py:566
 msgid "The scanner does not answer"
 msgstr "El escáner no responde"
 
-#: app/escl.py:585
+#: app/escl.py:597
 msgid "in progress"
 msgstr "en curso"
 
-#: app/escl.py:585
+#: app/escl.py:597
 msgid "ready"
 msgstr "lista"
 
-#: app/escl.py:585
+#: app/escl.py:597
 msgid "unsuccessful"
 msgstr "sin éxito"
 
-#: app/escl.py:589
+#: app/escl.py:601
 #, python-format
 msgid "scan-%(stamp)s"
 msgstr "escaneo-%(stamp)s"
 
-#: app/escl.py:610
+#: app/escl.py:622
 msgid "Unexpected error during the scan"
 msgstr "Error inesperado durante el escaneo"
 
-#: app/escl.py:652
+#: app/escl.py:664
 msgid "The server can not tell which address you are connecting from."
 msgstr "El servidor no puede saber desde qué dirección te conectas."
 
-#: app/escl.py:655
+#: app/escl.py:667
 msgid "Too many scan windows are open: try again in a few minutes."
 msgstr "Hay demasiadas ventanas de escaneo abiertas: inténtalo de nuevo en unos minutos."
 
-#: app/escl.py:678
+#: app/escl.py:690
 #, python-format
 msgid "The scanner “%(name)s” does not answer: refresh the page."
 msgstr "El escáner «%(name)s» no responde: actualiza la página."
 
-#: app/escl.py:678
+#: app/escl.py:690
 msgid "No scanner available."
 msgstr "Ningún escáner disponible."
 
-#: app/escl.py:685
+#: app/escl.py:697
 #, python-format
 msgid "%(name)s is already scanning: wait for it to finish."
 msgstr "%(name)s ya está escaneando: espera a que termine."
@@ -1333,8 +1333,8 @@ msgid "Too many wrong codes, retry later"
 msgstr "Demasiados códigos erróneos, vuelve a intentarlo más tarde"
 
 #: app/admin/routes.py:117
-msgid "Wrong code. It is in the gateway log (docker compose logs gateway)"
-msgstr "Código incorrecto. Está en el registro del gateway (docker compose logs gateway)"
+msgid "Wrong code. It is in the portal log (docker compose logs gateway)"
+msgstr "Código incorrecto. Está en el registro del portal (docker compose logs gateway)"
 
 #: app/admin/routes.py:120
 msgid "the two passwords differ"
@@ -1617,22 +1617,22 @@ msgid "The maintenance is over: printing and scanning work again."
 msgstr "El mantenimiento ha terminado: la impresión y el escaneo funcionan de nuevo."
 
 #: app/admin/templates/_own_notices.html:72 app/admin/templates/notices.html:44
-msgid "<b>Save the secret key in a safe place.</b> <span class=\"mono\">CUPSPL_SECRET_KEY</span> in the <span class=\"mono\">.env</span> file encrypts the file names kept in the audit and signs the portal sessions. A backup without encryption does not contain it: if the server breaks and you restore the backup with a new key, the names stay unreadable (<span class=\"mono\">[encrypted]</span>) for good. Copy the line from <span class=\"mono\">.env</span> into a password manager, or make encrypted backups (they include <span class=\"mono\">.env</span>)."
-msgstr "<b>Guarda la clave secreta en un lugar seguro.</b> <span class=\"mono\">CUPSPL_SECRET_KEY</span> en el archivo <span class=\"mono\">.env</span> cifra los nombres de archivo guardados en la auditoría y firma las sesiones del portal. Una copia de seguridad sin cifrado no la contiene: si el servidor se estropea y restauras la copia con una clave nueva, los nombres quedan ilegibles (<span class=\"mono\">[encrypted]</span>) para siempre. Copia la línea de <span class=\"mono\">.env</span> en un gestor de contraseñas, o haz copias cifradas (incluyen <span class=\"mono\">.env</span>)."
+msgid "<b>Save the secret key in a safe place.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in the <span class=\"mono\">.env</span> file encrypts the file names kept in the audit and signs the portal sessions. A backup without encryption does not contain it: if the server breaks and you restore the backup with a new key, the names stay unreadable (<span class=\"mono\">[encrypted]</span>) for good. Copy the line from <span class=\"mono\">.env</span> into a password manager, or make encrypted backups (they include <span class=\"mono\">.env</span>)."
+msgstr "<b>Guarda la clave secreta en un lugar seguro.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> en el archivo <span class=\"mono\">.env</span> cifra los nombres de archivo guardados en la auditoría y firma las sesiones del portal. Una copia de seguridad sin cifrado no la contiene: si el servidor se estropea y restauras la copia con una clave nueva, los nombres quedan ilegibles (<span class=\"mono\">[encrypted]</span>) para siempre. Copia la línea de <span class=\"mono\">.env</span> en un gestor de contraseñas, o haz copias cifradas (incluyen <span class=\"mono\">.env</span>)."
 
 #: app/admin/templates/_own_notices.html:76
 msgid "dismissed"
 msgstr "descartado"
 
-#: app/admin/templates/_own_notices.html:77 app/admin/templates/notices.html:53
+#: app/admin/templates/_own_notices.html:77 app/admin/templates/notices.html:55
 msgid "Dismiss"
 msgstr "Descartar"
 
-#: app/admin/templates/_own_notices.html:81 app/admin/templates/notices.html:57
+#: app/admin/templates/_own_notices.html:81 app/admin/templates/notices.html:59
 msgid "No notices."
 msgstr "Sin avisos."
 
-#: app/admin/templates/_own_notices.html:84 app/admin/templates/notices.html:60
+#: app/admin/templates/_own_notices.html:84 app/admin/templates/notices.html:62
 msgid "Dismiss all"
 msgstr "Descartar todos"
 
@@ -2306,8 +2306,8 @@ msgid "Key"
 msgstr "Clave"
 
 #: app/admin/templates/backups.html:105
-msgid "created on the server with <span class=\"mono\">docker compose exec -it gateway cups-policy-admin backup-key</span>: the passphrase never goes through the portal"
-msgstr "creada en el servidor con <span class=\"mono\">docker compose exec -it gateway cups-policy-admin backup-key</span>: la frase de contraseña nunca pasa por el portal"
+msgid "created on the server with <span class=\"mono\">docker compose exec -it gateway spoolsteward-admin backup-key</span>: the passphrase never goes through the portal"
+msgstr "creada en el servidor con <span class=\"mono\">docker compose exec -it gateway spoolsteward-admin backup-key</span>: la frase de contraseña nunca pasa por el portal"
 
 #: app/admin/templates/backups.html:107
 msgid "Without encryption the file contains the database (users, names of printed files). That is why the secrets are <b>not</b> saved: the TLS key, <span class=\"mono\">SECRET_KEY</span> and the RADIUS secret must be kept separately."
@@ -2464,8 +2464,8 @@ msgid "The documentation is not installed on this server."
 msgstr "La documentación no está instalada en este servidor."
 
 #: app/admin/templates/docs.html:33
-msgid "It is the docs folder of PrintMinder: the standard image and the host install both include it. You can also read it on GitHub:"
-msgstr "Es la carpeta docs de PrintMinder: la imagen estándar y la instalación en el host la incluyen. También puedes leerla en GitHub:"
+msgid "It is the docs folder of SpoolSteward: the standard image and the host install both include it. You can also read it on GitHub:"
+msgstr "Es la carpeta docs de SpoolSteward: la imagen estándar y la instalación en el host la incluyen. También puedes leerla en GitHub:"
 
 #: app/admin/templates/docs.html:37
 msgid "Documentation index"
@@ -3198,11 +3198,11 @@ msgstr "Ninguna solicitud."
 msgid "What concerns you: what the administrators did with your account (keys, group, quota, requests) and problems of the printer your print is waiting for."
 msgstr "Lo que te concierne: lo que hicieron los administradores con tu cuenta (claves, grupo, cuota, solicitudes) y los problemas de la impresora donde espera tu impresión."
 
-#: app/admin/templates/me_notices.html:9 app/admin/templates/notices.html:62
+#: app/admin/templates/me_notices.html:9 app/admin/templates/notices.html:64
 msgid "Hide dismissed"
 msgstr "Ocultar descartados"
 
-#: app/admin/templates/me_notices.html:9 app/admin/templates/notices.html:62
+#: app/admin/templates/me_notices.html:9 app/admin/templates/notices.html:64
 msgid "Show dismissed too"
 msgstr "Mostrar también los descartados"
 
@@ -3223,7 +3223,7 @@ msgstr "Cosas que la pasarela ha notado y que los administradores deberían sabe
 msgid "Last time"
 msgstr "Última vez"
 
-#: app/admin/templates/notices.html:16 app/admin/templates/notices.html:51
+#: app/admin/templates/notices.html:16 app/admin/templates/notices.html:53
 msgid "Times"
 msgstr "Veces"
 
@@ -3234,8 +3234,8 @@ msgstr "primera: %(t)s"
 
 #: app/admin/templates/notices.html:22
 #, python-format
-msgid "A scan request without a user name and password from <span class=\"mono\">%(ip)s</span> was refused, because scans without login are off. If your scan app can not send credentials, set <span class=\"mono\">CUPSPL_ESCL_ANONYMOUS=true</span> in <span class=\"mono\">.env</span> and run <span class=\"mono\">docker compose up -d</span>."
-msgstr "Se rechazó una petición de escaneo sin usuario ni contraseña desde <span class=\"mono\">%(ip)s</span>, porque los escaneos sin inicio de sesión están desactivados. Si su aplicación de escaneo no puede enviar credenciales, ponga <span class=\"mono\">CUPSPL_ESCL_ANONYMOUS=true</span> en <span class=\"mono\">.env</span> y ejecute <span class=\"mono\">docker compose up -d</span>."
+msgid "A scan request without a user name and password from <span class=\"mono\">%(ip)s</span> was refused, because scans without login are off. If your scan app can not send credentials, set <span class=\"mono\">SPOOLSTEWARD_ESCL_ANONYMOUS=true</span> in <span class=\"mono\">.env</span> and run <span class=\"mono\">docker compose up -d</span>."
+msgstr "Se rechazó una petición de escaneo sin usuario ni contraseña desde <span class=\"mono\">%(ip)s</span>, porque los escaneos sin inicio de sesión están desactivados. Si su aplicación de escaneo no puede enviar credenciales, ponga <span class=\"mono\">SPOOLSTEWARD_ESCL_ANONYMOUS=true</span> en <span class=\"mono\">.env</span> y ejecute <span class=\"mono\">docker compose up -d</span>."
 
 #: app/admin/templates/notices.html:24
 #, python-format
@@ -3304,14 +3304,19 @@ msgstr "<b>Problema</b> en la impresora “%(printer)s”: %(what)s."
 
 #: app/admin/templates/notices.html:46
 #, python-format
-msgid "<b>The secret key has changed</b> since the previous start (<span class=\"mono\">CUPSPL_SECRET_KEY</span> in <span class=\"mono\">.env</span>). %(count)s file names in the audit were encrypted with the old key and now show as <span class=\"mono\">[encrypted]</span>. If the change was not wanted (for example a restore with a new <span class=\"mono\">.env</span>), put the old key back and restart: the names become readable again."
-msgstr "<b>La clave secreta ha cambiado</b> desde el arranque anterior (<span class=\"mono\">CUPSPL_SECRET_KEY</span> en <span class=\"mono\">.env</span>). %(count)s nombres de archivo de la auditoría se cifraron con la clave antigua y ahora aparecen como <span class=\"mono\">[encrypted]</span>. Si el cambio no era deseado (por ejemplo, una restauración con un <span class=\"mono\">.env</span> nuevo), vuelve a poner la clave antigua y reinicia: los nombres vuelven a ser legibles."
+msgid "<b>The secret key has changed</b> since the previous start (<span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in <span class=\"mono\">.env</span>). %(count)s file names in the audit were encrypted with the old key and now show as <span class=\"mono\">[encrypted]</span>. If the change was not wanted (for example a restore with a new <span class=\"mono\">.env</span>), put the old key back and restart: the names become readable again."
+msgstr "<b>La clave secreta ha cambiado</b> desde el arranque anterior (<span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> en <span class=\"mono\">.env</span>). %(count)s nombres de archivo de la auditoría se cifraron con la clave antigua y ahora aparecen como <span class=\"mono\">[encrypted]</span>. Si el cambio no era deseado (por ejemplo, una restauración con un <span class=\"mono\">.env</span> nuevo), vuelve a poner la clave antigua y reinicia: los nombres vuelven a ser legibles."
 
 #: app/admin/templates/notices.html:48
-msgid "<b>No secret key is set.</b> <span class=\"mono\">CUPSPL_SECRET_KEY</span> is empty in <span class=\"mono\">.env</span>: the file names in the audit are stored without encryption and everybody has to sign in again after every restart. Set a long random value (for example the output of <span class=\"mono\">openssl rand -base64 48</span>), run <span class=\"mono\">docker compose up -d</span> and save the key in a safe place."
-msgstr "<b>No hay ninguna clave secreta.</b> <span class=\"mono\">CUPSPL_SECRET_KEY</span> está vacía en <span class=\"mono\">.env</span>: los nombres de archivo de la auditoría se guardan sin cifrar y tras cada reinicio todos deben volver a iniciar sesión. Pon un valor largo y aleatorio (por ejemplo la salida de <span class=\"mono\">openssl rand -base64 48</span>), ejecuta <span class=\"mono\">docker compose up -d</span> y guarda la clave en un lugar seguro."
+msgid "<b>No secret key is set.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> is empty in <span class=\"mono\">.env</span>: the file names in the audit are stored without encryption and everybody has to sign in again after every restart. Set a long random value (for example the output of <span class=\"mono\">openssl rand -base64 48</span>), run <span class=\"mono\">docker compose up -d</span> and save the key in a safe place."
+msgstr "<b>No hay ninguna clave secreta.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> está vacía en <span class=\"mono\">.env</span>: los nombres de archivo de la auditoría se guardan sin cifrar y tras cada reinicio todos deben volver a iniciar sesión. Pon un valor largo y aleatorio (por ejemplo la salida de <span class=\"mono\">openssl rand -base64 48</span>), ejecuta <span class=\"mono\">docker compose up -d</span> y guarda la clave en un lugar seguro."
 
-#: app/admin/templates/notices.html:52
+#: app/admin/templates/notices.html:50
+#, python-format
+msgid "<b>Scans without login are refused: the guest name is already taken.</b> A scan app sent no user name and password, and the account “%(name)s” that would receive its scans already exists as a real account (with a password, from RADIUS, or an administrator), so it is not used. Set a name nobody uses in <span class=\"mono\">SPOOLSTEWARD_ESCL_GUEST_USERNAME</span> in <span class=\"mono\">.env</span> and restart the portal."
+msgstr "<b>Se rechazan los escaneos sin inicio de sesión: el nombre de invitado ya está ocupado.</b> Una aplicación de escaneo no envió usuario ni contraseña, y la cuenta “%(name)s” que recibiría sus escaneos ya existe como cuenta real (con contraseña, de RADIUS o un administrador), por lo que no se usa. Indica un nombre que nadie use en <span class=\"mono\">SPOOLSTEWARD_ESCL_GUEST_USERNAME</span> del archivo <span class=\"mono\">.env</span> y reinicia el portal."
+
+#: app/admin/templates/notices.html:54
 #, python-format
 msgid "dismissed by %(who)s"
 msgstr "descartado por %(who)s"
@@ -4533,8 +4538,8 @@ msgid "Set the password of the administrator <b>%(user)s</b>."
 msgstr "Establece la contraseña del administrador <b>%(user)s</b>."
 
 #: app/admin/templates/setup.html:10
-msgid "The one-time code is printed in the gateway log: <code>docker compose logs gateway</code>. Whoever has no access to the server cannot complete this page."
-msgstr "El código de un solo uso se imprime en el registro del gateway: <code>docker compose logs gateway</code>. Quien no tenga acceso al servidor no puede completar esta página."
+msgid "The one-time code is printed in the portal log: <code>docker compose logs gateway</code>. Whoever has no access to the server cannot complete this page."
+msgstr "El código de un solo uso se imprime en el registro del portal: <code>docker compose logs gateway</code>. Quien no tenga acceso al servidor no puede completar esta página."
 
 #: app/admin/templates/setup.html:11
 msgid "One-time code"

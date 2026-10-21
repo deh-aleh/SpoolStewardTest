@@ -1,6 +1,6 @@
 #!/bin/sh
 # Copy the TLS certificate from the machine that renews it (Nginx Proxy Manager, certbot, ...) into config/tls and
-# restart the gateway when it changed. Meant to be run by cron on the machine where PrintMinder runs.
+# restart the gateway when it changed. Meant to be run by cron on the machine where SpoolSteward runs.
 #   scripts/cert-sync.sh             do it
 #   scripts/cert-sync.sh --dry-run   download and check, change nothing
 #
@@ -53,7 +53,7 @@ fail() {
     exit 1
 }
 
-[ -e .env ] || { echo ".env not found: run this from the PrintMinder folder (scripts/docker-init.sh creates it)" >&2; exit 1; }
+[ -e .env ] || { echo ".env not found: run this from the SpoolSteward folder (scripts/docker-init.sh creates it)" >&2; exit 1; }
 host="$(envget CERT_SYNC_HOST)"; user="$(envget CERT_SYNC_USER)"; key="$(envget CERT_SYNC_KEY)"; rdir="$(envget CERT_SYNC_REMOTE_DIR)"
 port="$(envget CERT_SYNC_PORT)"; port="${port:-22}"
 certname="$(envget CERT_SYNC_CERT_FILE)"; certname="${certname:-fullchain.pem}"

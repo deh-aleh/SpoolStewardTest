@@ -1,16 +1,16 @@
 """The signed-in user's own page: consumption, print keys, password, requests for more quota / another group."""
 
 import logging
-from datetime import datetime, timezone
-from zoneinfo import ZoneInfo
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.timeutil import local_tz, now_utc
 from app.admin.common import (
-    back, client_ip, current_user, flash, get_db, portal_base, render, session_stamp, verify_csrf,
+    back, client_ip, current_user, flash, get_db, render, session_stamp, verify_csrf,
 )
 from urllib.parse import quote
 
@@ -29,14 +29,6 @@ from app.policy import grants, permissions
 log = logging.getLogger("app.me")
 THEMES = {"auto": N_("Automatic (as the device)"), "light": N_("Light"), "dark": N_("Dark")}
 router = APIRouter(prefix="/me")
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
-
-
-def _tz() -> ZoneInfo:
-    return ZoneInfo(settings.timezone)
 
 
 def _describe(db: Session, req: QuotaRequest) -> str:
@@ -62,7 +54,7 @@ def _waiting_permissions(db: Session, user: User, now: datetime) -> set[str]:
 
 @router.get("", response_class=HTMLResponse)
 async def me(request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    now = _now()
+    now = now_utc()
     grants.expire_requests(db, now)
     key_rows = db.scalars(select(PrintKey).where(PrintKey.user_id == user.id).order_by(PrintKey.id.desc())).all()
     reqs = db.scalars(select(QuotaRequest).where(QuotaRequest.user_id == user.id).order_by(QuotaRequest.id.desc())
@@ -73,10 +65,10 @@ async def me(request: Request, user: User = Depends(current_user), db: Session =
     return render(
         request, "me.html", user, perms=perms, can_ask_printer=len(queues) < len(every_queue),
         perm_grants=_grant_lines(permissions.active_grants(db, user, now)), perm_window=permissions.describe_window(perms.window) if perms.window else "",
-        in_hours=permissions.in_window(perms.window, now, _tz()),
+        in_hours=permissions.in_window(perms.window, now, local_tz()),
         waiting=_waiting_permissions(db, user, now),
         group=db.get(Group, user.group_id) if user.group_id else None,
-        options=grants.quota_options(db, user, now, _tz()),
+        options=grants.quota_options(db, user, now, local_tz()),
         active_keys=sum(1 for k in key_rows if keylib.key_is_usable(k, now)),
         requests=[{"r": r, "what": _describe(db, r)} for r in reqs],
         server=request.headers.get("host", ""), ipp_mode=settings.ipp_auth,
@@ -100,14 +92,14 @@ async def key_create(request: Request, label: str = Form(""), validity: str = Fo
         record(db, user, "key.create", "print_key", row.id, label=row.label)
         db.commit()
     log.info("print key created user=%s label=%r", user.username, row.label)
-    expires = (row.expires_at.astimezone(_tz()).strftime("%Y-%m-%d %H:%M") if row.single_use else row.expires_at.strftime("%Y-%m-%d")) if row.expires_at else _("never")
+    expires = (row.expires_at.astimezone(local_tz()).strftime("%Y-%m-%d %H:%M") if row.single_use else row.expires_at.strftime("%Y-%m-%d")) if row.expires_at else _("never")
     host = request.headers.get("host", "")
     commands = [
         {"queue": q["name"],
          "url": f'ipps://{quote(user.username, safe="")}:{plain}@{host}/printers/{q["name"]}',
          "cmd": f'lpadmin -p {q["name"]} -E -v "ipps://{quote(user.username, safe="")}:{plain}@{host}/printers/{q["name"]}" '
                 f'-m everywhere -o auth-info-required=none'}
-        for q in permissions.allowed_queues(permissions.effective(db, user, _now()), await list_queues(request.app))
+        for q in permissions.allowed_queues(permissions.effective(db, user, now_utc()), await list_queues(request.app))
     ]
     return render(request, "secret_shown.html", user, title=_("New print key"), what=_("Print key"), secret=plain,
                   commands=commands,
@@ -123,7 +115,7 @@ async def key_create(request: Request, label: str = Form(""), validity: str = Fo
 
 @router.get("/keys", response_class=HTMLResponse)
 def keys_page(request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    now = _now()
+    now = now_utc()
     rows = db.scalars(select(PrintKey).where(PrintKey.user_id == user.id).order_by(PrintKey.id.desc())).all()
     return render(request, "keys.html", user, owner=user, keys=keylib.listing(rows, now),
                   choices=keylib.duration_choices(user), default_choice=str(keylib.default_duration(user)),
@@ -250,7 +242,7 @@ def password_change(request: Request, current: str = Form(""), new: str = Form("
         return back(_pw_page(user))
     forced = user.must_change_password
     user.password_hash, user.must_change_password = hash_password(new), False
-    user.password_changed_at = _now()
+    user.password_changed_at = now_utc()
     if user.is_admin:
         record(db, user, "password.change", "user", user.id)
     db.commit()
@@ -263,7 +255,7 @@ def password_change(request: Request, current: str = Form(""), new: str = Form("
 
 @router.get("/request/quota", response_class=HTMLResponse)
 def quota_form(request: Request, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    return render(request, "request_quota.html", user, options=grants.quota_options(db, user, _now(), _tz()),
+    return render(request, "request_quota.html", user, options=grants.quota_options(db, user, now_utc(), local_tz()),
                   max_open=settings.max_open_requests, reason_required=settings.request_reason_required)
 
 
@@ -273,7 +265,7 @@ def quota_submit(request: Request, metric: str = Form(""), amount: str = Form(""
     # no "period" field exists: the period is the one the administrator set for this user
     try:
         n = int(amount) if amount.strip().isascii() and amount.strip().isdigit() else 0
-        grants.create_quota_request(db, user, metric, n, scope, reason, _now())
+        grants.create_quota_request(db, user, metric, n, scope, reason, now_utc())
     except grants.RequestError as exc:
         flash(request, str(exc), "err")
         return back("/me/request/quota")
@@ -293,7 +285,7 @@ def group_form(request: Request, user: User = Depends(current_user), db: Session
 def group_submit(request: Request, group_id: int = Form(0), reason: str = Form(""),
                  user: User = Depends(current_user), db: Session = Depends(get_db)):
     try:
-        grants.create_group_request(db, user, group_id, reason, _now())
+        grants.create_group_request(db, user, group_id, reason, now_utc())
     except grants.RequestError as exc:
         flash(request, str(exc), "err")
         return back("/me/request/group")
@@ -303,16 +295,16 @@ def group_submit(request: Request, group_id: int = Form(0), reason: str = Form("
 
 def _grant_lines(rows) -> list[dict]:
     """The permissions granted to this person, for the list on their page: what, and the last day (None = permanent)."""
-    return [{"what": permissions.describe_grant(g.perm, g.printer), "until": grants.last_day(g.valid_until, _tz())} for g in rows]
+    return [{"what": permissions.describe_grant(g.perm, g.printer), "until": grants.last_day(g.valid_until, local_tz())} for g in rows]
 
 
 @router.get("/request/permission", response_class=HTMLResponse)
 async def permission_form(request: Request, perm: str = "", user: User = Depends(current_user), db: Session = Depends(get_db)):
     """Only what this person lacks is offered. `perm` (and `printer`) in the address pre-select the choice: the links on /me use them."""
-    perms = permissions.effective(db, user, _now())
+    perms = permissions.effective(db, user, now_utc())
     every_queue = await list_queues(request.app)
     blocked = [q["name"] for q in every_queue if not permissions.printer_allowed(perms, q["name"])]
-    waiting = _waiting_permissions(db, user, _now())  # already asked: not offered again until the answer comes
+    waiting = _waiting_permissions(db, user, now_utc())  # already asked: not offered again until the answer comes
     blocked = [n for n in blocked if f"printer:{n.lower()}" not in waiting]
     options = [(p, label) for p, label, lacks in (
         ("color", _("colour printing"), not perms.color), ("one_sided", _("one-sided printing"), not perms.one_sided),
@@ -332,7 +324,7 @@ async def permission_submit(request: Request, perm: str = Form(""), printer: str
             name = next((q["name"] for q in await list_queues(request.app) if q["name"].lower() == printer.strip().lower()), None)
             if name is None:
                 raise grants.RequestError(_("that printer does not exist"))
-        grants.create_permission_request(db, user, perm, name, reason, _now())
+        grants.create_permission_request(db, user, perm, name, reason, now_utc())
     except grants.RequestError as exc:
         flash(request, str(exc), "err")
         return back("/me/request/permission")
@@ -346,7 +338,7 @@ def request_cancel(request: Request, req_id: int, user: User = Depends(current_u
     if req is None or req.user_id != user.id:
         raise HTTPException(404)
     try:
-        grants.cancel_request(db, req, user, _now())
+        grants.cancel_request(db, req, user, now_utc())
         flash(request, _("Request canceled"))
     except grants.RequestError as exc:
         flash(request, str(exc), "err")

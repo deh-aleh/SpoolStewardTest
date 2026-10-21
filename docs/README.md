@@ -1,4 +1,4 @@
-# PrintMinder documentation · Documentazione
+# SpoolSteward documentation · Documentazione
 
 The documentation is written in two languages with the same structure. English is the main one.
 La documentazione è scritta in due lingue con la stessa struttura. L'inglese è la principale.

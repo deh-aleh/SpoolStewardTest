@@ -23,8 +23,8 @@ For people who run the installation. The portal is at `https://<server>:8631/` (
 
 ## 1. First steps
 
-1. Set the `cups_orchestrator` password with the one-time code ([installation.md](installation.md#36-first-administrator)).
-2. Create your **own** administrator account (Users → create → administrator) and use it day to day. `cups_orchestrator` is the emergency account: it belongs to no group and nothing limits it (no quota, no permission rule), so keep it for recovery.
+1. Set the `administrator` password with the one-time code ([installation.md](installation.md#36-first-administrator)).
+2. Create your **own** administrator account (Users → create → administrator) and use it day to day. `administrator` is the emergency account: it belongs to no group and nothing limits it (no quota, no permission rule), so keep it for recovery.
 3. Edit the **default** group limits (Groups) and create groups for the people who need different limits.
 4. Create users, or let RADIUS users log in. Tell people to create a print key ([user-guide.md](user-guide.md)).
 5. Set up a backup ([backup.md](backup.md)).
@@ -37,7 +37,7 @@ The list is read-only: a user's own limit or the inherited one (italics), active
 - Create **local**: a temporary password is shown once; the user changes it at first login.
 - Create **RADIUS**: choose the group; the person signs in with their office password.
 - **Reset password** (local): new temporary password, shown once.
-- **Keys**: the list per user is at `/admin/users/<id>/keys`. For each key you can **switch it off** (its expiry keeps running; switch it on again later), **extend it** (the new expiry counts from today, the time left is not added) or **revoke it**; "Revoke all" stops every device of the user. The user gets a notice for each action (not for their own). Revoked and expired keys disappear after `CUPSPL_KEY_HISTORY_DAYS` days (14).
+- **Keys**: the list per user is at `/admin/users/<id>/keys`. For each key you can **switch it off** (its expiry keeps running; switch it on again later), **extend it** (the new expiry counts from today, the time left is not added) or **revoke it**; "Revoke all" stops every device of the user. The user gets a notice for each action (not for their own). Revoked and expired keys disappear after `SPOOLSTEWARD_KEY_HISTORY_DAYS` days (14).
 - **Admin flag**: promotion moves the user to the `administrator` group, demotion to `default`.
 - Protected: you can not disable, demote or delete yourself, the emergency account or the last administrator.
 
@@ -50,7 +50,7 @@ deleted; deleting another group moves its users to `default`. Personal limits ar
 
 **Advanced permissions.** At the bottom of the group page and of the user page, the **Advanced permissions** button opens colour, one-sided
 prints, which printers, and which days and hours. A user's field is "as the group" or has its own value. The emergency administrator has no group and no
-limits at all; its page shows the block switched off. `CUPSPL_PERMISSION_MODE` decides whether a client that explicitly asks for colour or
+limits at all; its page shows the block switched off. `SPOOLSTEWARD_PERMISSION_MODE` decides whether a client that explicitly asks for colour or
 a one-sided print that is not allowed is corrected (`adjust`, default) or refused (`refuse`). Read the notes in
 [quotas.md](quotas.md#5-advanced-permissions) before choosing: with `refuse` many Windows and Android jobs are refused. A user is told in
 their bell when you change their own permissions, and when a job of theirs is refused or corrected.
@@ -59,7 +59,7 @@ their bell when you change their own permissions, and when a job of theirs is re
 
 Everything is on one page, *Requests*, in three parts:
 
-- **Pending requests**: edit the amount or the kind before approving, add one note (the user sees it, whether you approve or reject). A permission request (colour, one-sided, a printer, outside the hours) is approved *permanent* or *until the end of* a date you choose. Approval is idempotent.
+- **Pending requests**: edit the amount or the kind before approving, add one note (the user sees it, whether you approve or reject). A permission request (colour, one-sided, a printer, outside the hours) is approved *permanent* or *until the end of* a date you choose. If two administrators approve at once, or someone double-clicks, it is granted once.
 - **Active grants**: the extra quota and the permissions that count now; revoke them, or give one directly with a note (choose *quota* or *a permission* in the form).
 - **History** (closed until you open it): the latest decisions and the grants that no longer count (ended or revoked).
   *Delete ended grants* removes those from the list; active grants are not touched, and the administrators' log (*Actions*) keeps
@@ -78,13 +78,13 @@ print, send a test print with statistics, switch on **gateway maintenance** (red
 Use filters and the CSV export; cancel queued jobs; read archived files; verify their integrity. Nothing can be deleted
 ([audit.md](audit.md)).
 
-## 7. Command line (`cups-policy-admin`)
+## 7. Command line (`spoolsteward-admin`)
 
-Inside the container: `docker compose exec gateway cups-policy-admin <command>` (add `-it` when it asks for a password).
+Inside the container: `docker compose exec gateway spoolsteward-admin <command>` (add `-it` when it asks for a password).
 
 | Command | Purpose |
 |---|---|
-| `set-admin-password [user]` | create or update a **local** administrator (default `cups_orchestrator`) and set its password |
+| `set-admin-password [user]` | create or update a **local** administrator (default `administrator`) and set its password |
 | `make-admin <user>` | grant admin rights (creates the user if needed) |
 | `set-group <user> <group>` | move a user to a group (creates the group) |
 | `group-limit <group> <limit\|none> [--period weekly\|monthly] [--metric jobs\|pages]` | set a group limit; `none` removes it |
@@ -96,7 +96,7 @@ Inside the container: `docker compose exec gateway cups-policy-admin <command>` 
 | `backup-verify <file>` | check a backup file |
 | `backup-restore <file>` | restore database and audit files (stop the gateway first) |
 
-## 7b. Notices (the bell)
+## 8. Notices (the bell)
 
 The bell in the top bar (administrators only) lists what the gateway noticed and nobody asked about. Each notice shows the
 last time, the source, and how many times it happened; *Dismiss* closes it (the dismissal is recorded in *Actions*).
@@ -104,20 +104,20 @@ The kinds of notice:
 
 | Notice (as shown in the bell) | Meaning | Closes by itself when |
 |---|---|---|
-| A scan request without a user name and password from IP was refused | `CUPSPL_ESCL_ANONYMOUS` is off and a client sent no credentials ([scanning.md](scanning.md)) | never (dismiss it) |
+| A scan request without a user name and password from IP was refused | `SPOOLSTEWARD_ESCL_ANONYMOUS` is off and a client sent no credentials ([scanning.md](scanning.md)) | never (dismiss it) |
 | **Backup not done: the destination folder can not be reached** | The marker file of the destination is missing (disk not mounted); nothing was written ([backup.md](backup.md)) | the next backup works |
 | **Backup failed** | Any other error, with the reason; both notices carry the real name of the backup | the next backup works |
 | **The TLS certificate has expired** | Clients no longer trust the gateway ([certificates.md](certificates.md)) | a valid certificate is in place and the gateway restarted |
 | **The certificate could not be updated** | The last run of `scripts/cert-sync.sh` failed | the next run works |
 | **The announced address is not in the TLS certificate** | Clients that discover the printers through mDNS get a certificate error | the SAN lists the address |
-| **The TLS certificate expires on DATE** | Only if `CUPSPL_CERT_EXPIRY_WARN_ENABLED=true` | the certificate is renewed |
+| **The TLS certificate expires on DATE** | Only if `SPOOLSTEWARD_CERT_EXPIRY_WARN_ENABLED=true` | the certificate is renewed |
 | **Paper jam** / **Out of paper** | A physical printer reports it (checked once a minute, reported after two consecutive checks) | the printer stops reporting it |
 | **Ink or toner is out** / **running low** | Out: level 0, or the printer's state reason says so. Low: the printer's own low mark. Both name the supplies | the printer stops reporting it |
-| **Save the secret key in a safe place** | Once, after the first start: copy `CUPSPL_SECRET_KEY` from `.env`. Goes to the first-run administrator (`CUPSPL_BOOTSTRAP_ADMIN_USERNAME`) in their own bell, or to all administrators if that account does not exist or `CUPSPL_BOOTSTRAP_ADMIN=false`. Not repeated at a restart; repeated once if the key changes | never (dismiss it) |
-| **The secret key has changed** | `CUPSPL_SECRET_KEY` differs from the previous start; says how many file names can no longer be read | never (dismiss it) |
-| **No secret key is set** | `CUPSPL_SECRET_KEY` is empty: file names are not encrypted and sessions end at every restart | a key is set |
+| **Save the secret key in a safe place** | Once, after the first start: copy `SPOOLSTEWARD_SECRET_KEY` from `.env`. Goes to the first-run administrator (`SPOOLSTEWARD_BOOTSTRAP_ADMIN_USERNAME`) in their own bell, or to all administrators if that account does not exist or `SPOOLSTEWARD_BOOTSTRAP_ADMIN=false`. Not repeated at a restart; repeated once if the key changes | never (dismiss it) |
+| **The secret key has changed** | `SPOOLSTEWARD_SECRET_KEY` differs from the previous start; says how many file names can no longer be read | never (dismiss it) |
+| **No secret key is set** | `SPOOLSTEWARD_SECRET_KEY` is `none` or missing: file names are not encrypted and sessions end at every restart | a key is set |
 
-**Printer problems and users.** The notices above about printers are always for administrators. With `CUPSPL_PRINTER_ALERTS_USERS=true` (default) the people who have a
+**Printer problems and users.** The notices above about printers are always for administrators. With `SPOOLSTEWARD_PRINTER_ALERTS_USERS=true` (default) the people who have a
 print waiting on that printer get a notice in their own bell too (jam, paper and ink out; not "running low"), once per problem and only them, not everybody.
 It closes by itself when the printer is fine again. With `false` only the administrators are told.
 
@@ -125,23 +125,23 @@ It closes by itself when the printer is fine again. With `false` only the admini
 requests) and then the gateway's ones, and the red number adds both. `/me/notices` sends administrators there.
 
 To keep one client that retries 100 times from filling the list, the same notice from the same source is written again only
-after an interval; the repeats in between are counted. The interval depends on `CUPSPL_LOG_LEVEL`, and the same text is
+after an interval; the repeats in between are counted. The interval depends on `SPOOLSTEWARD_LOG_LEVEL`, and the same text is
 written to the container log with the same limit:
 
-| `CUPSPL_LOG_LEVEL` | Same notice, same source, reported again after |
+| `SPOOLSTEWARD_LOG_LEVEL` | Same notice, same source, reported again after |
 |---|---|
 | `DEBUG` | 1 minute |
 | `INFO` (default) | 1 day |
 | `WARNING` | 3 days |
 | `ERROR` | 7 days |
 
-`CUPSPL_NOTICE_INTERVAL` (seconds) replaces the table. At most 200 open notices of a kind are kept; dismissed ones are removed after 90 days.
+`SPOOLSTEWARD_NOTICE_INTERVAL` (seconds) replaces the table. At most 200 open notices of a kind are kept; dismissed ones are removed after 90 days.
 
-## 8. Operations
+## 9. Operations
 
-- Health: `GET /healthz` → 200 or 503, body `{"status":"ok"}`. It needs no login. `CUPSPL_HEALTHZ_INFO=version,printers` adds the version and the number of queues (usb / network / virtual / total); the default is the status only. Logs: `docker compose logs gateway`.
+- Health: `GET /healthz` → 200 or 503, body `{"status":"ok"}`. It needs no login. `SPOOLSTEWARD_HEALTHZ_INFO=version,printers` adds the version and the number of queues (usb / network / virtual / total); the default is the status only. Logs: `docker compose logs gateway`.
 - Migrations run automatically at start. Back up before updating an important database.
-- File names in the audit: the green/red button at the top right of the *Audit* page stops saving them, `.env` can erase them after some days, and they are stored encrypted ([data-protection.md](data-protection.md)). Do not change `CUPSPL_SECRET_KEY`.
+- File names in the audit: the green/red button at the top right of the *Audit* page stops saving them, `.env` can erase them after some days, and they are stored encrypted ([data-protection.md](data-protection.md)). Do not change `SPOOLSTEWARD_SECRET_KEY`.
 - Updates: a note appears at the top of the portal when a newer release exists. Update with `scripts/update.sh`, or with the *Update* button in the menu *Backup* when the optional updater container runs and a scheduled backup works ([installation.md](installation.md#updates)). The updater controls Docker, which is full control of the server: keep it off if you do not need it.
 - Do not leave test accounts or test printers on a real installation.
 - Protect `config/`, `.env`, `data/` and the volume: they hold secrets and personal data.

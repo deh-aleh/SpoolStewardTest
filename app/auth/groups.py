@@ -1,6 +1,6 @@
 """The two groups every installation has: "default" (where everybody starts) and "administrator"."""
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -45,7 +45,7 @@ def ensure_system_groups(sm) -> None:
             if is_emergency(u):
                 u.group_id = None
                 for model in (PolicyRule, PermissionRule):
-                    db.query(model).filter(model.subject_type == SubjectType.user, model.subject_id == u.id).delete()
+                    db.execute(delete(model).where(model.subject_type == SubjectType.user, model.subject_id == u.id))
             elif u.is_admin and u.group_id != admins.id:
                 u.group_id = admins.id
             elif not u.is_admin and u.group_id == admins.id:

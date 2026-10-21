@@ -1,25 +1,26 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Audit") }}{% endblock %}
-{% block mainattr %} style="max-width:1560px"{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/jobs.css?v={{ app_version }}">{% endblock %}
+{% block mainattr %} class="jb-main"{% endblock %}
+{% block scripts %}<script src="/admin/static/js/jobs.js?v={{ app_version }}"></script>{% endblock %}
 {% block body %}
 {% from "macros.html" import copybox %}
 {% if archives %}
-<div class="card" style="border-color:var(--warn)">
+<div class="card jb-warn">
   <b>{{ ngettext("There is %(n)s compressed audit archive", "There are %(n)s compressed audit archives", archives[0]) }}</b> {{ _("(from %(first)s to %(last)s):", first=archives[1]|localtime('%Y-%m-%d'), last=archives[2]|localtime('%Y-%m-%d')) }}
   {{ _("the oldest prints no longer appear in this table.") }} <a href="/admin/archive">{{ _("View, download or verify the archives →") }}</a>
 </div>
 {% endif %}
 <div class="card">
-  <style>.tdot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:7px; background:var(--ok) } .tdot.off { background:var(--err) }</style>
-  <form method="post" action="/admin/jobs/titles" style="float:right;margin:0"{% if titles_on %} data-confirm="{{ _t('Stop saving the names of the files? From now on new prints and scans will be listed without a file name. The names already saved stay. You can turn it on again at any time.') }}"{% endif %}>
+  <form method="post" action="/admin/jobs/titles" class="jb-titles"{% if titles_on %} data-confirm="{{ _t('Stop saving the names of the files? From now on new prints and scans will be listed without a file name. The names already saved stay. You can turn it on again at any time.') }}"{% endif %}>
     <input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="on" value="{{ '0' if titles_on else '1' }}">
     <button class="sec" title="{{ _('Click to stop saving the names of new files') if titles_on else _('Click to start saving the names of new files again') }}"><span class="tdot{{ '' if titles_on else ' off' }}"></span>{{ _("File names are being saved") if titles_on else _("File names are not being saved") }}</button>
   </form>
   <h1>{{ _("Print and scan audit") }} <span class="muted">({{ total }})</span></h1>
-  <p class="muted" style="margin:-6px 0 12px">
+  <p class="muted jb-m1">
     {% set ar_key = 'audit' %}{% set ar_seconds = refresh or 30 %}{% set ar_on = refresh > 0 %}{% include "autorefresh.html" %} · <a href="/me/settings">{{ _("change it in the settings") }}</a> · {{ _("30 actions per page") }}
   </p>
-  <form method="get" class="row" style="margin-bottom:12px">
+  <form method="get" class="row jb-filter">
     <input type="text" name="user" placeholder="{{ _('User') }}" value="{{ f.user }}">
     <input type="text" name="q" placeholder="{{ _('File name') }}" value="{{ f.q }}">
     <select name="state">
@@ -30,15 +31,15 @@
     <a href="/admin/jobs.csv?user={{ f.user|urlencode }}&state={{ f.state|urlencode }}&q={{ f.q|urlencode }}"><button type="button" class="sec">{{ _("Export CSV") }}</button></a>
     <a href="/admin/report"><button type="button" class="sec">{{ _("Report") }}</button></a>
   </form>
-  {% if f.q %}<p class="muted" style="margin:-4px 0 10px">{{ _("The search by file name looks in the latest %(n)s actions that match the other filters.", n=title_scan) }}</p>{% endif %}
+  {% if f.q %}<p class="muted jb-m2">{{ _("The search by file name looks in the latest %(n)s actions that match the other filters.", n=title_scan) }}</p>{% endif %}
   <table class="stack-md zebra">
-    <tr><th>{{ _("No.") }}</th><th>{{ _("When") }}</th><th>{{ _("User") }}</th><th>{{ _("Device") }}</th><th>{{ _("Action") }}</th><th>{{ _("State") }} <button type="button" class="info-lg" title="{{ _('What the states mean') }}" aria-label="{{ _('What the states mean') }}" onclick="document.getElementById('states-help').showModal()">ⓘ</button></th><th>{{ _("Pg.") }}</th><th>{{ _("File") }}</th><th>{{ _("Notes") }}</th><th></th></tr>
+    <tr><th>{{ _("No.") }}</th><th>{{ _("When") }}</th><th>{{ _("User") }}</th><th>{{ _("Device") }}</th><th>{{ _("Action") }}</th><th>{{ _("State") }} <button type="button" class="info-lg" title="{{ _('What the states mean') }}" aria-label="{{ _('What the states mean') }}" data-open-id="states-help">ⓘ</button></th><th>{{ _("Pg.") }}</th><th>{{ _("File") }}</th><th>{{ _("Notes") }}</th><th></th></tr>
     {% for r in rows %}{% set j = r.j %}
     <tr>
       <td data-l="{{ _('No.') }}" class="mono muted">{{ j.id }}</td>
       <td data-l="{{ _('When') }}" class="nowrap mono">{{ j.ts|localtime('%Y-%m-%d') }} {{ j.ts|localtime('%H:%M:%S') }}</td>
       <td data-l="{{ _('User') }}" class="wrap">{{ r.name or '—' }}{% if r.guest %}
-        <button type="button" class="dots" title="{{ _('Where the scan came from') }}" aria-label="{{ _('Where the scan came from') }}" onclick="this.nextElementSibling.showModal()">ⓘ</button>
+        <button type="button" class="dots" title="{{ _('Where the scan came from') }}" aria-label="{{ _('Where the scan came from') }}" data-open-next>ⓘ</button>
         <dialog>
           <h2>{{ _("Scan without sign-in · no. %(id)s", id=j.id) }}</h2>
           <p class="muted">{{ _("Whoever scanned did not sign in: they are recorded as “%(name)s”. This is all that is known about them.", name=r.name) }}</p>
@@ -46,7 +47,7 @@
             <dt>{{ _("Host name") }}</dt><dd class="mono">{{ r.guest.host or _('not available (no name registered in the DNS)') }}</dd></dl>
           <form method="dialog"><button class="sec">{{ _("Close") }}</button></form>
         </dialog>{% endif %}{% if r.win %}
-        <button type="button" class="dots" title="{{ _('Scan window') }}" aria-label="{{ _('Scan window') }}" onclick="this.nextElementSibling.showModal()">ⓘ</button>
+        <button type="button" class="dots" title="{{ _('Scan window') }}" aria-label="{{ _('Scan window') }}" data-open-next>ⓘ</button>
         <dialog>
           <h2>{{ _("Scan window · no. %(id)s", id=j.id) }}</h2>
           {% if r.win.expected %}<p class="muted">{{ _("Refused: the window was opened for one address and the request came from another.") }}</p>
@@ -59,7 +60,7 @@
         </dialog>{% endif %}</td>
       <td data-l="{{ _('Device') }}" class="wrap">{{ r.device }}</td>
       <td data-l="{{ _('Action') }}">{% if r.scan %}{{ _("scan") }}{% if r.adf %}<div><span class="pill" title="{{ _('Scanned with the automatic document feeder (ADF)') }}">ADF</span></div>{% endif %}{% else %}{{ _("print") }}
-        <button type="button" class="dots" title="{{ _('Specifications of this print') }}" aria-label="{{ _('Specifications of this print') }}" onclick="this.nextElementSibling.showModal()">ⓘ</button>
+        <button type="button" class="dots" title="{{ _('Specifications of this print') }}" aria-label="{{ _('Specifications of this print') }}" data-open-next>ⓘ</button>
         <dialog>
           <h2>{{ _("Print specifications · no. %(id)s", id=j.id) }}</h2>
           <dl class="kv">{% for label, value in r.specs %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}</dl>
@@ -68,20 +69,19 @@
       <td data-l="{{ _('State') }}"><span class="pill s-{{ j.state.value }}">{{ _(j.state.value) }}</span></td>
       <td data-l="{{ _('Pg.') }}">{{ j.pages or '' }}</td>
       <td data-l="{{ _('File') }}" class="wrap">
-        {% set open_all = "this.closest('td').querySelector('dialog').showModal()" %}
-        {{ r.title or '—' }}{% if r.title_cut %} <button type="button" class="dots" title="{{ _('Show all') }}" aria-label="{{ _('Show the complete information of the file') }}" onclick="{{ open_all }}">…</button>{% endif %}
-        {% if r.doc %}<div class="muted">{{ r.doc }}{% if r.doc_cut %} <button type="button" class="dots" title="{{ _('Show all') }}" aria-label="{{ _('Show the complete information of the file') }}" onclick="{{ open_all }}">…</button>{% endif %}</div>{% endif %}
-        {% if r.comment %}<div class="muted">💬 {{ r.comment }}{% if r.comment_cut %} <button type="button" class="dots" title="{{ _('Show all') }}" aria-label="{{ _('Show the complete comment') }}" onclick="{{ open_all }}">…</button>{% endif %}</div>{% endif %}
+        {{ r.title or '—' }}{% if r.title_cut %} <button type="button" class="dots" title="{{ _('Show all') }}" aria-label="{{ _('Show the complete information of the file') }}" data-open-td>…</button>{% endif %}
+        {% if r.doc %}<div class="muted">{{ r.doc }}{% if r.doc_cut %} <button type="button" class="dots" title="{{ _('Show all') }}" aria-label="{{ _('Show the complete information of the file') }}" data-open-td>…</button>{% endif %}</div>{% endif %}
+        {% if r.comment %}<div class="muted">💬 {{ r.comment }}{% if r.comment_cut %} <button type="button" class="dots" title="{{ _('Show all') }}" aria-label="{{ _('Show the complete comment') }}" data-open-td>…</button>{% endif %}</div>{% endif %}
         {% if r.file_cut %}<dialog>
           <h2>{{ _("File · no. %(id)s", id=j.id) }}</h2>
           <dl class="kv">{% for label, value in r.details %}<dt>{{ label }}</dt><dd>{{ value }}</dd>{% endfor %}</dl>
           <form method="dialog"><button class="sec">{{ _("Close") }}</button></form>
         </dialog>{% endif %}</td>
-      <td data-l="{{ _('Notes') }}" class="muted wrap">{{ r.note }}{% if r.note_cut %} <button type="button" class="dots" title="{{ _('Show and copy the whole note') }}" aria-label="{{ _('Show and copy the whole note') }}" onclick="this.nextElementSibling.showModal()">…</button>
+      <td data-l="{{ _('Notes') }}" class="muted wrap">{{ r.note }}{% if r.note_cut %} <button type="button" class="dots" title="{{ _('Show and copy the whole note') }}" aria-label="{{ _('Show and copy the whole note') }}" data-open-next>…</button>
         <dialog>
           <h2>{{ _("Note · no. %(id)s", id=j.id) }}</h2>
           {{ copybox(j.denied_reason) }}
-          <form method="dialog" style="margin-top:12px"><button class="sec">{{ _("Close") }}</button></form>
+          <form method="dialog" class="jb-close"><button class="sec">{{ _("Close") }}</button></form>
         </dialog>{% endif %}</td>
       <td>{% if j.state.value == 'accepted' and j.cups_job_id and j.printer and r.name %}
         <form method="post" action="/admin/jobs/{{ j.id }}/cancel" data-confirm="{{ _t('Cancel this queued job?') }}">
@@ -90,7 +90,7 @@
     {% else %}<tr><td colspan="10" class="muted">{{ _("No jobs.") }}</td></tr>{% endfor %}
   </table>
   {% if pages > 1 %}
-  <div class="row" style="margin-top:12px">
+  <div class="row jb-pager">
     {% if page > 1 %}<a href="?user={{ f.user|urlencode }}&state={{ f.state|urlencode }}&q={{ f.q|urlencode }}&page={{ page-1 }}">← {{ _("Previous") }}</a>{% endif %}
     <span class="muted">{{ _("Page %(page)s / %(pages)s", page=page, pages=pages) }}</span>
     {% if page < pages %}<a href="?user={{ f.user|urlencode }}&state={{ f.state|urlencode }}&q={{ f.q|urlencode }}&page={{ page+1 }}">{{ _("Next") }} →</a>{% endif %}
@@ -99,7 +99,7 @@
 </div>
 <dialog id="states-help">
   <h2>{{ _("States of a print or scan") }}</h2>
-  <dl class="kv states" style="grid-template-columns:max-content 1fr">
+  <dl class="kv states jb-states">
     <dt><span class="pill s-accepted">{{ _("accepted") }}</span></dt><dd>{{ _("<b>Accepted.</b> It passed the checks (identity, quota, blocks, maintenance) and was handed to CUPS or the scanner: it is printing, queued or in progress. It already counts toward the quota.") }}</dd>
     <dt><span class="pill s-completed">{{ _("completed") }}</span></dt><dd>{{ _("<b>Completed.</b> Print finished (CUPS confirms it) or scan delivered. The real pages replace the estimate made before printing.") }}</dd>
     <dt><span class="pill s-denied">{{ _("denied") }}</span></dt><dd>{{ _("<b>Denied.</b> The gateway refused it and nothing started: quota used up, printer blocked, gateway in maintenance, invalid file… The reason is in the Notes column. It does not count toward the quota.") }}</dd>

@@ -3,7 +3,6 @@ action happened on, and the specifications of a print."""
 
 from app.db.models import JobKind, JobLog
 from app.i18n import N_, _
-from app.i18n import _
 
 FILE_MAX = 36     # characters of a file name / document name shown in the table
 COMMENT_MAX = 30  # characters of the comment shown in the table

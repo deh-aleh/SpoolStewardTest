@@ -5,7 +5,7 @@ import shutil
 import stat
 import subprocess
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -22,7 +22,7 @@ def write_pair(folder: Path, days_left=60, wrong_key=False):
     folder.mkdir(parents=True, exist_ok=True)
     key = ec.generate_private_key(ec.SECP256R1())
     name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "t")])
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key()).serial_number(1)
             .not_valid_before(now - timedelta(days=100)).not_valid_after(now + timedelta(days=days_left))
             .sign(key, hashes.SHA256()))

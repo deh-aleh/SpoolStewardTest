@@ -15,23 +15,22 @@ recorded. Everything is read live and best effort: a printer that does not offer
 - **Ink** left (levels and colours from CUPS).
 - **Printer counters** (lifetime): total pages, black and white, colour, single/double-sided sheets, jams, pick failures —
   read from HP's embedded web service (`/DevMgmt/ProductUsageDyn.xml`). Other brands show only IPP data.
-- Serial number, firmware, speed, paper ready, alerts (as the device reports them). A paper jam, empty paper or ink/toner out or low also raise a notice in the bell ([admin-guide.md](admin-guide.md#7b-notices-the-bell)).
+- Serial number, firmware, speed, paper ready, alerts (as the device reports them). A paper jam, empty paper or ink/toner out or low also raise a notice in the bell ([admin-guide.md](admin-guide.md#8-notices-the-bell)).
 - State and capabilities of the **scanner** (eSCL), with an *MFP* badge for multifunction devices.
 - Beside them, what the gateway recorded: jobs, pages, scans, last job.
 
-Reads are parallel, fault tolerant and cached for `CUPSPL_PRINTERS_REFRESH_SECONDS` seconds (default 15; 0 or an unusable value means 15; minimum 5,
-maximum 3600 — lower means the printers are asked more often). The **Automatic refresh** switch under the title reloads the page by itself every
+Reads are parallel, fault tolerant and cached for `SPOOLSTEWARD_PRINTERS_REFRESH_SECONDS` seconds (default 15, from 5 to 3600: the lower, the more often the printers are asked). The **Automatic refresh** switch under the title reloads the page by itself every
 that many seconds, so an unplugged printer shows up without pressing F5. It starts off, is remembered by the browser, and the page does not reload
 while a popup is open or something is being typed. Nothing is tied to a printer model: colour support, name, inks and
 counters are read from the device. Texts coming from the device (ink names, firmware, warnings) are shown as received.
 
 ## 2. New and unplugged USB printers
 
-**New printers appear by themselves.** Every `CUPSPL_DISCOVERY_INTERVAL` seconds (30) the gateway looks at the USB side and
+**New printers appear by themselves.** Every `SPOOLSTEWARD_DISCOVERY_INTERVAL` seconds (30) the gateway looks at the USB side and
 creates the CUPS queue of each new device — within about a minute of plugging it in. Two ways, in this order of priority:
 
 1. **ipp-usb** (preferred): a printer with IPP-over-USB (most recent ones) is served by the `ipp-usb` container on a port of
-   `CUPSPL_USB_BRIDGE_PORTS`; its queue points at `ipp://ipp-usb:<port>/ipp/print` and needs no driver.
+   `SPOOLSTEWARD_USB_BRIDGE_PORTS`; its queue points at `ipp://ipp-usb:<port>/ipp/print` and needs no driver.
 2. **CUPS' own usb backend**: for printers with no IPP-over-USB (many older lasers, for example Brother DCP-7055): the queue
    points at `usb://Maker/Model?serial=…` and CUPS needs a driver. The image ships brlaser, gutenprint, splix and foo2zjs; if CUPS
    has none for the model, the Printers page says so ("found, but CUPS has no driver for it"). A device that ipp-usb serves is
@@ -49,7 +48,7 @@ number is dropped, "Hewlett-Packard" becomes "HP", and a still-too-long name kee
 declares (for HP's 7300 series the printer says "Smart Tank 7300 series", not the sales name or SKU), so the gateway can not know a more
 specific name. Every printer connected by USB shows a badge next to its name: **IPP-USB** (served by the ipp-usb bridge) or **USB**
 (driven by CUPS directly). The **Look now** button on the Printers page runs a pass at once.
-`CUPSPL_AUTO_DISCOVER=false` turns the whole thing off; `CUPSPL_USB_DIRECT=false` skips path 2.
+`SPOOLSTEWARD_AUTO_DISCOVER=false` turns the whole thing off; `SPOOLSTEWARD_USB_DIRECT=false` skips path 2.
 
 **Unplugged printers.** A queue outlives the cable, so the card shows **NOT REACHABLE**, a red notice, and:
 
@@ -58,7 +57,7 @@ specific name. Every printer connected by USB shows a badge next to its name: **
 - for **USB queues** (ipp-usb or `usb://`), a **countdown** ("will be removed automatically in 7:41:23 (2026-10-13 04:12) unless the
   printer comes back"). When it reaches zero the gateway deletes the queue by itself and writes `printer.auto_remove` in the
   administrators' audit (actor `system`); new devices are logged as `printer.auto_add`. If the printer answers again before the end,
-  the countdown disappears. The wait is `CUPSPL_OFFLINE_REMOVE_HOURS` (default 8; `0` = never).
+  the countdown disappears. The wait is `SPOOLSTEWARD_OFFLINE_REMOVE_HOURS` (default 8; `0` = never).
 - **network queues are never removed by themselves**: a printer switched off for the weekend must come back as it was. 
 
 If the printer is plugged in again later it is simply added again as a new printer.
@@ -73,7 +72,7 @@ list: every administrator has their own order, so if you put printer A before B 
 order is also the one of your own print form (*Print*). A button is greyed out and not clickable when the printer is already at that end.
 A printer moves only inside its group: physical printers stay above the virtual ones. Once you have moved a printer its place in your list
 is fixed; a printer connected later goes after the ones you already placed (in its group). Moves are written to the administrators'
-audit (`printer.move`). A printer you never moved follows the default order described below.
+audit (`printer.move`). A printer you never moved follows the default order described above.
 
 **Renaming a queue.** The pencil button opens a dialog with an empty field for the new name (the current name is shown in grey as a
 placeholder). The name is the last part of the address, `…/printers/<name>`: letters, digits and `. _ @ + -`. CUPS can not rename a queue, so the gateway creates the new one on the same device — same driver (IPP printers:
@@ -88,8 +87,7 @@ permissions granted for that printer and the requests for it still waiting follo
 Logged as `printer.rename`.
 
 **Names used before.** The gateway remembers the names that queues had: a queue that was deleted from the Printers page, a USB queue
-that was removed because its device stayed away, and the old name of a queue that was renamed (names found in the audit before this
-feature are included). In the rename dialog:
+that was removed because its device stayed away, and the old name of a queue that was renamed. In the rename dialog:
 
 - **While you type**, if a name used before starts with the letters typed so far, the rest of it appears in grey inside the field, like
   the suggestion of a search engine. It is only a reminder: the whole name must still be typed, and the grey part disappears as soon as
@@ -142,7 +140,7 @@ English ([languages.md](languages.md)).
 - **Gateway maintenance** (red traffic-cone button at the top) — stops printing **and scanning** for everybody except administrators and
   withdraws every mDNS announcement. A red banner shows the state on every page. The confirmation window has a tick, on by default, to **tell all users in their notices** (administrators too, except the one who acts) that printing is suspended, or that it works again; leaving maintenance closes the earlier "in maintenance" notice.
 
-The mDNS announcer asks the gateway (`/mdns/policy`, authenticated by a code derived from `CUPSPL_SECRET_KEY`).
+The mDNS announcer asks the gateway (`/mdns/policy`, authenticated by a code derived from `SPOOLSTEWARD_SECRET_KEY`).
 
 ## 7. Test printers
 

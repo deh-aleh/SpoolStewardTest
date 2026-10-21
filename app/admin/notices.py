@@ -1,6 +1,6 @@
 """The bell: notices for administrators (things the gateway noticed and nobody asked about)."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
@@ -33,7 +33,7 @@ def listing(request: Request, all: int = 0, admin: User = Depends(current_admin)
     if not all:
         own = own.where(Notice.dismissed_at.is_(None))
     own_rows = list(db.scalars(own.limit(200)))
-    admin.notices_seen_at = admin.own_notices_seen_at = datetime.now(timezone.utc)   # opening the list is what "seeing" them means: the red dot goes away
+    admin.notices_seen_at = admin.own_notices_seen_at = datetime.now(UTC)   # opening the list is what "seeing" them means: the red dot goes away
     db.commit()
     rows = [{"n": n, "extra": notices.pending(n.kind, n.key) if n.dismissed_at is None else 0} for n in db.scalars(q.limit(200))]
     return render(request, "notices.html", admin, rows=rows, own_rows=own_rows, show_all=bool(all), when=_every(notices.interval()))
@@ -45,7 +45,7 @@ def dismiss(request: Request, nid: int, admin: User = Depends(current_admin), db
     if n is None or n.user_id is not None:
         raise HTTPException(404)
     if n.dismissed_at is None:
-        n.dismissed_at, n.dismissed_by = datetime.now(timezone.utc), admin.username
+        n.dismissed_at, n.dismissed_by = datetime.now(UTC), admin.username
         record(db, admin, "notice.dismiss", "notice", n.id, kind=n.kind, source=n.key)
         db.commit()
     return back("/admin/notices")
@@ -53,7 +53,7 @@ def dismiss(request: Request, nid: int, admin: User = Depends(current_admin), db
 
 @router.post("/dismiss-all", dependencies=[Depends(verify_csrf)])
 def dismiss_all(request: Request, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
-    now, done = datetime.now(timezone.utc), 0
+    now, done = datetime.now(UTC), 0
     for n in db.scalars(select(Notice).where(Notice.dismissed_at.is_(None), Notice.user_id.is_(None))):
         n.dismissed_at, n.dismissed_by = now, admin.username
         done += 1

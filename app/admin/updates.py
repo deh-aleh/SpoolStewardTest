@@ -1,7 +1,7 @@
 """Update from the portal. Allowed only when a scheduled backup is working, and only if the optional updater container runs."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
@@ -22,7 +22,7 @@ def panel(request: Request, db: Session) -> dict:
     """Everything the Backup page needs to draw the update card, including why the button may be off."""
     info = getattr(request.app.state, "update_info", None)
     alive = updates.updater_alive()
-    target = updates.eligible_backup(db, datetime.now(timezone.utc))
+    target = updates.eligible_backup(db, datetime.now(UTC))
     if info is None:
         reason = "none"
     elif not alive:

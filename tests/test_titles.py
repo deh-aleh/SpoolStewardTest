@@ -2,8 +2,7 @@
 
 import gzip
 import json
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -115,7 +114,7 @@ def test_names_switched_off_keep_the_counts_but_not_the_name(sm, key):
 
 def test_retention_erases_only_the_old_names(sm, key):
     u = user(sm)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     with sm() as s:
         for days, name in ((200, "vecchissimo.pdf"), (100, "vecchio.pdf"), (10, "recente.pdf")):
             s.add(JobLog(ts=now - timedelta(days=days), user_id=u.id, kind=JobKind.print, printer="p", title=name, pages=2,
@@ -131,12 +130,12 @@ def test_retention_erases_only_the_old_names(sm, key):
 
 def test_the_archive_keeps_names_encrypted_and_the_portal_reads_them(sm, key, tmp_path, monkeypatch):
     u = user(sm)
-    old = datetime(2026, 4, 10, 9, 0, tzinfo=timezone.utc)
+    old = datetime(2026, 4, 10, 9, 0, tzinfo=UTC)
     with sm() as s:
         s.add(JobLog(ts=old, user_id=u.id, kind=JobKind.print, printer="p", title="bilancio.pdf", pages=1,
                      state=JobState.completed, options_json={"document_name": "bilancio.pdf"}))
         s.commit()
-    res = archive.archive_table(sm, "job_log", datetime(2026, 10, 7, tzinfo=timezone.utc), TZ, tmp_path, 0, force=True)
+    res = archive.archive_table(sm, "job_log", datetime(2026, 10, 7, tzinfo=UTC), TZ, tmp_path, 0, force=True)
     with gzip.open(res.path, "rt") as f:
         line = json.loads(f.readline())
     assert line["title"].startswith("enc1:") and line["options"]["document_name"].startswith("enc1:")
@@ -150,10 +149,10 @@ def test_archive_drops_names_past_the_retention(sm, key, tmp_path, monkeypatch):
     monkeypatch.setattr(settings, "job_title_retention_days", 30)
     u = user(sm)
     with sm() as s:
-        s.add(JobLog(ts=datetime(2026, 4, 10, 9, 0, tzinfo=timezone.utc), user_id=u.id, kind=JobKind.print, printer="p",
+        s.add(JobLog(ts=datetime(2026, 4, 10, 9, 0, tzinfo=UTC), user_id=u.id, kind=JobKind.print, printer="p",
                      title="dimenticami.pdf", pages=1, state=JobState.completed, options_json={"document_name": "dimenticami.pdf"}))
         s.commit()
-    res = archive.archive_table(sm, "job_log", datetime.now(timezone.utc), TZ, tmp_path, 0, force=True)
+    res = archive.archive_table(sm, "job_log", datetime.now(UTC), TZ, tmp_path, 0, force=True)
     row = next(archive.iter_archive(res.path))
     assert row["title"] is None and row["options"] is None
 

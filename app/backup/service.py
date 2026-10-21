@@ -4,14 +4,14 @@ import asyncio
 import logging
 import secrets
 import threading
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from starlette.concurrency import run_in_threadpool
 
 from app import notices
+from app.timeutil import aware, local_tz
 from app.backup import core
 from app.config import settings
 from app.db.models import BackupTarget, GatewaySetting
@@ -22,10 +22,6 @@ RETRY_AFTER = timedelta(hours=1)
 STALE_AFTER = timedelta(hours=48)
 GLOBAL_NAME = "Generale (.env)"
 _RUN = threading.Lock()  # one backup at a time: they all read the same database
-
-
-def _aware(dt: datetime | None) -> datetime | None:
-    return dt if dt is None or dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
 def instance_id(db) -> str:
@@ -62,13 +58,13 @@ def sync_global(db) -> None:
 def is_due(t: BackupTarget, now: datetime) -> bool:
     if not t.enabled:
         return False
-    local = now.astimezone(ZoneInfo(settings.timezone))
-    ok = _aware(t.last_ok_at)
-    if ok is not None and ok.astimezone(ZoneInfo(settings.timezone)).date() >= local.date():
+    local = now.astimezone(local_tz())
+    ok = aware(t.last_ok_at)
+    if ok is not None and ok.astimezone(local_tz()).date() >= local.date():
         return False  # already done today
     if local.hour < t.hour:
         return False
-    tried = _aware(t.last_attempt_at)
+    tried = aware(t.last_attempt_at)
     return not (t.last_status == "error" and tried is not None and now - tried < RETRY_AFTER)
 
 
@@ -76,11 +72,11 @@ def health(t: BackupTarget, now: datetime) -> str:
     """ok | stale (enabled but no success for 48 h) | error | off | never"""
     if not t.enabled:
         return "off"
-    ok = _aware(t.last_ok_at)
+    ok = aware(t.last_ok_at)
     if t.last_status == "error" and (ok is None or now - ok > timedelta(hours=1)):
         return "error"
     if ok is None:
-        return "never" if now - (_aware(t.created_at) or now) < STALE_AFTER else "stale"
+        return "never" if now - (aware(t.created_at) or now) < STALE_AFTER else "stale"
     return "stale" if now - ok > STALE_AFTER else "ok"
 
 
@@ -94,7 +90,7 @@ def run_target(sm, target_id: int, *, prune: bool = True) -> tuple[bool, str]:
             t = db.get(BackupTarget, target_id)
             if t is None:
                 return False, _("Backup target not found")
-            instance, now = instance_id(db), datetime.now(timezone.utc)
+            instance, now = instance_id(db), datetime.now(UTC)
             t.last_attempt_at = now
             db.commit()
             try:
@@ -136,7 +132,7 @@ def run_target(sm, target_id: int, *, prune: bool = True) -> tuple[bool, str]:
 def due_ids(sm) -> list[int]:
     with sm() as db:
         sync_global(db)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return [t.id for t in db.scalars(select(BackupTarget)) if is_due(t, now)]
 
 

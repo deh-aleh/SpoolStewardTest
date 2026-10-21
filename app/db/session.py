@@ -28,8 +28,3 @@ def init_db() -> None:
     from app.db.migrate import upgrade
 
     upgrade(engine)
-
-
-def get_session():
-    with SessionLocal() as session:
-        yield session

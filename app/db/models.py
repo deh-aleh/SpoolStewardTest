@@ -1,14 +1,11 @@
 import enum
-from datetime import datetime, timezone
+from datetime import datetime
 
 from sqlalchemy import JSON, DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint, false
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+from app.timeutil import now_utc
 from app.crypto_fields import SealedOptions, SealedText
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 class Base(DeclarativeBase):
@@ -140,7 +137,7 @@ class PermissionRule(Base):
     hours_days: Mapped[str | None] = mapped_column(String(7))  # weekdays as digits, 0 = Monday ("01234")
     hours_start: Mapped[int | None]  # minutes after midnight, 0-1439
     hours_end: Mapped[int | None]
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
 
     __table_args__ = (UniqueConstraint("subject_type", "subject_id"),)
 
@@ -153,7 +150,7 @@ class PrinterFormer(Base):
 
     name: Mapped[str] = mapped_column(String(128), primary_key=True)  # lower-case
     display: Mapped[str] = mapped_column(String(128))  # as it was written
-    removed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    removed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
     reason: Mapped[str] = mapped_column(String(16))  # "deleted" | "removed_offline" | "renamed"
 
 
@@ -161,7 +158,7 @@ class JobLog(Base):
     __tablename__ = "job_log"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, index=True)
+    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc, index=True)
     user_id: Mapped[int | None] = mapped_column(ForeignKey("user.id"), index=True)
     # name at the time of the job: stays readable after the account is deleted (user_id then becomes NULL)
     user_name: Mapped[str | None] = mapped_column(String(128))
@@ -188,7 +185,7 @@ class PrinterControl(Base):
     printer: Mapped[str] = mapped_column(String(128), primary_key=True)
     blocked: Mapped[bool] = mapped_column(default=False, server_default=false())  # nobody prints, administrators included
     mdns_hidden: Mapped[bool] = mapped_column(default=False, server_default=false())  # not announced on the network
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
 
 
 class PrinterSeen(Base):
@@ -197,7 +194,7 @@ class PrinterSeen(Base):
     __tablename__ = "printer_seen"
 
     printer: Mapped[str] = mapped_column(String(128), primary_key=True)  # lower-case queue name
-    first_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    first_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
 
 
 class PrinterOffline(Base):
@@ -206,7 +203,7 @@ class PrinterOffline(Base):
     __tablename__ = "printer_offline"
 
     printer: Mapped[str] = mapped_column(String(128), primary_key=True)  # lower-case queue name
-    since: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    since: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
 
 
 class PrinterOrder(Base):
@@ -235,7 +232,7 @@ class PrinterKeepalive(Base):
     last_ok_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_status: Mapped[str | None] = mapped_column(String(8))  # ok | error | offline
     last_error: Mapped[str | None] = mapped_column(String(500))
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
     updated_by: Mapped[str] = mapped_column(String(128), default="")
 
 
@@ -258,7 +255,7 @@ class PrintKey(Base):
     label: Mapped[str] = mapped_column(String(64))
     key_prefix: Mapped[str] = mapped_column(String(16))  # shown in the portal to tell keys apart
     key_hash: Mapped[str] = mapped_column(String(64), unique=True)  # sha256 of a >=128-bit random secret
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_used_ip: Mapped[str | None] = mapped_column(String(64))
@@ -281,7 +278,7 @@ class QuotaRequest(Base):
     params_json: Mapped[dict | None] = mapped_column(JSON)  # quota: {metric, amount}; group_change: {target_group_id}; permission: {perm, printer}
     reason: Mapped[str] = mapped_column(String(500))
     status: Mapped[RequestStatus] = mapped_column(Enum(RequestStatus), default=RequestStatus.pending, index=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     decided_by: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
     decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -303,7 +300,7 @@ class QuotaGrant(Base):
     request_id: Mapped[int | None] = mapped_column(ForeignKey("quota_request.id"))
     granted_by: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
     note: Mapped[str | None] = mapped_column(String(500))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     revoked_by: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
 
@@ -323,7 +320,7 @@ class PermissionGrant(Base):
     request_id: Mapped[int | None] = mapped_column(ForeignKey("quota_request.id"))
     granted_by: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
     note: Mapped[str | None] = mapped_column(String(500))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     revoked_by: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
     expiry_notified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # the "it ended" notice was sent
@@ -335,7 +332,7 @@ class AdminAudit(Base):
     __tablename__ = "admin_audit"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, index=True)
+    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc, index=True)
     actor_id: Mapped[int | None] = mapped_column(ForeignKey("user.id"))
     actor_name: Mapped[str] = mapped_column(String(128))  # kept even if the actor row changes
     action: Mapped[str] = mapped_column(String(64))
@@ -356,8 +353,8 @@ class Notice(Base):
     kind: Mapped[str] = mapped_column(String(48), index=True)  # a fixed code, translated when shown
     key: Mapped[str] = mapped_column(String(128))  # the source, for example an IP address
     user_id: Mapped[int | None] = mapped_column(index=True)  # NULL = for the administrators; else for this user only
-    first_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
-    last_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    first_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
+    last_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
     count: Mapped[int] = mapped_column(default=1)
     detail_json: Mapped[dict | None] = mapped_column(JSON)
     dismissed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -381,7 +378,7 @@ class AuditArchive(Base):
     rows: Mapped[int]
     bytes: Mapped[int]
     sha256: Mapped[str] = mapped_column(String(64))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
 
 
 class BackupTarget(Base):
@@ -405,7 +402,7 @@ class BackupTarget(Base):
     keep_monthly: Mapped[int] = mapped_column(default=12)
     mode: Mapped[str] = mapped_column(String(16), default="none")  # none | passphrase | key
     recipient: Mapped[str | None] = mapped_column(Text)  # public + wrapped private key; never the passphrase
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_utc)
     last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_ok_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_status: Mapped[str | None] = mapped_column(String(8))  # ok | error

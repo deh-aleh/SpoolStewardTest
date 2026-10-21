@@ -5,7 +5,7 @@ import hmac
 import io
 import logging
 import secrets
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, Response
@@ -114,7 +114,7 @@ async def setup(request: Request, code: str = Form(""), password: str = Form("")
     if not hmac.compare_digest(code.strip(), request.app.state.setup_code):
         throttle.fail(key)
         log.warning("first-run setup: wrong code from %s", ip)
-        flash(request, _("Wrong code. It is in the gateway log (docker compose logs gateway)"), "err")
+        flash(request, _("Wrong code. It is in the portal log (docker compose logs gateway)"), "err")
         return back("/setup")
     name = settings.bootstrap_admin_username
     error = None if password == confirm else _("the two passwords differ")
@@ -129,7 +129,7 @@ async def setup(request: Request, code: str = Form(""), password: str = Form("")
             if user is None or user.provider != "local" or user.password_hash:
                 return False
             user.password_hash, user.must_change_password = hash_password(password), False
-            user.password_changed_at = datetime.now(timezone.utc)
+            user.password_changed_at = datetime.now(UTC)
             record(db, user, "admin.setup", "user", user.id, ip=ip)
             db.commit()
             return True

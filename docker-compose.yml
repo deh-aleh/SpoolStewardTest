@@ -1,23 +1,35 @@
-# Production-style stack: ipp-usb + CUPS + gateway, everything in containers.
+# Production-style stack: ipp-usb + CUPS + gateway (the application), everything in containers.
 # You never edit this file: every setting is in .env (see docker/env.example), so an update can replace this file freely.
 # Nothing is installed on the host and no host CUPS is touched. Setup: scripts/docker-init.sh
 #
+# Two images only: "spoolsteward" (the application, CUPS and ipp-usb; the services below start it with different commands)
+# and "spoolsteward-updater" (optional, see the service "updater").
+#
 # Two ways to get the images (same file):
 #   * build from this source tree:   docker compose up -d --build
-#   * download them, no source:      PRINTGW_REGISTRY=ghcr.io/<owner> PRINTGW_VERSION=1.0.0 docker compose pull
+#   * download them, no source:      SPOOLSTEWARD_REGISTRY=ghcr.io/<owner> SPOOLSTEWARD_VERSION=1.0.0 docker compose pull
 #                                    docker compose up -d
 #     (put both variables in .env so they are not typed every time)
-# PRINTGW_VERSION: use a fixed version in production, never "latest", so an update is a decision and not a surprise.
+# SPOOLSTEWARD_VERSION: use a fixed version in production, never "latest", so an update is a decision and not a surprise.
 # Try it without a printer or a RADIUS server:
 #   CUPS_VIRTUAL_QUEUE=1 docker compose --profile radius-test up -d --build
-name: printgw
+name: spoolsteward
+
+# the one image of the stack; every service that uses it also carries the same build recipe, so that
+# `docker compose up -d --build` finds it whichever service comes first
+x-image: &image ${SPOOLSTEWARD_REGISTRY:-spoolsteward}/spoolsteward:${SPOOLSTEWARD_VERSION:-dev}
+x-build: &build
+  context: .
+  dockerfile: docker/stack/Dockerfile
 
 services:
   # USB <-> IPP bridge. Needs exclusive use of the printer: stop the host's ipp-usb first
   # (sudo systemctl disable --now ipp-usb && sudo systemctl mask ipp-usb).
   ipp-usb:
-    image: ${PRINTGW_REGISTRY:-printgw}/ipp-usb:${PRINTGW_VERSION:-dev}
-    build: ./docker/stack/ipp-usb
+    image: *image
+    build: *build
+    command: ["/usr/local/lib/spoolsteward/ipp-usb.sh"]
+    user: "0:0"                             # needs root to open the USB devices
     restart: unless-stopped
     volumes:
       - /dev/bus/usb:/dev/bus/usb
@@ -28,8 +40,10 @@ services:
 
   # Private backend: unix socket only, shared with the gateway through a volume.
   cups:
-    image: ${PRINTGW_REGISTRY:-printgw}/cups:${PRINTGW_VERSION:-dev}
-    build: ./docker/stack/cups
+    image: *image
+    build: *build
+    command: ["/usr/local/lib/spoolsteward/cups.sh"]
+    user: "0:0"                             # cupsd runs as root and drops privileges for the filters itself
     restart: unless-stopped
     environment:
       CUPS_QUEUES: ${CUPS_QUEUES:-}
@@ -49,11 +63,10 @@ services:
       timeout: 5s
       retries: 10
 
+  # The application: IPP and eSCL proxy, web portal, schedulers.
   gateway:
-    image: ${PRINTGW_REGISTRY:-printgw}/gateway:${PRINTGW_VERSION:-dev}
-    build:
-      context: .
-      dockerfile: docker/stack/gateway/Dockerfile
+    image: *image
+    build: *build
     # runs as the host user (decided here, not when the image is built, so one published image fits every machine):
     # the bind-mounted TLS key (mode 600) and data/audit-archive belong to that user
     user: "${PUID:-1000}:${PGID:-1000}"
@@ -63,15 +76,15 @@ services:
         condition: service_healthy
     env_file: .env
     ports:
-      - "${GATEWAY_PORT:-8631}:8631"        # the only thing exposed to the network
+      - "${PORTAL_PORT:-8631}:8631"         # the only thing exposed to the network
     environment:
       # shown in the portal so people know where the compressed audit files are on this machine
-      CUPSPL_AUDIT_ARCHIVE_HOST_PATH: ${AUDIT_ARCHIVE_HOST_PATH:-}
-      CUPSPL_BACKUP_HOST_PATH: ${BACKUP_HOST_PATH:-}
+      SPOOLSTEWARD_AUDIT_ARCHIVE_HOST_PATH: ${AUDIT_ARCHIVE_HOST_PATH:-none}
+      SPOOLSTEWARD_BACKUP_HOST_PATH: ${BACKUP_HOST_PATH:-none}
     volumes:
       - ./config/tls:/tls:ro
       - cups-run:/run/cups
-      - gateway-data:/data                  # SQLite: users, rules, audit
+      - portal-data:/data                   # SQLite: users, rules, audit
       - ./data/audit-archive:/data/audit-archive   # compressed audit, kept forever, readable on the host
       # backups: the only place the gateway may write them. Administrators pick a sub-folder in the portal.
       # To save on a USB disk or a network share, mount it on the host INSIDE this folder (before starting the gateway).
@@ -79,6 +92,12 @@ services:
       # read-only: lets encrypted backups include .env and the TLS key (never written into a plain backup)
       - ./config:/config:ro
       - ./.env:/project.env:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import ssl,urllib.request as u; c=ssl.create_default_context(); c.check_hostname=False; c.verify_mode=ssl.CERT_NONE; u.urlopen('https://127.0.0.1:8631/healthz', context=c, timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
     read_only: true
     tmpfs: [/tmp]
     cap_drop: [ALL]
@@ -87,14 +106,15 @@ services:
   # Announces the queues on the LAN (DNS-SD/Bonjour: _ipps._tcp + AirPrint subtype) so phones and computers find them.
   # Multicast does not cross a bridge network, hence host networking; it only reads the queue list from CUPS.
   mdns:
-    image: ${PRINTGW_REGISTRY:-printgw}/gateway:${PRINTGW_VERSION:-dev}
+    image: *image
+    build: *build
     command: ["python", "-m", "app.mdns"]
     restart: unless-stopped
     depends_on: [gateway]
     network_mode: host
     env_file: .env
     environment:
-      CUPSPL_MDNS_PORT: ${GATEWAY_PORT:-8631}
+      SPOOLSTEWARD_MDNS_PORT: ${PORTAL_PORT:-8631}
     volumes:
       - cups-run:/run/cups
     read_only: true
@@ -107,7 +127,7 @@ services:
   # Details and alternatives (scripts/update.sh in a terminal): docs/en/installation.md, section "Updates".
   # PROJECT_DIR is written into .env by scripts/docker-init.sh (the full path of this folder).
   updater:
-    image: ${PRINTGW_REGISTRY:-printgw}/updater:${PRINTGW_VERSION:-dev}
+    image: ${SPOOLSTEWARD_REGISTRY:-spoolsteward}/spoolsteward-updater:${SPOOLSTEWARD_VERSION:-dev}
     build: ./docker/stack/updater
     profiles: [autoupdate]
     restart: unless-stopped
@@ -117,11 +137,11 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${PROJECT_DIR:-/nonexistent}:${PROJECT_DIR:-/nonexistent}   # same path as on the host, so relative paths in this file still work
-      - gateway-data:/data                  # where requests and results are exchanged with the gateway (folder /data/update)
+      - portal-data:/data                   # where requests and results are exchanged with the portal (folder /data/update)
     security_opt: ["no-new-privileges:true"]
 
   # Only for trying the stack: users mario/mario123, anna/anna123, admin/admin123, secret testing123.
-  # Point .env at it with CUPSPL_RADIUS_HOST=radius, CUPSPL_RADIUS_SECRET=testing123.
+  # Point .env at it with SPOOLSTEWARD_RADIUS_HOST=radius, SPOOLSTEWARD_RADIUS_SECRET=testing123.
   # (RADIUS is optional: with host/secret empty only local accounts exist.)
   radius:
     image: freeradius/freeradius-server:latest
@@ -137,4 +157,4 @@ volumes:
   cups-run:
   cups-spool:
   cups-pdf:
-  gateway-data:
+  portal-data:

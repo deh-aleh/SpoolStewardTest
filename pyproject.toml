@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cups-policy-gateway"
-version = "0.3.2"
-description = "Auth, quota and audit gateway in front of CUPS (IPP)"
+name = "spoolsteward"
+version = "0.4.0"
+description = "Authentication, quotas and audit for shared printers, in front of CUPS (IPP)"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 authors = [{name = "Alessio Paccino"}]
@@ -34,15 +34,17 @@ dependencies = [
 dev = ["pytest", "pytest-asyncio"]
 
 [project.scripts]
-cups-policy-gateway = "app.__main__:main"
-cups-policy-admin = "app.cli:main"
+spoolsteward = "app.__main__:main"
+spoolsteward-admin = "app.cli:main"
 
 [tool.setuptools.packages.find]
 include = ["app*"]
 
 [tool.setuptools.package-data]
-app = ["admin/templates/*.html", "admin/static/*", "locales/*/messages.po", "auth/dictionary", "migrations/script.py.mako", "migrations/versions/*.py"]
+app = ["admin/templates/*.html", "admin/static/*", "admin/static/css/*", "admin/static/js/*", "locales/*/messages.po", "auth/dictionary", "migrations/script.py.mako", "migrations/versions/*.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+markers = ["demo: builds sample pages for screenshots (writes tests/_out); run with -m demo"]
+addopts = "-m 'not demo'"

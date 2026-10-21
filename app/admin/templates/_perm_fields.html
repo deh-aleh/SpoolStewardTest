@@ -47,15 +47,3 @@
     </fieldset>
   </div>
 </details>
-<script>
-  // the printers and the days are shown only when their choice needs them (without scripts everything stays visible)
-  document.querySelectorAll('details.adv [data-show]').forEach(function (block) {
-    var radios = document.querySelectorAll('details.adv input[name="' + block.dataset.show + '"]');
-    function update() {
-      var on = Array.prototype.some.call(radios, function (r) { return r.checked && r.value === block.dataset.value; });
-      block.hidden = !on;
-    }
-    Array.prototype.forEach.call(radios, function (r) { r.addEventListener('change', update); });
-    update();
-  });
-</script>

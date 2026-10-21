@@ -30,9 +30,9 @@ router = APIRouter()
 LANGS = ("en", "it")
 # what a user who is not an administrator may read (page names, per language); administrators read everything
 USER_PAGES = {"en": {"user-guide", "windows"}, "it": {"guida-utente", "windows"}}
-REPO = "https://github.com/deh-aleh/PrintMinder"
+REPO = "https://github.com/deh-aleh/SpoolSteward"
 # the image puts the docs here; deploy/install.sh puts them in $PREFIX/docs (its default PREFIX); a source tree has them next to app/
-DOCS_DIRS = (Path("/opt/printminder/docs"), Path("/opt/cups-policy-gateway/docs"),
+DOCS_DIRS = (Path("/opt/spoolsteward/docs"),
              Path(app_package.__file__).resolve().parents[1] / "docs")
 EXTERNAL = {"target": "_blank", "rel": "noopener noreferrer"}
 

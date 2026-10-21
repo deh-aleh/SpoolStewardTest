@@ -6,7 +6,7 @@ Componenti, confini di fiducia e percorso di una richiesta. Per il ruolo di ogni
 
 ## 1. L'idea
 
-CUPS stampa, ma non sa *chi* può stampare *quanto*. PrintMinder è uno strato posto davanti a CUPS che aggiunge autenticazione,
+CUPS stampa, ma non sa *chi* può stampare *quanto*. SpoolSteward è uno strato posto davanti a CUPS che aggiunge autenticazione,
 quote, registro delle attività (audit) e un portale web, **senza modificare CUPS, ipp-usb o il firmware delle stampanti**:
 restano semplici dipendenze, aggiornabili in modo indipendente.
 
@@ -53,7 +53,7 @@ Differenze consapevoli rispetto a uno schema "classico":
 | RADIUS | **pyrad** (PAP + Message-Authenticator) | Il server RADIUS esiste già in ufficio |
 | Portale | Pagine **Jinja2** generate dal server, sessioni firmate (**itsdangerous**) | HTML dal server; JavaScript solo per piccoli aiuti (copia, suggerimenti, popup, aggiornamento automatico) |
 | Traduzioni | **Babel** (cataloghi gettext `.po` letti in memoria) | Nessuna compilazione; vedi [lingue.md](lingue.md) |
-| Configurazione | **pydantic-settings** (variabili `CUPSPL_*`) | Validazione e valori predefiniti |
+| Configurazione | **pydantic-settings** (variabili `SPOOLSTEWARD_*`) | Validazione e valori predefiniti |
 | Backend di stampa | **CUPS 2.4** | Dipendenza non modificata; filtri e driver già pronti |
 | Ponte USB | **ipp-usb** | Espone la stampante USB come IPP/eSCL |
 | Conteggio pagine | **pypdf** (+ intestazioni di immagini, URF, PostScript) | Il limite pagine deve valere anche per un file da 200 pagine |
@@ -66,12 +66,15 @@ Differenze consapevoli rispetto a uno schema "classico":
 
 ## 3. I contenitori
 
+Le immagini sono due. `spoolsteward` contiene l'applicazione, CUPS e ipp-usb: i servizi `ipp-usb`, `cups`, `gateway` e `mdns` la avviano
+tutti, ognuno con il suo comando, quindi hanno sempre la stessa versione. `spoolsteward-updater` è l'updater facoltativo.
+
 | Servizio | Ruolo | Esposizione |
 |---|---|---|
 | `ipp-usb` | Unico proprietario di `/dev/bus/usb`; trasforma ogni dispositivo USB in un endpoint IPP + eSCL. Uno script lo riavvia quando cambia l'elenco USB (gli eventi udev non arrivano nei container). | nessuna (rete interna) |
 | `cups` | Backend di stampa. Le code nascono all'avvio da `CUPS_QUEUES` e, per le stampanti USB, dalla scoperta automatica del gateway; configurazione persistente; solo socket unix. Vede `/dev/bus/usb` per le stampanti che ipp-usb non sa servire (serve un driver). | nessuna |
 | `gateway` | L'applicazione: proxy IPP, proxy eSCL, portale, scheduler. Utente non root (`PUID:PGID`), filesystem in sola lettura, nessuna capability. | **porta 8631** (l'unica) |
-| `mdns` | Annuncia code e scanner sulla LAN. Stessa immagine del gateway, rete host. Chiede al gateway cosa annunciare (autenticato da un codice derivato da `CUPSPL_SECRET_KEY`). | multicast |
+| `mdns` | Annuncia code e scanner sulla LAN. Stessa immagine del portal, rete host. Chiede al gateway cosa annunciare (autenticato da un codice derivato da `SPOOLSTEWARD_SECRET_KEY`). | multicast |
 | `radius` | RADIUS di prova, solo con `--profile radius-test` | interna |
 
 Dati: un volume docker per il database (`/data`), la cartella `data/audit-archive` sull'host per l'audit compresso, la cartella
@@ -80,11 +83,11 @@ Dati: un volume docker per il database (`/data`), la cartella `data/audit-archiv
 ## 4. Percorso di una richiesta IPP
 
 1. Solo `application/ipp`, solo HTTPS.
-2. Le **query di capacità** (`Get-Printer-Attributes` e `Validate-Job`, corpo dichiarato ≤ 64 KB, `CUPSPL_ANONYMOUS_DISCOVERY`) ricevono risposta
+2. Le **query di capacità** (`Get-Printer-Attributes` e `Validate-Job`, corpo dichiarato ≤ 64 KB, `SPOOLSTEWARD_ANONYMOUS_DISCOVERY`) ricevono risposta
    senza credenziali: i client le fanno prima di avere una password. Non creano utenti né righe di audit e non portano alcun documento.
    `Validate-Job` anonimo non viene controllato sulla quota.
 3. **Autenticazione**: HTTP Basic, nome utente + **chiave di stampa**. La password di dominio non è accettata
-   (`CUPSPL_IPP_AUTH=keys`); `keys+radius` la riammette per gli utenti RADIUS durante una transizione, mai per gli account locali.
+   (`SPOOLSTEWARD_IPP_AUTH=keys`); `keys+radius` la riammette per gli utenti RADIUS durante una transizione, mai per gli account locali.
 4. **Filtro operazioni**: l'utente può stampare, annullare, vedere job e stampanti; le operazioni amministrative di CUPS e
    `Print-URI` / `Send-URI` (rischio SSRF) sono vietate a tutti.
 5. **Identità**: `requesting-user-name` è sovrascritto con `gw:<utente>`. Il prefisso impedisce che un nome come `root`
@@ -95,7 +98,7 @@ Dati: un volume docker per il database (`/data`), la cartella `data/audit-archiv
    il job è rifiutato; gli elenchi di stampanti sono filtrati ([quote.md](quote.md)). L'amministratore di emergenza è esente.
 9. **Quota**: riserva atomica del posto ([quote.md](quote.md)); se superata, errore IPP con il motivo **e l'indirizzo del portale**
    per chiedere una deroga.
-10. **Inoltro** a CUPS in streaming (tetto `CUPSPL_MAX_REQUEST_MB`, default 200); gli URI interni vengono riscritti, `device-uri`
+10. **Inoltro** a CUPS in streaming (tetto `SPOOLSTEWARD_MAX_REQUEST_MB`, default 200); gli URI interni vengono riscritti, `device-uri`
    nascosto, i rifiuti HTML di CUPS trasformati in errori IPP puliti.
 11. **Registrazione** dell'esito; se l'upload si interrompe la riga passa a `failed` e il posto si libera.
 12. In seguito il **riconciliatore** sostituisce la stima delle pagine con quelle realmente stampate e libera la quota dei job mai stampati. Un job di CUPS è associato alla sua riga di audit dal numero del job *e* da `time-at-creation` (CUPS riparte da 1 se il suo volume viene ricreato).
@@ -109,17 +112,17 @@ Tutte avviate dal ciclo di vita del gateway ([`app/main.py`](../../app/main.py))
 
 | Attività | Intervallo | Cosa fa |
 |---|---|---|
-| Riconciliatore | `CUPSPL_RECONCILE_INTERVAL` (30 s) | Allinea `job_log` con CUPS: pagine reali, quota restituita ai job annullati, riserve orfane liberate dopo 1 h |
-| Archiviatore audit | `CUPSPL_AUDIT_CHECK_INTERVAL` (1 h) | Sposta le righe vecchie in file compressi verificati quando le tabelle superano `CUPSPL_AUDIT_MAX_MB` |
+| Riconciliatore | `SPOOLSTEWARD_RECONCILE_INTERVAL` (30 s) | Allinea `job_log` con CUPS: pagine reali, quota restituita ai job annullati, riserve orfane liberate dopo 1 h |
+| Archiviatore audit | `SPOOLSTEWARD_AUDIT_CHECK_INTERVAL` (1 h) | Sposta le righe vecchie in file compressi verificati quando le tabelle superano `SPOOLSTEWARD_AUDIT_MAX_MB` |
 | Scheduler dei backup | 60 s | Esegue i backup in scadenza |
 | Scheduler della stampa periodica | 60 s | Stampa le pagine di manutenzione e annota la prima volta che ogni coda è stata vista |
-| Scoperta delle stampanti | `CUPSPL_DISCOVERY_INTERVAL` (30 s) | Crea le code delle stampanti USB nuove (prima ipp-usb, poi backend usb di CUPS) e toglie le code USB irraggiungibili da `CUPSPL_OFFLINE_REMOVE_HOURS` |
-| Annunciatore mDNS | `CUPSPL_MDNS_INTERVAL` (30 s) | Contenitore a parte: rilegge l'elenco delle code e dice al gateway quale indirizzo annuncia |
-| Nomi dei file ([`app/titles.py`](../../app/titles.py)) | all'avvio, poi 1 giorno | Cifra i nomi scritti prima che ci fosse la chiave; con la retention accesa cancella i nomi più vecchi di `CUPSPL_JOB_TITLE_RETENTION_DAYS` |
+| Scoperta delle stampanti | `SPOOLSTEWARD_DISCOVERY_INTERVAL` (30 s) | Crea le code delle stampanti USB nuove (prima ipp-usb, poi backend usb di CUPS) e toglie le code USB irraggiungibili da `SPOOLSTEWARD_OFFLINE_REMOVE_HOURS` |
+| Annunciatore mDNS | `SPOOLSTEWARD_MDNS_INTERVAL` (30 s) | Contenitore a parte: rilegge l'elenco delle code e dice al gateway quale indirizzo annuncia |
+| Nomi dei file ([`app/titles.py`](../../app/titles.py)) | all'avvio, poi 1 giorno | Cifra i nomi scritti prima che ci fosse la chiave; con la retention accesa cancella i nomi più vecchi di `SPOOLSTEWARD_JOB_TITLE_RETENTION_DAYS` |
 | Controllo del certificato ([`app/certwatch.py`](../../app/certwatch.py)) | 6 h | Legge il certificato TLS e `config/tls/sync-status.json`, e apre o chiude gli avvisi sul certificato |
 | Controllo stampanti ([`app/printerwatch.py`](../../app/printerwatch.py)) | 1 min | Inceppamento, carta finita, inchiostro finito/in esaurimento come avvisi (confermati da due controlli consecutivi) |
 | Manutenzione delle chiavi ([`app/keywatch.py`](../../app/keywatch.py)) | 1 h | Elimina le chiavi di stampa concluse, avvisa di quelle in scadenza e dei permessi temporanei terminati |
-| Controllo aggiornamenti ([`app/updates.py`](../../app/updates.py)) | 24 h (la prima volta 2 min dopo l'avvio) | Chiede a GitHub l'ultima release (`CUPSPL_UPDATE_CHECK`) |
+| Controllo aggiornamenti ([`app/updates.py`](../../app/updates.py)) | 24 h (la prima volta 2 min dopo l'avvio) | Chiede a GitHub l'ultima release (`SPOOLSTEWARD_UPDATE_CHECK`) |
 
 ## 6. Modello dei dati
 
@@ -167,7 +170,7 @@ Tabelle (Alembic applica le migrazioni all'avvio; un test fallisce se un modello
 - CUPS non è raggiungibile dalla rete né da altri utenti locali; l'utente verso CUPS è `gw:<utente>`, quindi nessun nome RADIUS
   (per esempio `root`) può diventare amministratore CUPS. Le operazioni amministrative IPP sono bloccate.
 - TLS obbligatorio. Credenziali mai in chiaro su HTTP.
-- Disabilitare un utente nel portale blocca subito login e chiavi; per gli utenti RADIUS la chiave smette di valere alla scadenza.
+- Disabilitare un utente nel portale blocca subito login e chiavi. Chi è stato tolto solo dal server RADIUS continua a stampare con le chiavi già create finché non scadono.
 - Le chiavi si salvano solo come hash, si mostrano una volta e non aprono il portale; le password locali sono argon2id (minimo 12 caratteri).
 - Blocco dei login: 5 password *diverse* sbagliate in 5 minuti per coppia (utente, IP), più un tetto per IP. Lo stesso errore ripetuto
   conta una volta (libcups riprova) e un estraneo non può bloccare un altro utente.

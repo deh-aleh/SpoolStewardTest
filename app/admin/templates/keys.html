@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Print keys") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block body %}
 <div class="card">
   <h1>{{ _("Print keys") }}{% if not own %} {{ _("of %(user)s", user=owner.username) }}{% endif %}</h1>
@@ -37,7 +38,7 @@
   </table>
   {% set live = keys|selectattr('usable')|list %}
   {% if live|length > 1 or (not own and live) %}
-  <form method="post" action="{{ '/me/keys/revoke-all' if own else '/admin/users/%d/revoke-keys' % owner.id }}" style="margin-top:12px"
+  <form method="post" action="{{ '/me/keys/revoke-all' if own else '/admin/users/%d/revoke-keys' % owner.id }}" class="ky-revoke"
         {% if not own %}data-confirm="{{ _t('Revoke ALL the keys of %(user)s?', user=owner.username) }}"{% else %}data-confirm="{{ _t('Revoke ALL your keys?') }}"{% endif %}>
     <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="danger">{{ _("Revoke all active keys (%(n)s)", n=live|length) }}</button>
   </form>

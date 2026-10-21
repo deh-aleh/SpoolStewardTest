@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Admin actions") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block body %}
 <div class="card">
   <h1>{{ _("Administrative actions") }} <span class="muted">({{ total }})</span></h1>
   <p class="muted">{{ _("Who did what in the portal. Read only: no row is ever deleted · 30 actions per page.") }}</p>
-  <form method="get" class="row" style="margin-bottom:12px">
+  <form method="get" class="row ac-form">
     <input type="text" name="actor" placeholder="{{ _('Who (administrator)') }}" value="{{ f.actor }}" autocomplete="off" data-suggest='{{ actors|tojson }}'><input type="text" name="action" placeholder="{{ _('Action (e.g. user.update)') }}" value="{{ f.action }}" autocomplete="off" data-suggest='{{ action_names|tojson }}'><button>{{ _("Filter") }}</button>
   </form>
   <table class="roomy stack">
@@ -12,11 +13,11 @@
     {% for a in rows %}
     <tr><td class="nowrap mono">{{ a.ts|localtime }}</td><td>{{ a.actor_name }}</td><td class="mono">{{ a.action }}</td>
       <td>{{ a.target_type or '' }}{% if a.target_id %} #{{ a.target_id }}{% endif %}</td>
-      <td class="muted mono" style="font-size:12px">{{ a.detail_json | tojson if a.detail_json else '' }}</td></tr>
+      <td class="muted mono ac-detail">{{ a.detail_json | tojson if a.detail_json else '' }}</td></tr>
     {% else %}<tr><td colspan="5" class="muted">{{ _("No actions.") }}</td></tr>{% endfor %}
   </table>
   {% if pages > 1 %}
-  <div class="row" style="margin-top:12px">
+  <div class="row ac-gap">
     {% if page > 1 %}<a href="?actor={{ f.actor|urlencode }}&action={{ f.action|urlencode }}&page={{ page-1 }}">← {{ _("Previous") }}</a>{% endif %}
     <span class="muted">{{ _("Page %(page)s / %(pages)s", page=page, pages=pages) }}</span>
     {% if page < pages %}<a href="?actor={{ f.actor|urlencode }}&action={{ f.action|urlencode }}&page={{ page+1 }}">{{ _("Next") }} →</a>{% endif %}

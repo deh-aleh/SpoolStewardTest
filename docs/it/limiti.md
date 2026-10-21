@@ -2,7 +2,7 @@
 
 [Indice della documentazione](../README.md) · [English](../en/limitations.md) · Italiano
 
-Ciò che PrintMinder **non** fa (ancora) o fa con delle riserve. La versione breve è nel
+Ciò che SpoolSteward **non** fa (ancora) o fa con delle riserve. La versione breve è nel
 [README](../../README.it.md#limiti).
 
 ## 1. Installazione
@@ -22,7 +22,7 @@ Ciò che PrintMinder **non** fa (ancora) o fa con delle riserve. La versione bre
   di default (va attivata e preparata a mano, vedi [backup.md](backup.md)).
 - Tornare a una versione precedente dopo una migrazione del database richiede il ripristino di un backup: `scripts/update.sh` lo propone da solo quando la versione
   vecchia non parte. Le migrazioni nuove devono solo aggiungere (la versione vecchia continua a poter leggere il database), ma non è una garanzia per ogni caso.
-- I **nomi dei file stampati sono cifrati** nel database e nell'archivio audit (chiave derivata da `CUPSPL_SECRET_KEY`: se la cambi non si leggono più). Il resto del
+- I **nomi dei file stampati sono cifrati** nel database e nell'archivio audit (chiave derivata da `SPOOLSTEWARD_SECRET_KEY`: se la cambi non si leggono più). Il resto del
   database non è cifrato (nomi utente, gruppi, nomi delle stampanti, registro admin): per proteggere tutto cifra il disco, vedi [protezione-dati.md](protezione-dati.md).
   Anche CUPS tiene i nomi dei suoi ultimi job (fino a 2.000) nel proprio volume: il pulsante e la retention dei nomi non li toccano.
 - Certificati: i dispositivi devono fidarsi della CA aziendale; l'annuncio usa l'IP, quindi il certificato deve elencarlo (il portale avvisa se non è così).
@@ -38,7 +38,7 @@ Ciò che PrintMinder **non** fa (ancora) o fa con delle riserve. La versione bre
 - Il conteggio delle pagine vale solo se esiste un limite di pagine e il documento è leggibile.
 - Se RADIUS distingue `Mario` da `mario`, per il gateway sono la stessa persona (stessa quota).
 - I limiti per il formato carta non esistono. Colore, solo fronte, stampanti e orari ci sono ([quote.md](quote.md#5-permessi-avanzati)), con questi limiti:
-  - **Il bianco e nero forzato può non funzionare** con alcune stampanti e alcuni driver, soprattutto con le immagini che il telefono ha già trasformato in pixel a colori (iPhone / AirPrint). Per una garanzia usa `CUPSPL_PERMISSION_MODE=refuse`. Il fronte-retro usa l'attributo standard `sides` ed è più affidabile, purché la coda dichiari la sua unità fronte-retro.
+  - **Il bianco e nero forzato può non funzionare** con alcune stampanti e alcuni driver, soprattutto con le immagini che il telefono ha già trasformato in pixel a colori (iPhone / AirPrint). Per una garanzia usa `SPOOLSTEWARD_PERMISSION_MODE=refuse`. Il fronte-retro usa l'attributo standard `sides` ed è più affidabile, purché la coda dichiari la sua unità fronte-retro.
   - Con `refuse`, Windows e Android spesso rifiutano molti lavori, perché mandano solo fronte o colore in ogni lavoro. Il predefinito `adjust` lo evita.
   - L'annuncio in rete (mDNS) è uguale per tutti: le stampanti che una persona non può usare si vedono comunque, e il lavoro viene rifiutato. L'elenco delle stampanti che il gateway dà dopo l'accesso le nasconde.
   - Gli orari si controllano quando il lavoro viene inviato, non mentre stampa. C'è una sola fascia (giorni + due ore) per gruppo o utente.
@@ -62,7 +62,7 @@ Ciò che PrintMinder **non** fa (ancora) o fa con delle riserve. La versione bre
 - Le code USB irraggiungibili da 8 h (configurabile) vengono tolte da sole; quelle di rete mai.
 
 - Il rilevamento di un dispositivo scollegato ritarda fino a ~30 s; per le code di rete è una prova TCP (nessuna informazione sulla carta).
-- Gli scanner si trovano da soli solo se rispondono a eSCL sulla porta IPP della coda o sulla 80; altrimenti `CUPSPL_SCAN_URL`.
+- Gli scanner si trovano da soli solo se rispondono a eSCL sulla porta IPP della coda o sulla 80; altrimenti `SPOOLSTEWARD_SCAN_URL`.
 - I contatori a vita vengono solo dal servizio web HP; le altre marche mostrano i dati IPP.
 - Una scansione consegnata sul client conta come completata anche se l'utente non salva il file.
 - Un caricatore addormentato può essere dichiarato vuoto: in *Automatica* si usa il vetro (pagina bianca).

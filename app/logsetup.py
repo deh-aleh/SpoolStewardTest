@@ -1,4 +1,4 @@
-"""Log setup shared by the gateway and the mDNS announcer: the times follow CUPSPL_TIMEZONE, with the UTC offset."""
+"""Log setup shared by the gateway and the mDNS announcer: the times follow SPOOLSTEWARD_TIMEZONE, with the UTC offset."""
 
 import logging
 from datetime import datetime

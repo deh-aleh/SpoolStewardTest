@@ -1,0 +1,10 @@
+.tdot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:7px; background:var(--ok) } .tdot.off { background:var(--err) }
+main.jb-main { max-width:1560px }
+.card.jb-warn { border-color:var(--warn) }
+form.jb-titles { float:right; margin:0 }
+.jb-m1.jb-m1 { margin:-6px 0 12px }
+.jb-m2.jb-m2 { margin:-4px 0 10px }
+form.jb-filter { margin-bottom:12px }
+form.jb-close { margin-top:12px }
+.row.jb-pager { margin-top:12px }
+dl.kv.states.jb-states { grid-template-columns:max-content 1fr }

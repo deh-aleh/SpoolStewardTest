@@ -2,7 +2,7 @@
 
 [Indice della documentazione](../README.md) · [English](../en/installation.md) · Italiano
 
-Due modi per installare PrintMinder:
+Due modi per installare SpoolSteward:
 
 - **Docker (consigliato)** — tutto gira in contenitori (`ipp-usb`, CUPS, gateway, mDNS). Sull'host non si installa né si modifica nulla.
 - **Installazione sull'host (avanzata)** — un servizio systemd più un CUPS di sistema riconfigurato. Modifica
@@ -24,17 +24,17 @@ Problemi? Vedi [risoluzione-problemi.md](risoluzione-problemi.md).
 ## 2. Percorso rapido (Docker)
 
 ```sh
-# 0. scarica il pacchetto; VERSION = l'ultima release (https://github.com/deh-aleh/PrintMinder/releases)
+# 0. scarica il pacchetto; VERSION = l'ultima release (https://github.com/deh-aleh/SpoolSteward/releases)
 VERSION=x.y.z
-curl -LO https://github.com/deh-aleh/PrintMinder/releases/download/v$VERSION/printminder-$VERSION.tar.gz
-curl -LO https://github.com/deh-aleh/PrintMinder/releases/download/v$VERSION/SHA256SUMS
+curl -LO https://github.com/deh-aleh/SpoolSteward/releases/download/v$VERSION/spoolsteward-$VERSION.tar.gz
+curl -LO https://github.com/deh-aleh/SpoolSteward/releases/download/v$VERSION/SHA256SUMS
 sha256sum -c --ignore-missing SHA256SUMS            # deve rispondere «OK»: il file è quello pubblicato
-tar xzf printminder-$VERSION.tar.gz && cd printminder-$VERSION
+tar xzf spoolsteward-$VERSION.tar.gz && cd spoolsteward-$VERSION
 
 # 1. nomi / IP con cui i client raggiungeranno il server (finiscono nel certificato TLS)
 scripts/docker-init.sh print.lan 192.168.1.50
 
-# 2. impostazioni (RADIUS è facoltativo: lascia host e secret vuoti per usare solo account locali)
+# 2. impostazioni (RADIUS è facoltativo: scrivi none in host e secret per usare solo account locali)
 $EDITOR .env
 
 # 3. stampanti: vedi §5 (USB) e §6 (rete); poi avvia
@@ -45,8 +45,8 @@ docker compose logs gateway | grep "FIRST RUN"
 #    apri https://<server>:8631/setup
 ```
 
-L'account amministratore è `cups_orchestrator`. Da terminale si ottiene lo stesso con
-`docker compose exec -it gateway cups-policy-admin set-admin-password`.
+L'account amministratore è `administrator`. Da terminale si ottiene lo stesso con
+`docker compose exec -it gateway spoolsteward-admin set-admin-password`.
 
 ## 3. Passo per passo
 
@@ -56,7 +56,7 @@ L'account amministratore è `cups_orchestrator`. Da terminale si ottiene lo stes
 
 | Creato | Cosa |
 |---|---|
-| `.env` | **tutte** le impostazioni in un solo file. La parte A è per compose: `PRINTGW_REGISTRY`/`PRINTGW_VERSION` (quali immagini pubblicate girano), `PUID`/`PGID` (il tuo utente), `PROJECT_DIR`, `GATEWAY_PORT`, `CUPS_QUEUES`, `CUPS_VIRTUAL_QUEUE`, percorsi sull'host. La parte B sono le impostazioni del programma `CUPSPL_*`, con una `CUPSPL_SECRET_KEY` appena generata. Permessi 600 (contiene segreti) |
+| `.env` | **tutte** le impostazioni in un solo file. La parte A è per compose: `SPOOLSTEWARD_REGISTRY`/`SPOOLSTEWARD_VERSION` (quali immagini pubblicate girano), `PUID`/`PGID` (il tuo utente), `PROJECT_DIR`, `PORTAL_PORT`, `CUPS_QUEUES`, `CUPS_VIRTUAL_QUEUE`, percorsi sull'host. La parte B sono le impostazioni del programma `SPOOLSTEWARD_*`, con una `SPOOLSTEWARD_SECRET_KEY` appena generata. Permessi 600 (contiene segreti) |
 | `config/tls/` | un certificato autofirmato (825 giorni) i cui nomi alternativi sono i nomi/IP indicati |
 | `data/audit-archive/`, `data/backups/` | cartelle sull'host per l'audit compresso e i backup |
 
@@ -70,24 +70,24 @@ Le impostazioni cambiate più spesso (tutte hanno un valore predefinito):
 
 | Impostazione | Quando |
 |---|---|
-| `CUPSPL_RADIUS_HOST`, `CUPSPL_RADIUS_SECRET` | Vuoi gli accessi con le credenziali d'ufficio (RADIUS). Registra questa macchina come *client* RADIUS con lo stesso secret. Compila entrambi o nessuno. |
-| `CUPSPL_PORTAL_URL` | Scrivi `https://print.lan:8631` perché i messaggi inviati ai client di stampa contengano il link giusto |
-| `CUPSPL_TIMEZONE` | Settimane/mesi delle quote e orari mostrati la seguono (predefinito `UTC`: imposta il tuo, per esempio `Europe/Rome`); anche gli orari dei log (`docker compose logs`) la seguono e mostrano lo scarto da UTC |
-| `CUPSPL_LANGUAGE` | Lingua predefinita del portale (`en`, `it`, `es`, `ru`, `zh`) |
-| `CUPSPL_MDNS_HOSTNAME` | Se il nome della macchina non è nel certificato |
-| `CUPSPL_BACKUP_*` | Il backup generale programmato (vedi [backup.md](backup.md)) |
-| `CUPSPL_HEALTHZ_INFO` | Cosa mostra `/healthz` oltre allo stato (niente, di default): `version`, `printers` |
-| `CUPSPL_UPDATE_CHECK` | `false` ferma la domanda giornaliera a GitHub su una versione più nuova |
-| `CUPSPL_ESCL_ANONYMOUS` | `true` accetta le scansioni dalle app che non sanno inviare una password (vedi [scansione.md](scansione.md)) |
+| `SPOOLSTEWARD_RADIUS_HOST`, `SPOOLSTEWARD_RADIUS_SECRET` | Vuoi gli accessi con le credenziali d'ufficio (RADIUS). Registra questa macchina come *client* RADIUS con lo stesso secret. Compila entrambi o nessuno. |
+| `SPOOLSTEWARD_PORTAL_URL` | Scrivi `https://print.lan:8631` perché i messaggi inviati ai client di stampa contengano il link giusto |
+| `SPOOLSTEWARD_TIMEZONE` | Settimane/mesi delle quote e orari mostrati la seguono (predefinito `UTC`: imposta il tuo, per esempio `Europe/Rome`); anche gli orari dei log (`docker compose logs`) la seguono e mostrano lo scarto da UTC |
+| `SPOOLSTEWARD_LANGUAGE` | Lingua predefinita del portale (`en`, `it`, `es`, `ru`, `zh`) |
+| `SPOOLSTEWARD_MDNS_HOSTNAME` | Se il nome della macchina non è nel certificato |
+| `SPOOLSTEWARD_BACKUP_*` | Il backup generale programmato (vedi [backup.md](backup.md)) |
+| `SPOOLSTEWARD_HEALTHZ_INFO` | Cosa mostra `/healthz` oltre allo stato (niente, di default): `version`, `printers` |
+| `SPOOLSTEWARD_UPDATE_CHECK` | `false` ferma la domanda giornaliera a GitHub su una versione più nuova |
+| `SPOOLSTEWARD_ESCL_ANONYMOUS` | `true` accetta le scansioni dalle app che non sanno inviare una password (vedi [scansione.md](scansione.md)) |
 
 Il file è interamente commentato. Ogni variabile, con il suo valore predefinito e quando cambiarla, è in [configurazione.md](configurazione.md). Dopo ogni modifica: `docker compose up -d`.
 
-Se il valore ha spazi, `$` o `#`, mettilo tra apici singoli, per esempio `CUPSPL_RADIUS_SECRET='il$mio #secret'`: senza apici compose legge il `$` come l'inizio di una variabile.
+Se il valore ha spazi, `$` o `#`, mettilo tra apici singoli, per esempio `SPOOLSTEWARD_RADIUS_SECRET='il$mio #secret'`: senza apici compose legge il `$` come l'inizio di una variabile.
 
 ### 3.3 Le variabili di compose (parte A di `.env`)
 
-Sempre in `.env`, modifica per le code delle stampanti (`CUPS_QUEUES`), la porta pubblicata (`GATEWAY_PORT=631` per prendere la porta 631),
-l'utente (`PUID`/`PGID`) e, per le immagini scaricate, `PRINTGW_REGISTRY` + `PRINTGW_VERSION` (in produzione fissa una versione, mai `latest`).
+Sempre in `.env`, modifica per le code delle stampanti (`CUPS_QUEUES`), la porta pubblicata (`PORTAL_PORT=631` se nessun altro CUPS la usa),
+l'utente (`PUID`/`PGID`) e, per le immagini scaricate, `SPOOLSTEWARD_REGISTRY` + `SPOOLSTEWARD_VERSION` (in produzione fissa una versione, mai `latest`).
 
 ### 3.4 Certificato TLS
 
@@ -107,7 +107,7 @@ certificato direttamente al gateway, senza proxy in mezzo:
 2. Copia la coppia dalla macchina che la tiene (NPM: `data/letsencrypt/live/npm-<n>/fullchain.pem` e `privkey.pem`; certificati personalizzati:
    `data/custom_ssl/npm-<n>/`) in `config/tls/fullchain.pem` e `config/tls/privkey.pem`, rendi la chiave leggibile dall'utente `PUID`
    (`chmod 600`) ed esegui `docker compose restart gateway`.
-3. Imposta `CUPSPL_PORTAL_URL=https://print.example.com:8631` in `.env` e usa `ipps://print.example.com:8631/printers/<coda>`.
+3. Imposta `SPOOLSTEWARD_PORTAL_URL=https://print.example.com:8631` in `.env` e usa `ipps://print.example.com:8631/printers/<coda>`.
 4. I certificati Let's Encrypt si rinnovano ogni circa 60 giorni. Per non copiarli a mano ogni volta usa `scripts/cert-sync.sh` da cron: copia i
    due file, li controlla e riavvia il gateway solo se sono cambiati. È spiegato passo per passo, compresa la creazione di un utente che può
    solo leggere, in [certificati.md](certificati.md).
@@ -126,7 +126,7 @@ stati configurati.
 
 ```sh
 docker compose up -d --build          # costruisce dal sorgente
-# oppure, con immagini pubblicate (imposta PRINTGW_REGISTRY e PRINTGW_VERSION in .env):
+# oppure, con immagini pubblicate (imposta SPOOLSTEWARD_REGISTRY e SPOOLSTEWARD_VERSION in .env):
 docker compose pull && docker compose up -d
 ```
 
@@ -135,8 +135,8 @@ Verifica: `curl -sk https://<server>:8631/healthz` risponde 200; `docker compose
 ### 3.6 Primo amministratore
 
 `docker compose logs gateway | grep "FIRST RUN"` mostra un codice monouso. Apri `https://<server>:8631/setup`, inserisci il
-codice e scegli la password di `cups_orchestrator` (minimo 12 caratteri). Il codice vale una volta sola ed è protetto dai tentativi a caso.
-Se non compare nulla, probabilmente l'account ha già una password (questa cartella è già stata usata e il volume Docker ha tenuto il database): il log dice allora "already has a password"; accedi, oppure reimposta con `docker compose exec -it gateway cups-policy-admin set-admin-password`. Altre cause: [risoluzione-problemi.md](risoluzione-problemi.md).
+codice e scegli la password di `administrator` (minimo 12 caratteri). Il codice vale una volta sola ed è protetto dai tentativi a caso.
+Se non compare nulla, probabilmente l'account ha già una password (questa cartella è già stata usata e il volume Docker ha tenuto il database): il log dice allora "already has a password"; accedi, oppure reimposta con `docker compose exec -it gateway spoolsteward-admin set-admin-password`. Altre cause: [risoluzione-problemi.md](risoluzione-problemi.md).
 
 ### 3.7 Primi utenti
 
@@ -159,7 +159,7 @@ Il dispositivo deve fidarsi del certificato. Dettagli in [stampa.md](stampa.md).
 
 **Le stampanti USB nuove si aggiungono da sole** (entro circa un minuto): collega la stampante e compare nella pagina Stampanti. Se ha
 l'IPP-su-USB la serve `ipp-usb`; se no (molte laser vecchie) la usa direttamente il contenitore `cups`, che ha bisogno di un driver — l'immagine
-include brlaser, gutenprint, splix e foo2zjs (altri si aggiungono in `docker/stack/cups/Dockerfile`). `CUPS_QUEUES` serve solo per dare un nome
+include brlaser, gutenprint, splix e foo2zjs (altri si aggiungono in `docker/stack/Dockerfile`). `CUPS_QUEUES` serve solo per dare un nome
 fisso a una coda; una coda indicata lì viene creata una sola volta e, se la elimini dopo (o se il gateway toglie una stampante USB scollegata), resta eliminata. Per rimetterla: `scripts/queue-restore.sh NOME --reboot`. Vedi [stampanti.md](stampanti.md#2-stampanti-usb-nuove-e-scollegate).
 
 `ipp-usb` ha bisogno dell'uso esclusivo della stampante. Se è installato sull'host, fermalo e mascheralo (vale anche per SANE):
@@ -182,12 +182,12 @@ entro qualche secondo.
 ## 6. Stampante di rete
 
 Dai a `CUPS_QUEUES` l'indirizzo IPP della stampante: `CUPS_QUEUES="UFFICIO=ipp://192.168.1.60/ipp/print"` (più code si separano con
-spazi). Gli scanner che rispondono a eSCL sulla porta IPP della stampante (o sulla 80) si trovano da soli; altrimenti elencali in `CUPSPL_SCAN_URL`.
+spazi). Gli scanner che rispondono a eSCL sulla porta IPP della stampante (o sulla 80) si trovano da soli; altrimenti elencali in `SPOOLSTEWARD_SCAN_URL`.
 
 ## 7. Provare senza stampante e senza RADIUS
 
 ```sh
-# in .env:  CUPS_VIRTUAL_QUEUE=1   CUPSPL_RADIUS_HOST=radius   CUPSPL_RADIUS_SECRET=testing123
+# in .env:  CUPS_VIRTUAL_QUEUE=1   SPOOLSTEWARD_RADIUS_HOST=radius   SPOOLSTEWARD_RADIUS_SECRET=testing123
 docker compose --profile radius-test up -d --build
 ```
 
@@ -205,23 +205,23 @@ Non lasciare account di prova su un'installazione vera.
 
 ### Aggiornamenti
 
-Le immagini sono pubblicate a ogni release (`ghcr.io/deh-aleh/{gateway,cups,ipp-usb,updater}:<versione>`, amd64 + arm64) e `.env`
-contiene la versione in uso (`PRINTGW_VERSION`). La versione cambia solo **di proposito**: niente si aggiorna da solo. Le migrazioni
+Le immagini sono pubblicate a ogni release (`ghcr.io/deh-aleh/spoolsteward:<versione>`, più `spoolsteward-updater` per l'updater facoltativo; amd64 + arm64) e `.env`
+contiene la versione in uso (`SPOOLSTEWARD_VERSION`). La versione cambia solo **di proposito**: niente si aggiorna da solo. Le migrazioni
 del database partono all'avvio.
 
-Ogni release ha anche un **pacchetto** (`printminder-<versione>.tar.gz` con il suo `SHA256SUMS`) che contiene `docker-compose.yml`, gli script,
+Ogni release ha anche un **pacchetto** (`spoolsteward-<versione>.tar.gz` con il suo `SHA256SUMS`) che contiene `docker-compose.yml`, gli script,
 `docker/env.example` e la documentazione. Non contiene mai `.env`, `config/` né `data/`: un aggiornamento non può toccarli.
 
 | Come | Quando |
 |---|---|
 | `scripts/update.sh` | **Via normale.** Fa un backup completo (`data/backups/pre-update/`), scarica il pacchetto della nuova versione e ne controlla la somma sha256, sostituisce `docker-compose.yml` e gli script (i vecchi restano in `.update-prev/`), scrive la nuova versione in `.env`, scarica le immagini, riavvia e aspetta che il gateway sia in salute. Se non lo è, rimette i file e la versione di prima; se nemmeno la versione di prima parte (la nuova ha già cambiato il database), ti propone di ripristinare il backup appena fatto. `scripts/update.sh 1.2.0` sceglie una versione; `--check` dice solo se ne esiste una più nuova. Il cambio di versione maggiore (1.x → 2.x) chiede conferma: leggi prima le note di rilascio. |
-| Pulsante *Aggiorna* nel portale | Facoltativo. Menu *Backup*, riquadro *Aggiornamento*. Richiede il contenitore `updater` (sotto) **e** un backup programmato attivo e riuscito nelle ultime 48 h: si fa un backup fresco, poi parte l'aggiornamento. Senza un backup programmato funzionante il pulsante resta spento e dice perché. Solo aggiornamenti dentro la stessa versione maggiore. Se la nuova versione non parte rimette quella vecchia, ma il ripristino del backup, se serve, lo fai tu dal menu *Backup* o con `scripts/backup.sh restore`. |
-| `git pull && docker compose up -d --build` | Solo in una cartella clonata con git (sviluppo) e per le immagini costruite da te (`PRINTGW_REGISTRY` vuoto in `.env`). `scripts/update.sh` in una cartella con `.git` si rifiuta di partire, per non litigare con git. |
+| Pulsante *Aggiorna* nel portale | Facoltativo. Menu *Backup*, riquadro *Aggiornamento*. Richiede il contenitore `updater` (sotto) **e** un backup programmato attivo e riuscito nelle ultime 48 h: si fa un backup fresco, poi parte l'aggiornamento. Senza un backup programmato funzionante il pulsante resta spento e dice perché. Solo aggiornamenti dentro la stessa versione maggiore. Se la nuova versione non parte rimette quella vecchia, ma il ripristino del backup, se serve, lo fai tu con `scripts/backup.sh restore` (vedi «Tornare a una versione precedente» più sotto). |
+| `git pull && docker compose up -d --build` | Solo in una cartella clonata con git (sviluppo) e per le immagini costruite da te (`SPOOLSTEWARD_REGISTRY` vuoto in `.env`). `scripts/update.sh` in una cartella con `.git` si rifiuta di partire, per non litigare con git. |
 
 Il file compose e le immagini cambiano sempre insieme, quindi un'immagine nuova non gira mai con un compose vecchio. `.env` non viene toccato.
 
 **Avviso di nuova versione.** Una volta ogni 24 ore (la prima 2 minuti dopo l'avvio del gateway, quindi un riavvio lo rifà subito) il gateway chiede a GitHub qual è l'ultima release e mostra un avviso agli
-amministratori. Esce solo quella richiesta e non invia nulla del tuo server. Si spegne con `CUPSPL_UPDATE_CHECK=false`.
+amministratori. Esce solo quella richiesta e non invia nulla del tuo server. Si spegne con `SPOOLSTEWARD_UPDATE_CHECK=false`.
 
 **Il contenitore facoltativo `updater`** applica gli aggiornamenti chiesti dal portale. È **spento di default** perché usa il socket
 di Docker (`/var/run/docker.sock`), e chi controlla quel socket controlla tutta la macchina (root): se qualcuno trovasse un difetto
@@ -243,9 +243,9 @@ ha la sua spiegazione. Se ne vuoi cambiare una, copia la riga nel tuo `.env` e l
 
 ```sh
 ls data/backups/pre-update/
-#   printgw-v0.3.0-20261016-132831.tar.gz   <- fatto mentre girava la 0.3.0
-#   printgw-v0.2.2-20261016-101500.tar.gz   <- fatto mentre girava la 0.2.2 (prima dell'aggiornamento alla 0.3.0)
-scripts/backup.sh restore data/backups/pre-update/printgw-v0.2.2-20261016-101500.tar.gz    # chiede di scrivere YES
+#   spoolsteward-v0.3.0-20261016-132831.tar.gz   <- fatto mentre girava la 0.3.0
+#   spoolsteward-v0.2.2-20261016-101500.tar.gz   <- fatto mentre girava la 0.2.2 (prima dell'aggiornamento alla 0.3.0)
+scripts/backup.sh restore data/backups/pre-update/spoolsteward-v0.2.2-20261016-101500.tar.gz    # chiede di scrivere YES
 scripts/update.sh 0.2.2                    # rimette i file di quella versione (il ripristino ha riportato il suo .env)
 ```
 
@@ -253,22 +253,22 @@ La versione nel nome del file è quella che girava quando il backup è stato fat
 
 **Beta.** Una versione come `0.4.0-beta.1` è una release di prova, pubblicata come pre-release su GitHub. `scripts/update.sh` senza argomenti, il pulsante *Aggiorna* e l'avviso "nuova versione" non la propongono mai: la si ottiene solo nominandola, con `scripts/update.sh 0.4.0-beta.1`. Da una beta la versione finale (`0.4.0`) viene proposta normalmente. Non usare una beta su un server da cui dipendono altre persone.
 
-**Blocca la versione.** Non usare mai `latest`: lascia `PRINTGW_VERSION` a un numero, così l'aggiornamento è una decisione.
+**Blocca la versione.** Non usare mai `latest`: lascia `SPOOLSTEWARD_VERSION` a un numero, così l'aggiornamento è una decisione.
 
 ## 9. Alternativa: installazione sull'host (senza docker)
 
-> Questo **modifica il sistema**: crea l'utente `cupspl`, file in `/opt` e `/etc`, un'unità systemd e sostituisce
+> Questo **modifica il sistema**: crea l'utente `spoolsteward`, file in `/opt` e `/etc`, un'unità systemd e sostituisce
 > `/etc/cups/cupsd.conf` (l'originale resta salvato come `cupsd.conf.pre-gateway`).
 
 ```sh
-sudo sh deploy/install.sh                 # utente, venv in /opt/cups-policy-gateway, /etc/cups-policy-gateway/env, unità systemd
-sudoedit /etc/cups-policy-gateway/env     # RADIUS (facoltativo), percorsi TLS, …; metti il certificato in /etc/cups-policy-gateway/tls
+sudo sh deploy/install.sh                 # utente, venv in /opt/spoolsteward, /etc/spoolsteward/env, unità systemd
+sudoedit /etc/spoolsteward/env     # RADIUS (facoltativo), percorsi TLS, …; metti il certificato in /etc/spoolsteward/tls
 sudo sh deploy/setup-cups.sh              # rende CUPS un backend privato (socket unix, nessun TCP); --revert per tornare indietro
-sudo systemctl enable --now cups-policy-gateway
-journalctl -u cups-policy-gateway | grep "FIRST RUN"
+sudo systemctl enable --now spoolsteward
+journalctl -u spoolsteward | grep "FIRST RUN"
 ```
 
-Serve Python ≥ 3.12 con `venv`. Il servizio gira come `cupspl`, isolato, e usa la porta 631 grazie a `CAP_NET_BIND_SERVICE`.
+Serve Python ≥ 3.12 con `venv`. Il servizio gira come `spoolsteward`, isolato, e usa la porta 631 grazie a `CAP_NET_BIND_SERVICE`.
 `deploy/env.example` elenca le impostazioni. L'annunciatore mDNS è un processo a parte (`python -m app.mdns`) che devi avviare tu se lo vuoi.
 
 ## 10. Sviluppo

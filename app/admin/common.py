@@ -1,9 +1,8 @@
 """Shared pieces of the portal: templates, session/CSRF dependencies, helpers."""
 
 import hmac
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 from fastapi import Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -11,22 +10,23 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
 from app import i18n
+from app.timeutil import local_tz
 from app.backup.core import app_version
 from app.config import settings
 from app.db.models import User
+from app.netutil import client_ip  # noqa: F401  (re-exported: the portal modules import it from here)
 from app.policy.permissions import describe_grant, describe_hours
 from app.policy.rules import MAX_LIMIT
 
 templates = Jinja2Templates(directory=str(Path(__file__).with_name("templates")))
-PAGE = 50
 
 
 def localtime(dt: datetime | None, fmt: str = "%Y-%m-%d %H:%M:%S") -> str:
     if dt is None:
         return ""
     if dt.tzinfo is None:  # SQLite returns naive; we store UTC
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(ZoneInfo(settings.timezone)).strftime(fmt)
+        dt = dt.replace(tzinfo=UTC)
+    return dt.astimezone(local_tz()).strftime(fmt)
 
 
 def isotime(value: str | None) -> str:
@@ -54,7 +54,7 @@ def session_stamp(user: User) -> str:
     if dt is None:
         return ""
     # SQLite hands datetimes back without tzinfo; we store UTC, so both forms must give the same stamp
-    return (dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)).astimezone(timezone.utc).isoformat()
+    return (dt if dt.tzinfo else dt.replace(tzinfo=UTC)).astimezone(UTC).isoformat()
 
 
 def current_user(request: Request, db: Session = Depends(get_db)) -> User:
@@ -76,10 +76,14 @@ def current_admin(user: User = Depends(current_user)) -> User:
     return user
 
 
-async def verify_csrf(request: Request, csrf_token: str = Form("")) -> None:
+def check_csrf(request: Request, token: str) -> None:
     expected = request.session.get("csrf", "")
-    if not expected or not hmac.compare_digest(expected, csrf_token):
+    if not expected or not hmac.compare_digest(expected, token):
         raise HTTPException(403, "invalid CSRF token")
+
+
+async def verify_csrf(request: Request, csrf_token: str = Form("")) -> None:
+    check_csrf(request, csrf_token)
 
 
 def flash(request: Request, msg: str, kind: str = "ok") -> None:
@@ -113,7 +117,7 @@ def _pending_requests(request: Request) -> int:
     with request.app.state.sessionmaker() as db:
         return db.scalar(select(func.count(QuotaRequest.id)).where(
             QuotaRequest.status == RequestStatus.pending,
-            QuotaRequest.expires_at > datetime.now(timezone.utc))) or 0
+            QuotaRequest.expires_at > datetime.now(UTC))) or 0
 
 
 def _notices_unseen(request: Request, user_id: int, own: bool = False) -> int:
@@ -150,12 +154,3 @@ def parse_limit(raw: str) -> int | None:
     return value
 
 
-def client_ip(request: Request) -> str:
-    return request.client.host if request.client else "?"
-
-
-def portal_base(request: Request) -> str:
-    """Public address of the portal, for messages that tell people where to go."""
-    if settings.portal_url:
-        return settings.portal_url.rstrip("/")
-    return f"https://{request.headers.get('host', 'localhost')}"

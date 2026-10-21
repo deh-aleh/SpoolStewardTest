@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Groups") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block body %}
 <div class="card">
-  <div class="row" style="justify-content:space-between"><h1 style="margin:0">{{ _("Groups") }}</h1><a class="btn" href="/admin/groups/new">{{ _("New group") }}</a></div>
+  <div class="row gr-head"><h1 class="gr-title">{{ _("Groups") }}</h1><a class="btn" href="/admin/groups/new">{{ _("New group") }}</a></div>
   <p class="muted">{{ _("Read-only values: use <b>Edit</b> to change them. Empty limit = no limit. Jobs that were refused, failed or canceled before printing do not count. The page limit is soft: the job that exceeds it is printed anyway.") }}</p>
   <table class="stack">
     <tr><th>{{ _("Group") }}</th><th>{{ _("Members") }}</th><th>{{ _("Job limit") }}</th><th>{{ _("Page limit") }}</th><th>{{ _("Period") }}</th><th>{{ _("Requestable") }}</th><th></th></tr>

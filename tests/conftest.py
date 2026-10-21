@@ -34,11 +34,10 @@ CUPS_SOCK = str(Path(__file__).resolve().parent.parent / "docker" / "run" / "cup
 # ---------------------------------------------------------------- shared portal/gateway fixtures
 
 import re  # noqa: E402
-from datetime import datetime, timezone  # noqa: E402
+from datetime import UTC, datetime  # noqa: E402
 
 from sqlalchemy import create_engine  # noqa: E402
 from sqlalchemy.orm import sessionmaker  # noqa: E402
-from sqlalchemy.pool import StaticPool  # noqa: E402
 
 
 class StubRadius:
@@ -68,7 +67,7 @@ def make_user(sm, username, *, provider="local", password=None, admin=False, gro
         u = User(username=username, provider=provider, is_admin=admin, enabled=enabled, group_id=gid,
                  must_change_password=must_change,
                  password_hash=hash_password(password) if password else None,
-                 password_changed_at=datetime.now(timezone.utc) if password else None)
+                 password_changed_at=datetime.now(UTC) if password else None)
         s.add(u)
         s.commit()
         return u.id
@@ -108,6 +107,29 @@ async def portal(monkeypatch, tmp_path):
 
 async def portal_login(cl, username, password):
     return await cl.post("/login", data={"username": username, "password": password})
+
+
+GOOD = "correct horse battery"
+
+
+@pytest.fixture
+async def admin(portal):
+    """The portal with an administrator ('boss') logged in; the system groups exist, as after a real start."""
+    from app.auth.groups import ensure_system_groups
+
+    make_user(portal.sm, "boss", password=GOOD, admin=True)
+    ensure_system_groups(portal.sm)
+    await portal_login(portal, "boss", GOOD)
+    return portal
+
+
+def user_row(cl, name):
+    from sqlalchemy import select
+
+    from app.db.models import User
+
+    with cl.sm() as s:
+        return s.scalars(select(User).where(User.username == name)).first()
 
 
 async def csrf_of_page(cl, path="/me"):

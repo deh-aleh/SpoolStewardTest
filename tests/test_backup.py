@@ -3,7 +3,7 @@
 import io
 import os
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -23,7 +23,7 @@ def dirs(tmp_path, monkeypatch):
     root, cfg, audit = tmp_path / "backups", tmp_path / "cfg", tmp_path / "archive"
     for d in (root, cfg / "tls", audit):
         d.mkdir(parents=True)
-    (cfg / "gateway.env").write_text("CUPSPL_SECRET_KEY=very-secret\n")
+    (cfg / "gateway.env").write_text("SPOOLSTEWARD_SECRET_KEY=very-secret\n")
     (cfg / "tls" / "privkey.pem").write_text("PRIVATE KEY")
     (audit / "job_log-1.jsonl.gz").write_bytes(b"audit-bytes" * 100)
     monkeypatch.setattr(settings, "backup_root", str(root))
@@ -86,7 +86,7 @@ def test_no_root_means_a_clear_error(tmp_path, monkeypatch):
 # ------------------------------------------------------------------------------------------------ retention
 
 def test_retention_keeps_newest_per_period():
-    now = datetime(2026, 10, 11, 12, tzinfo=timezone.utc)
+    now = datetime(2026, 10, 11, 12, tzinfo=UTC)
     stamps = [now - timedelta(days=d) for d in range(0, 90)]          # one per day, newest first
     keep = core.keep_set(stamps, 7, 4, 3, "UTC")
     assert {0, 1, 2, 3, 4, 5, 6} <= keep                                  # the last 7 days
@@ -97,8 +97,8 @@ def test_retention_keeps_newest_per_period():
 
 def test_prune_only_touches_its_own_files(dirs):
     f = core.resolve_folder("p")
-    mine = [f / f"printgw-aaaaaaaa-t1-2026010{d}-030000.tar.gz" for d in range(1, 6)]
-    others = [f / "printgw-bbbbbbbb-t1-20260101-030000.tar.gz", f / "printgw-aaaaaaaa-t2-20260101-030000.tar.gz",
+    mine = [f / f"spoolsteward-aaaaaaaa-t1-2026010{d}-030000.tar.gz" for d in range(1, 6)]
+    others = [f / "spoolsteward-bbbbbbbb-t1-20260101-030000.tar.gz", f / "spoolsteward-aaaaaaaa-t2-20260101-030000.tar.gz",
               f / "notes.txt"]
     for p in mine + others:
         p.write_bytes(b"x")
@@ -112,38 +112,38 @@ def test_prune_only_touches_its_own_files(dirs):
 async def test_plain_backup_has_no_secrets_and_encrypted_has_them(portal, dirs):
     make_user(portal.sm, "ada", password=GOOD, admin=True)
     f = core.resolve_folder("t")
-    plain = core.create_backup(portal.sm, f, "printgw-aaaaaaaa-t1", recipient=None, target_name="p", instance="aaaaaaaa")
+    plain = core.create_backup(portal.sm, f, "spoolsteward-aaaaaaaa-t1", recipient=None, target_name="p", instance="aaaaaaaa")
     m = core.verify(plain.path)
-    assert set(m["files"]) == {"gateway.db"} and not m["secrets_included"]
+    assert set(m["files"]) == {"spoolsteward.db"} and not m["secrets_included"]
 
     bundle = crypto.make_recipient(PASS)
-    enc = core.create_backup(portal.sm, f, "printgw-aaaaaaaa-t2", recipient=bundle, target_name="e", instance="aaaaaaaa",
-                             now=datetime.now(timezone.utc) + timedelta(seconds=1))
+    enc = core.create_backup(portal.sm, f, "spoolsteward-aaaaaaaa-t2", recipient=bundle, target_name="e", instance="aaaaaaaa",
+                             now=datetime.now(UTC) + timedelta(seconds=1))
     assert enc.path.name.endswith(".tar.gz.enc") and b"very-secret" not in enc.path.read_bytes()
     m = core.verify(enc.path, PASS)
-    assert {"gateway.db", "config/gateway.env", "config/tls/privkey.pem"} == set(m["files"])
+    assert {"spoolsteward.db", "config/gateway.env", "config/tls/privkey.pem"} == set(m["files"])
     with pytest.raises(crypto.CryptoError):
         core.verify(enc.path, "not the passphrase!!")
 
 
 async def test_the_env_file_travels_in_encrypted_backups_only(portal, dirs, tmp_path, monkeypatch):
     env = tmp_path / "project.env"
-    env.write_text("CUPSPL_SECRET_KEY=from-env\n")
+    env.write_text("SPOOLSTEWARD_SECRET_KEY=from-env\n")
     monkeypatch.setattr(settings, "backup_env_file", str(env))
     (dirs.parent / "cfg" / ".cert-sync.abc123").mkdir()
     (dirs.parent / "cfg" / ".cert-sync.abc123" / "privkey.pem").write_text("TEMPORARY")
     f = core.resolve_folder("t")
-    plain = core.create_backup(portal.sm, f, "printgw-aaaaaaaa-t1", recipient=None, target_name="p", instance="aaaaaaaa")
-    assert set(core.verify(plain.path)["files"]) == {"gateway.db"}
-    enc = core.create_backup(portal.sm, f, "printgw-aaaaaaaa-t2", recipient=crypto.make_recipient(PASS), target_name="e",
-                             instance="aaaaaaaa", now=datetime.now(timezone.utc) + timedelta(seconds=1))
+    plain = core.create_backup(portal.sm, f, "spoolsteward-aaaaaaaa-t1", recipient=None, target_name="p", instance="aaaaaaaa")
+    assert set(core.verify(plain.path)["files"]) == {"spoolsteward.db"}
+    enc = core.create_backup(portal.sm, f, "spoolsteward-aaaaaaaa-t2", recipient=crypto.make_recipient(PASS), target_name="e",
+                             instance="aaaaaaaa", now=datetime.now(UTC) + timedelta(seconds=1))
     files = set(core.verify(enc.path, PASS)["files"])
     assert "config/.env" in files and not any(".cert-sync" in x for x in files)   # the script's temporary folder is skipped
 
 
 async def test_a_damaged_backup_is_detected(portal, dirs):
     f = core.resolve_folder("t")
-    res = core.create_backup(portal.sm, f, "printgw-aaaaaaaa-t1", recipient=None, target_name="p", instance="aaaaaaaa")
+    res = core.create_backup(portal.sm, f, "spoolsteward-aaaaaaaa-t1", recipient=None, target_name="p", instance="aaaaaaaa")
     blob = bytearray(res.path.read_bytes())
     blob[len(blob) // 2] ^= 0xFF
     res.path.write_bytes(bytes(blob))
@@ -156,20 +156,20 @@ async def test_restore_brings_back_database_audit_and_config(portal, dirs, tmp_p
     make_user(portal.sm, "bob", password=GOOD)
     f = core.resolve_folder("t")
     bundle = crypto.make_recipient(PASS)
-    res = core.create_backup(portal.sm, f, "printgw-aaaaaaaa-t1", recipient=bundle, target_name="e", instance="aaaaaaaa")
+    res = core.create_backup(portal.sm, f, "spoolsteward-aaaaaaaa-t1", recipient=bundle, target_name="e", instance="aaaaaaaa")
     assert core.mirror_audit(Path(settings.audit_archive_dir), f, "aaaaaaaa", bundle) == 1
     assert core.mirror_audit(Path(settings.audit_archive_dir), f, "aaaaaaaa", bundle) == 0   # already there
     assert b"audit-bytes" not in next((f / "audit-archive-aaaaaaaa").iterdir()).read_bytes()
 
     new = tmp_path / "new"
     new.mkdir()
-    (new / "gateway.db").write_bytes(b"old database")
-    out = core.restore(res.path, PASS, db_path=new / "gateway.db", config_out=new / "cfg", audit_dir=new / "audit")
+    (new / "spoolsteward.db").write_bytes(b"old database")
+    out = core.restore(res.path, PASS, db_path=new / "spoolsteward.db", config_out=new / "cfg", audit_dir=new / "audit")
     assert out["audit_files"] == 1 and out["config"]
     assert (new / "audit" / "job_log-1.jsonl.gz").read_bytes() == b"audit-bytes" * 100
-    assert (new / "cfg" / "gateway.env").read_text().startswith("CUPSPL_SECRET_KEY")
-    assert list(new.glob("gateway.db.before-restore-*"))[0].read_bytes() == b"old database"
-    names = {r[0] for r in sqlite3.connect(new / "gateway.db").execute("select username from user")}
+    assert (new / "cfg" / "gateway.env").read_text().startswith("SPOOLSTEWARD_SECRET_KEY")
+    assert list(new.glob("spoolsteward.db.before-restore-*"))[0].read_bytes() == b"old database"
+    names = {r[0] for r in sqlite3.connect(new / "spoolsteward.db").execute("select username from user")}
     assert {"ada", "bob"} <= names
 
 
@@ -178,14 +178,14 @@ async def test_a_restore_that_cannot_work_leaves_the_current_database_alone(port
     f = core.resolve_folder("t")
     new = tmp_path / "new"
     new.mkdir()
-    (new / "gateway.db").write_bytes(b"current database")
+    (new / "spoolsteward.db").write_bytes(b"current database")
 
     def attempt(path, passphrase=None):
         with pytest.raises(core.BackupError):
-            core.restore(path, passphrase, db_path=new / "gateway.db", config_out=new / "cfg", audit_dir=new / "audit")
-        assert (new / "gateway.db").read_bytes() == b"current database" and not list(new.glob("*before-restore*"))
+            core.restore(path, passphrase, db_path=new / "spoolsteward.db", config_out=new / "cfg", audit_dir=new / "audit")
+        assert (new / "spoolsteward.db").read_bytes() == b"current database" and not list(new.glob("*before-restore*"))
 
-    empty = f / "printgw-aaaaaaaa-t1-20260101-000000.tar.gz"   # a valid archive whose manifest lists no database
+    empty = f / "spoolsteward-aaaaaaaa-t1-20260101-000000.tar.gz"   # a valid archive whose manifest lists no database
     with tarfile.open(empty, "w:gz") as tf:
         data = json.dumps({"format": 1, "schema": None, "instance": "aaaaaaaa", "files": {}}).encode()
         info = tarfile.TarInfo(core.MANIFEST)
@@ -193,16 +193,16 @@ async def test_a_restore_that_cannot_work_leaves_the_current_database_alone(port
         tf.addfile(info, io.BytesIO(data))
     attempt(empty)
 
-    good = core.create_backup(portal.sm, f, "printgw-aaaaaaaa-t1", recipient=None, target_name="p", instance="aaaaaaaa")
-    cut = f / "printgw-aaaaaaaa-t1-20260102-000000.tar.gz"      # cut in half: an interrupted copy
+    good = core.create_backup(portal.sm, f, "spoolsteward-aaaaaaaa-t1", recipient=None, target_name="p", instance="aaaaaaaa")
+    cut = f / "spoolsteward-aaaaaaaa-t1-20260102-000000.tar.gz"      # cut in half: an interrupted copy
     cut.write_bytes(good.path.read_bytes()[: good.size // 2])
     attempt(cut)
 
     bundle = crypto.make_recipient(PASS)
-    enc = core.create_backup(portal.sm, f, "printgw-aaaaaaaa-t1", recipient=bundle, target_name="e", instance="aaaaaaaa")
+    enc = core.create_backup(portal.sm, f, "spoolsteward-aaaaaaaa-t1", recipient=bundle, target_name="e", instance="aaaaaaaa")
     with pytest.raises(Exception):                                # wrong passphrase
-        core.restore(enc.path, "another long passphrase", db_path=new / "gateway.db", config_out=new / "cfg", audit_dir=new / "audit")
-    assert (new / "gateway.db").read_bytes() == b"current database"
+        core.restore(enc.path, "another long passphrase", db_path=new / "spoolsteward.db", config_out=new / "cfg", audit_dir=new / "audit")
+    assert (new / "spoolsteward.db").read_bytes() == b"current database"
 
 
 # ------------------------------------------------------------------------------------------------ portal
@@ -219,7 +219,7 @@ async def test_admins_have_their_own_backups(portal, dirs):
     bad = await portal.post("/admin/backups", data=dict(csrf_token=csrf, name="x", folder="../etc", mode="none"))
     assert bad.status_code == 303
     assert "Nome cartella non valido" in (await portal.get("/admin/backups")).text
-    mismatch = await portal.post("/admin/backups", data=dict(csrf_token=csrf, name="x", folder="ada", mode="passphrase",
+    await portal.post("/admin/backups", data=dict(csrf_token=csrf, name="x", folder="ada", mode="passphrase",
                                                             passphrase=PASS, passphrase2="different one!!"))
     assert "sono diverse" in (await portal.get("/admin/backups")).text
     with portal.sm() as s:
@@ -298,7 +298,7 @@ async def test_a_failing_backup_is_visible_not_silent(portal, dirs):
     with portal.sm() as s:
         t = s.get(BackupTarget, tid)
         assert t.last_status == "error" and t.last_error and t.last_ok_at is None
-        assert service.health(t, datetime.now(timezone.utc)) == "error"
+        assert service.health(t, datetime.now(UTC)) == "error"
 
 
 @pytest.mark.usefixtures("english")
@@ -340,8 +340,8 @@ async def test_a_new_backup_is_created_with_the_marker_ticked(portal, dirs):
 
 def test_schedule_runs_once_a_day_after_the_hour(monkeypatch):
     monkeypatch.setattr(settings, "timezone", "UTC")
-    t = BackupTarget(name="n", folder="f", enabled=True, hour=3, created_at=datetime(2026, 10, 1, tzinfo=timezone.utc))
-    at = lambda h, d=11: datetime(2026, 10, d, h, 30, tzinfo=timezone.utc)  # noqa: E731
+    t = BackupTarget(name="n", folder="f", enabled=True, hour=3, created_at=datetime(2026, 10, 1, tzinfo=UTC))
+    at = lambda h, d=11: datetime(2026, 10, d, h, 30, tzinfo=UTC)  # noqa: E731
     assert not service.is_due(t, at(2))                  # before the hour
     assert service.is_due(t, at(3))                      # first time: as soon as the hour has come
     t.last_ok_at, t.last_status = at(3), "ok"
@@ -356,7 +356,7 @@ def test_schedule_runs_once_a_day_after_the_hour(monkeypatch):
 
 
 def test_health_flags_old_backups():
-    now = datetime(2026, 10, 11, tzinfo=timezone.utc)
+    now = datetime(2026, 10, 11, tzinfo=UTC)
     t = BackupTarget(name="n", folder="f", enabled=True, created_at=now - timedelta(days=5),
                      last_ok_at=now - timedelta(days=3), last_status="ok")
     assert service.health(t, now) == "stale"
@@ -444,7 +444,7 @@ async def test_update_button_needs_updater_and_a_working_scheduled_backup(portal
     await portal.post("/admin/backups", data=dict(csrf_token=csrf, name="n", folder="n", mode="none"))
     with portal.sm() as s:
         t = s.scalars(select(BackupTarget)).one()
-        t.last_ok_at, t.last_status = datetime.now(timezone.utc), "ok"
+        t.last_ok_at, t.last_status = datetime.now(UTC), "ok"
         s.commit()
     assert not (udir / "request.json").exists() and "<button disabled>" in (await portal.get("/admin/backups")).text
 
@@ -493,3 +493,28 @@ def test_bounded_gives_up_on_a_stuck_disk_and_does_not_pile_up(english):
     release.set()
     time.sleep(0.3)
     assert core.bounded(lambda: 42) == 42                   # the disk is back: works again
+
+
+
+def test_restore_audit_with_a_wrong_passphrase_leaves_no_half_file(tmp_path):
+    src = tmp_path / "archive"
+    src.mkdir()
+    (src / "2026-01.jsonl.gz").write_bytes(b"some audit bytes" * 1000)
+    folder = tmp_path / "bk"
+    folder.mkdir()
+    core.mirror_audit(src, folder, "inst", crypto.make_recipient(PASS))
+    dest = tmp_path / "restored"
+    with pytest.raises(crypto.CryptoError):
+        core.restore_audit(folder / "audit-archive-inst", dest, "wrong pass phrase")
+    assert list(dest.iterdir()) == []
+
+
+async def test_a_backup_that_fails_while_writing_leaves_no_file_behind(portal, dirs, monkeypatch):
+    f = dirs
+    def boom(*a, **k):
+        raise OSError("disk full")
+    monkeypatch.setattr(core, "_add", boom)
+    with pytest.raises(OSError):
+        core.create_backup(portal.sm, f, "spoolsteward-aaaaaaaa-t1", recipient=crypto.make_recipient(PASS), target_name="e",
+                           instance="aaaaaaaa")
+    assert [p.name for p in f.iterdir()] == []

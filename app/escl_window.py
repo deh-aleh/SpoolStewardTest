@@ -1,7 +1,7 @@
 """Scan window: "my scan app is about to scan, accept it from this address".
 
-Scan apps that cannot send a password (NAPS2 and most others) are refused while CUPSPL_ESCL_ANONYMOUS is off. The person
-presses a button on /me/scan: the gateway notes the address it sees and, for CUPSPL_ESCL_WINDOW_SECONDS, accepts the
+Scan apps that cannot send a password (NAPS2 and most others) are refused while SPOOLSTEWARD_ESCL_ANONYMOUS is off. The person
+presses a button on /me/scan: the gateway notes the address it sees and, for SPOOLSTEWARD_ESCL_WINDOW_SECONDS, accepts the
 credential-less eSCL requests that come from that address, as that person (their quotas and permissions apply, the audit
 names them). Everything else is still refused.
 

@@ -4,21 +4,23 @@ import base64
 import binascii
 import logging
 from collections.abc import AsyncIterator
+from dataclasses import dataclass
 from urllib.parse import unquote, urlsplit
-from zoneinfo import ZoneInfo
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request, Response
 from starlette.concurrency import run_in_threadpool
 
+from app.timeutil import local_tz
 from app.auth import keys, service
 from app.auth.throttle import IP_FAILS, USER_FAILS, register_failure
 from app.config import settings
 from app.cups_client import UNKNOWN_CAPS, queue_caps
 from app.ipp import codec
+from app.netutil import client_ip
 from app.ipp.rewrite import advertise_auth, rewrite_uris
 from app.policy import audit, control, permissions
-from app.db.models import Metric, PrintKey, Resource
+from app.db.models import Metric, PrintKey, Resource, User
 from app.policy import pages as pages_mod
 from app.policy.engine import Decision, check_job, effective_rules
 
@@ -134,8 +136,56 @@ async def not_found(path: str) -> Response:
     return Response("not found", status_code=404, media_type="text/plain")
 
 
+@dataclass
+class _Call:
+    """One request on its way through the gateway: filled in step by step by `ipp_proxy`."""
+
+    msg: codec.IppMessage
+    head_rest: bytes                # bytes of the body read after the IPP header
+    rest: AsyncIterator[bytes]      # the rest of the body, still unread
+    anonymous: bool
+    identity: str
+    user: User | None = None
+    key: PrintKey | None = None
+    og: codec.Group | None = None   # the operation group (always present once the identity is stamped)
+    path: str = ""
+    sm: object = None
+    tz: object = None
+    printer: str | None = None
+    log_id: int | None = None       # the audit row that holds the quota slot (job submissions only)
+    pages: int | None = None
+    perm: permissions.PermDecision | None = None
+    listing: permissions.Perms | None = None  # the printers a limited person may see in a printer list
+
+
 @router.post("/{path:path}")
 async def ipp_proxy(path: str, request: Request) -> Response:
+    call = await _authenticate(request, path)
+    if isinstance(call, Response):
+        return call
+    call.tz = local_tz()
+    call.sm = request.app.state.sessionmaker
+    call.printer, mismatch = _printer_name(path, call.og)
+    if mismatch:  # CUPS obeys printer-uri, the audit/quota would follow the HTTP path: refuse the ambiguity
+        return _ipp_error(call.msg, codec.STATUS_BAD_REQUEST, "printer-uri does not match the request path")
+    refused = await _screen(call, request)
+    if refused is not None:
+        return refused
+    refused = await _spend_key(call)
+    if refused is not None:
+        return refused
+    resp = await _forward(call, request)
+    if isinstance(resp, Response):  # CUPS was not reached: the answer is ready
+        return resp
+    resp, out = _read_upstream(call, resp)
+    await _record(call, out, resp)
+    return _answer(call, request, resp, out)
+
+
+# ---- the steps of ipp_proxy, in the order they run
+
+async def _authenticate(request: Request, path: str) -> _Call | Response:
+    """Who is asking: the transport rules, then an anonymous capability query or a login. A Response = refused."""
     if request.headers.get("content-type", "").split(";")[0].strip().lower() != IPP_CT:
         raise HTTPException(415, "application/ipp required")
 
@@ -143,121 +193,166 @@ async def ipp_proxy(path: str, request: Request) -> Response:
         return Response("TLS required (use ipps://)", status_code=403, media_type="text/plain")
 
     creds = _parse_basic(request.headers.get("authorization"))
-    anonymous = creds is None
-    user = None
-    key = None
-    if anonymous:
-        # Capability queries are answered without credentials: IPP Everywhere clients (CUPS, KDE, Windows,
-        # macOS) ask what the printer can do before they ever send a password. Only small, fully declared
-        # bodies are read: anything that could carry a document is challenged at once, unread.
-        # (libcups sends "Expect: 100-continue" even for plain attribute queries, so that header alone proves nothing.)
-        declared = request.headers.get("content-length", "")
-        if not settings.anonymous_discovery or not declared.isdigit() or int(declared) > ANON_MAX_BODY:
-            log.info("unauthenticated request challenged (content-length=%r)", declared)
-            return _unauthorized()
-        msg, head_rest, rest = await read_head(request)
-        if msg.code not in ANON_OPS:
-            log.info("unauthenticated op=0x%04x path=/%s challenged", msg.code, path)
-            return _unauthorized()
-        identity = "anonymous"
+    if creds is None:
+        got = await _anonymous(request, path)
+        if isinstance(got, Response):
+            return got
+        msg, head_rest, rest = got
+        call = _Call(msg, head_rest, rest, anonymous=True, identity="anonymous")
     else:
-        username, password = creds
-        throttle = request.app.state.throttle
-        ip = request.client.host if request.client else "?"
-        ukey, ikey = f"u:{username.strip().lower()}|{ip}", f"ip:{ip}"
-        if throttle.blocked(ukey, USER_FAILS) or throttle.blocked(ikey, IP_FAILS):
-            return Response("too many failed attempts", status_code=429, headers={"Retry-After": "60"})
-        user, key = await service.print_login_with_key(request.app, username, password, ip)
-        if user is None:
-            register_failure(throttle, ukey, ikey, password)
-            log.warning("auth failed user=%r ip=%s", username, ip)
-            return _unauthorized("invalid credentials")
-        throttle.clear(ukey)
-        identity = user.username
-        msg, head_rest, rest = await read_head(request)
-        if key is not None and key.used_at is not None and msg.code not in STATUS_OPS:
-            log.info("single-use key %s of %s already used: op=0x%04x refused", key.key_prefix, identity, msg.code)
-            return _unauthorized("this single-use key has already been used")
-        if msg.code in NEVER_OPS or (msg.code not in USER_OPS and not user.is_admin):
-            log.warning("op 0x%04x denied for user=%s", msg.code, identity)
-            return _ipp_error(msg, codec.STATUS_FORBIDDEN, "operation not permitted")
+        got = await _login(request, creds)
+        if isinstance(got, Response):
+            return got
+        msg, head_rest, rest, user, key = got
+        call = _Call(msg, head_rest, rest, anonymous=False, identity=user.username, user=user, key=key)
 
     # Identity comes from authentication, never from the client.
     og = msg.group(codec.TAG_OPERATION)
     if og is None:
         og = codec.Group(codec.TAG_OPERATION)
         msg.groups.insert(0, og)
-    og.set("requesting-user-name", codec.TAG_NAME, settings.cups_user_prefix + identity)
-    log.debug("ipp op=0x%04x path=/%s user=%s", msg.code, path, identity)
+    og.set("requesting-user-name", codec.TAG_NAME, settings.cups_user_prefix + call.identity)
+    log.debug("ipp op=0x%04x path=/%s user=%s", msg.code, path, call.identity)
+    call.og, call.path = og, path
+    return call
 
-    tz = ZoneInfo(settings.timezone)
-    sm = request.app.state.sessionmaker
-    printer, mismatch = _printer_name(path, og)
-    if mismatch:  # CUPS obeys printer-uri, the audit/quota would follow the HTTP path: refuse the ambiguity
-        return _ipp_error(msg, codec.STATUS_BAD_REQUEST, "printer-uri does not match the request path")
-    log_id: int | None = None
-    pages: int | None = None
-    if user is not None and msg.code in (codec.PRINT_JOB, codec.SEND_DOCUMENT) and await run_in_threadpool(_has_pages_rule, sm, user):
-        # A pages limit exists: read the document (bounded) to count its pages before deciding.
-        head_rest, rest, whole = await _buffer(head_rest, rest, pages_mod.MAX_COUNT_BYTES)
-        if whole:
-            fmt = og.get("document-format")
-            n = await run_in_threadpool(pages_mod.count_pages, head_rest, fmt.first if fmt else None)
-            if n:
-                copies = msg.get(codec.TAG_JOB, "copies")
-                pages = n * (copies if isinstance(copies, int) and copies > 0 else 1)
+
+async def _anonymous(request: Request, path: str):
+    """No credentials. Capability queries are answered without them: IPP Everywhere clients (CUPS, KDE, Windows,
+    macOS) ask what the printer can do before they ever send a password. Only small, fully declared
+    bodies are read: anything that could carry a document is challenged at once, unread.
+    (libcups sends "Expect: 100-continue" even for plain attribute queries, so that header alone proves nothing.)"""
+    declared = request.headers.get("content-length", "")
+    if not settings.anonymous_discovery or not declared.isdigit() or int(declared) > ANON_MAX_BODY:
+        log.info("unauthenticated request challenged (content-length=%r)", declared)
+        return _unauthorized()
+    msg, head_rest, rest = await read_head(request)
+    if msg.code not in ANON_OPS:
+        log.info("unauthenticated op=0x%04x path=/%s challenged", msg.code, path)
+        return _unauthorized()
+    return msg, head_rest, rest
+
+
+async def _login(request: Request, creds: tuple[str, str]):
+    """Basic credentials: throttle, password or print key, single-use key, and the operations a person may run."""
+    username, password = creds
+    throttle = request.app.state.throttle
+    ip = client_ip(request)
+    ukey, ikey = f"u:{username.strip().lower()}|{ip}", f"ip:{ip}"
+    if throttle.blocked(ukey, USER_FAILS) or throttle.blocked(ikey, IP_FAILS):
+        return Response("too many failed attempts", status_code=429, headers={"Retry-After": "60"})
+    user, key = await service.print_login_with_key(request.app, username, password, ip)
+    if user is None:
+        register_failure(throttle, ukey, ikey, password)
+        log.warning("auth failed user=%r ip=%s", username, ip)
+        return _unauthorized("invalid credentials")
+    throttle.clear(ukey)
+    identity = user.username
+    msg, head_rest, rest = await read_head(request)
+    if key is not None and key.used_at is not None and msg.code not in STATUS_OPS:
+        log.info("single-use key %s of %s already used: op=0x%04x refused", key.key_prefix, identity, msg.code)
+        return _unauthorized("this single-use key has already been used")
+    if msg.code in NEVER_OPS or (msg.code not in USER_OPS and not user.is_admin):
+        log.warning("op 0x%04x denied for user=%s", msg.code, identity)
+        return _ipp_error(msg, codec.STATUS_FORBIDDEN, "operation not permitted")
+    return msg, head_rest, rest, user, key
+
+
+async def _screen(call: _Call, request: Request) -> Response | None:
+    """What the account may do with this request, before CUPS is asked: page count, permissions, printer list, quota.
+    Fills `call.pages`, `perm`, `listing` and `log_id`. A Response = refused."""
+    msg, user = call.msg, call.user
+    await _count_pages(call)
     # What the person's permissions say about this job (colour, one-sided, printer, hours); None = nothing limits them.
-    perm = await _permissions(request, sm, user, printer, msg, tz) if user is not None and msg.code in PERMISSION_OPS else None
-    listing = None  # the printers a limited person may see in a printer list
-    if user is not None and msg.code in LISTING_OPS:
-        listing = await run_in_threadpool(permissions.load, sm, user)
-        if listing.printers is not None:
-            _ask_for_names(og)
-        else:
-            listing = None
+    call.perm = (await _permissions(request, call.sm, user, call.printer, msg, call.tz)
+                 if user is not None and msg.code in PERMISSION_OPS else None)
+    await _limit_listing(call)
     if msg.code in SUBMIT_OPS:
-        title, options = _job_info(og, msg)
-        if pages:
-            options["pages_counted"] = pages
-        if perm is not None and perm.changed:
-            options["adjusted"] = list(perm.changed)  # the audit shows what was asked (color, sides) and what was corrected
-        decision, log_id = await run_in_threadpool(_reserve, sm, user, printer, title, options, tz, pages, perm)
-        if not decision.allowed:
-            log.info("job denied user=%s printer=%s reason=%s", identity, printer, decision.reason)
-            refused = _refused_by(perm, decision)
-            if refused:
-                await run_in_threadpool(permissions.notify_refused, sm, user.id, printer, perm)
-            elif decision.quota:
-                await run_in_threadpool(permissions.notify_quota, sm, user.id, printer, decision.quota)
-            return _ipp_error(msg, codec.STATUS_NOT_POSSIBLE, _with_portal_hint(request, decision.reason, permission=refused))
-        if perm is not None:
-            _apply_permission(msg, perm)
-            if perm.changed:
-                await run_in_threadpool(permissions.notify_adjusted, sm, user.id, printer, perm)
-    elif msg.code == codec.VALIDATE_JOB and user is not None:
-        decision = await run_in_threadpool(_peek, sm, user, tz, printer, perm)
-        if not decision.allowed:
-            return _ipp_error(msg, codec.STATUS_NOT_POSSIBLE, _with_portal_hint(request, decision.reason, permission=_refused_by(perm, decision)))
-        if perm is not None:
-            _apply_permission(msg, perm)
-    elif msg.code == codec.SEND_DOCUMENT and user is not None:
-        why = await run_in_threadpool(_blocked, sm, user, printer)
+        return await _admit_job(call, request)
+    if msg.code == codec.VALIDATE_JOB and user is not None:
+        return await _admit_validation(call, request)
+    if msg.code == codec.SEND_DOCUMENT and user is not None:
+        why = await run_in_threadpool(_blocked, call.sm, user, call.printer)
         if why:
             return _ipp_error(msg, codec.STATUS_NOT_POSSIBLE, why)
+    return None
 
+
+async def _count_pages(call: _Call) -> None:
+    msg, user, og = call.msg, call.user, call.og
+    if user is not None and msg.code in (codec.PRINT_JOB, codec.SEND_DOCUMENT) and await run_in_threadpool(_has_pages_rule, call.sm, user):
+        # A pages limit exists: read the document (bounded) to count its pages before deciding.
+        call.head_rest, call.rest, whole = await _buffer(call.head_rest, call.rest, pages_mod.MAX_COUNT_BYTES)
+        if whole:
+            fmt = og.get("document-format")
+            n = await run_in_threadpool(pages_mod.count_pages, call.head_rest, fmt.first if fmt else None)
+            if n:
+                copies = msg.get(codec.TAG_JOB, "copies")
+                call.pages = n * (copies if isinstance(copies, int) and copies > 0 else 1)
+
+
+async def _limit_listing(call: _Call) -> None:
+    if call.user is not None and call.msg.code in LISTING_OPS:
+        listing = await run_in_threadpool(permissions.load, call.sm, call.user)
+        if listing.printers is not None:
+            _ask_for_names(call.og)
+            call.listing = listing
+
+
+async def _admit_job(call: _Call, request: Request) -> Response | None:
+    """Print-Job / Create-Job: reserve the quota slot (the audit row), tell the person if refused, apply the corrections."""
+    msg, user, perm, printer = call.msg, call.user, call.perm, call.printer
+    title, options = _job_info(call.og, msg)
+    if call.pages:
+        options["pages_counted"] = call.pages
+    if perm is not None and perm.changed:
+        options["adjusted"] = list(perm.changed)  # the audit shows what was asked (color, sides) and what was corrected
+    decision, call.log_id = await run_in_threadpool(_reserve, call.sm, user, printer, title, options, call.tz, call.pages, perm)
+    if not decision.allowed:
+        log.info("job denied user=%s printer=%s reason=%s", call.identity, printer, decision.reason)
+        refused = _refused_by(perm, decision)
+        if refused:
+            await run_in_threadpool(permissions.notify_refused, call.sm, user.id, printer, perm)
+        elif decision.quota:
+            await run_in_threadpool(permissions.notify_quota, call.sm, user.id, printer, decision.quota)
+        return _ipp_error(msg, codec.STATUS_NOT_POSSIBLE, _with_portal_hint(request, decision.reason, permission=refused))
+    if perm is not None:
+        _apply_permission(msg, perm)
+        if perm.changed:
+            await run_in_threadpool(permissions.notify_adjusted, call.sm, user.id, printer, perm)
+    return None
+
+
+async def _admit_validation(call: _Call, request: Request) -> Response | None:
+    decision = await run_in_threadpool(_peek, call.sm, call.user, call.tz, call.printer, call.perm)
+    if not decision.allowed:
+        return _ipp_error(call.msg, codec.STATUS_NOT_POSSIBLE,
+                          _with_portal_hint(request, decision.reason, permission=_refused_by(call.perm, decision)))
+    if call.perm is not None:
+        _apply_permission(call.msg, call.perm)
+    return None
+
+
+async def _spend_key(call: _Call) -> Response | None:
+    key, msg = call.key, call.msg
     if key is not None and key.single_use and msg.code in (codec.PRINT_JOB, codec.SEND_DOCUMENT):
         # the print was accepted: the key is spent. Two requests racing with the same key: one passes, the other is refused.
-        if not await run_in_threadpool(_consume_key, sm, key.id):
-            if log_id is not None:
-                await run_in_threadpool(_finalize, sm, log_id, False, None, "single-use key already used")
+        if not await run_in_threadpool(_consume_key, call.sm, key.id):
+            if call.log_id is not None:
+                await run_in_threadpool(_finalize, call.sm, call.log_id, False, None, "single-use key already used")
             return _unauthorized("this single-use key has already been used")
-        log.info("single-use key %s of %s used", key.key_prefix, identity)
+        log.info("single-use key %s of %s used", key.key_prefix, call.identity)
+    return None
 
+
+async def _forward(call: _Call, request: Request) -> httpx.Response | Response:
+    """Send the request to CUPS. A Response = CUPS was not reached (too large), or an HTTPException is raised."""
     upstream: httpx.AsyncClient = request.app.state.upstream
+    sm, log_id, msg = call.sm, call.log_id, call.msg
     try:
-        resp = await upstream.post(
-            "/" + path,
-            content=_body(codec.encode(msg) + (b"" if anonymous else head_rest), _no_more() if anonymous else rest,
+        return await upstream.post(
+            "/" + call.path,
+            content=_body(codec.encode(msg) + (b"" if call.anonymous else call.head_rest), _no_more() if call.anonymous else call.rest,
                           settings.max_request_mb << 20),
             headers={"Content-Type": IPP_CT, "Host": "localhost"},
         )
@@ -267,7 +362,7 @@ async def ipp_proxy(path: str, request: Request) -> Response:
             await run_in_threadpool(_finalize, sm, log_id, False, None, "CUPS unreachable")
         raise HTTPException(502, "CUPS unreachable")
     except TooLarge:
-        log.warning("request too large user=%s printer=%s", identity, printer)
+        log.warning("request too large user=%s printer=%s", call.identity, call.printer)
         if log_id is not None:
             _finalize(sm, log_id, False, None, f"request larger than {settings.max_request_mb} MB")
         return _ipp_error(msg, codec.STATUS_TOO_LARGE, f"request larger than {settings.max_request_mb} MB")
@@ -278,41 +373,52 @@ async def ipp_proxy(path: str, request: Request) -> Response:
             _finalize(sm, log_id, False, None, "aborted before reaching CUPS")
         raise
 
-    body = resp.content
+
+def _read_upstream(call: _Call, resp: httpx.Response) -> tuple[httpx.Response, codec.IppMessage | None]:
+    """The answer of CUPS as an IPP message (None if it can not be read). A non-IPP answer becomes a plain IPP error."""
     out = None
     is_ipp = resp.headers.get("content-type", "").startswith(IPP_CT)
     if resp.status_code == 200 and is_ipp:
         try:
-            out = codec.decode(body)
+            out = codec.decode(resp.content)
         except codec.IppError:
             log.warning("undecodable IPP response, passed through unchanged")
     elif not is_ipp:
         # CUPS answers policy refusals with HTML (401/403/426 = "authenticate/upgrade"). Never leak that
         # to an IPP client, where 426 would read as "switch to TLS": turn it into a plain IPP error.
         refused = resp.status_code in (401, 403, 426)
-        log.warning("CUPS refused op=0x%04x user=%s: HTTP %s", msg.code, identity, resp.status_code)
+        log.warning("CUPS refused op=0x%04x user=%s: HTTP %s", call.msg.code, call.identity, resp.status_code)
         out = codec.make_error_response(
-            codec.STATUS_FORBIDDEN if refused else 0x0500, msg.request_id,
+            codec.STATUS_FORBIDDEN if refused else 0x0500, call.msg.request_id,
             "not permitted by print server" if refused else "print server error",
         )
-        out.version = msg.version
+        out.version = call.msg.version
         resp = httpx.Response(200, headers={"content-type": IPP_CT}, content=codec.encode(out))
+    return resp, out
 
+
+async def _record(call: _Call, out: codec.IppMessage | None, resp: httpx.Response) -> None:
+    """Close the audit row of a submission with what CUPS said, or attach the document of a Send-Document to its job."""
+    msg, sm, og = call.msg, call.sm, call.og
     ipp_ok = out is not None and out.code < 0x0100  # successful-ok*
-    if log_id is not None:
+    if call.log_id is not None:
         job_id = out.get(codec.TAG_JOB, "job-id") if out else None
         reason = None if ipp_ok else f"CUPS status {'0x%04x' % out.code if out else resp.status_code}"
-        await run_in_threadpool(_finalize, sm, log_id, ipp_ok, job_id, reason)
+        await run_in_threadpool(_finalize, sm, call.log_id, ipp_ok, job_id, reason)
     elif msg.code == codec.SEND_DOCUMENT and ipp_ok:
         jid = _job_id_from_request(og)
         if jid is not None:
             await run_in_threadpool(
-                _attach, sm, user.id, jid, og.get("document-name") and og.get("document-name").first,
-                og.get("document-format") and og.get("document-format").first, pages,
+                _attach, sm, call.user.id, jid, og.get("document-name") and og.get("document-name").first,
+                og.get("document-format") and og.get("document-format").first, call.pages,
             )
 
-    if out is not None and listing is not None and out.code < 0x0100:
-        out.groups = [g for g in out.groups if g.tag != codec.TAG_PRINTER or _may_see(listing, g)]
+
+def _answer(call: _Call, request: Request, resp: httpx.Response, out: codec.IppMessage | None) -> Response:
+    """What goes back to the client: printers it may not see removed, internal addresses rewritten to public ones."""
+    body = resp.content
+    if out is not None and call.listing is not None and out.code < 0x0100:
+        out.groups = [g for g in out.groups if g.tag != codec.TAG_PRINTER or _may_see(call.listing, g)]
     if out is not None:
         internal = {"localhost", "127.0.0.1", "::1", urlsplit(settings.cups_url).hostname or ""}
         rewrite_uris(out, internal, *_public_bases(request))
@@ -320,7 +426,7 @@ async def ipp_proxy(path: str, request: Request) -> Response:
         _hide_internal(out)
         body = codec.encode(out)
 
-    log.info("ipp op=0x%04x user=%s path=%s -> %s", msg.code, identity, "/" + path,
+    log.info("ipp op=0x%04x user=%s path=%s -> %s", call.msg.code, call.identity, "/" + call.path,
              "0x%04x" % out.code if out is not None else resp.status_code)
     return Response(body, status_code=resp.status_code, media_type=resp.headers.get("content-type", IPP_CT))
 
@@ -362,7 +468,7 @@ async def _permissions(request: Request, sm, user, printer, msg, tz) -> permissi
     # the printer is asked what it can do only when colour or sides matter (and it is not refused for another reason anyway)
     need_caps = printer and permissions.printer_allowed(perms, printer) and not (perms.color and perms.one_sided)
     caps = await queue_caps(request.app, printer) if need_caps else dict(UNKNOWN_CAPS)
-    return permissions.decide(perms, printer, caps, _job_attrs(msg), settings.permission_mode, audit.now_utc(), ZoneInfo(settings.timezone))
+    return permissions.decide(perms, printer, caps, _job_attrs(msg), settings.permission_mode, audit.now_utc(), local_tz())
 
 
 def _apply_permission(msg: codec.IppMessage, d: permissions.PermDecision) -> None:

@@ -6,7 +6,7 @@ same personal keys as printing, records every scan in the audit (kind=scan) and 
 
 Scanners are not configured one by one: they are found at run time. Every CUPS queue that lives on the network
 (ipp-usb gives each USB printer its own port) is asked for its eSCL capabilities, and so is every address listed in
-CUPSPL_SCAN_URL ("url" or "name=url", comma separated). What answers is a scanner; what stops answering (cable
+SPOOLSTEWARD_SCAN_URL ("url" or "name=url", comma separated). What answers is a scanner; what stops answering (cable
 pulled, device off) disappears from the list within half a minute. The first one is the default for native clients
 at /eSCL/...; every other is reachable at /eSCL-<id>/... and announced under that path.
 
@@ -26,7 +26,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from urllib.parse import quote, urlsplit
 from collections.abc import AsyncIterator
-from zoneinfo import ZoneInfo
 
 import httpx
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
@@ -35,6 +34,7 @@ from sqlalchemy import select
 from starlette.concurrency import run_in_threadpool
 
 from app import notices
+from app.timeutil import local_tz
 from app.admin.common import back, current_user, flash, render, verify_csrf
 from app.auth import service
 from app.auth.throttle import IP_FAILS, USER_FAILS, register_failure
@@ -43,9 +43,9 @@ from app.db.models import Group, JobKind, JobLog, JobState, User
 from app.cups_client import list_queues
 from app.ipp.gateway import _parse_basic, _unauthorized
 from app.policy import audit, control
-from app.i18n import _
 from app.i18n import N_, _
 from app.escl_window import Windows, normalize_ip
+from app.netutil import client_ip
 from app import i18n
 from app.admin.docs import slugify
 
@@ -59,7 +59,6 @@ MAX_SETTINGS = 64 << 10
 COLORS = {"color": "RGB24", "gray": "Grayscale8", "bw": "BlackAndWhite1"}
 FORMATS = {"pdf": "application/pdf", "jpeg": "image/jpeg"}
 SOURCES = {"platen": "Platen", "adf": "Feeder"}  # plus "auto" in the portal
-GUEST = "ospite-scansione"  # identity of scans sent without credentials (CUPSPL_ESCL_ANONYMOUS)
 MAX_PAGES = 100
 FALLBACK_DPI = (75, 100, 150, 200, 300)
 
@@ -134,6 +133,17 @@ async def scanners(app) -> dict[str, Scanner]:
     cached = getattr(app.state, "scanners_cache", None)
     if cached and cached[0] == id(client) and time.monotonic() - cached[1] < SCANNERS_TTL:
         return cached[2]
+    cands = await _candidates(app, client)
+    found = await asyncio.gather(*[_probe(client, base) for _, base, _ in cands.values()])
+    busy = {r.get("base") for r in getattr(app.state, "web_scans", {}).values() if r.get("state") == "running"}
+    previous = cached[2] if cached and cached[0] == id(client) else {}
+    ordered = _with_paths(_name_scanners(cands, found, previous, busy))
+    app.state.scanners_cache = (id(client), time.monotonic(), ordered)
+    return ordered
+
+
+async def _candidates(app, client: httpx.AsyncClient) -> dict[tuple[str, int], tuple[str | None, str, str | None]]:
+    """Where a scanner might be: the configured ones, the client's own address, and the network printers' addresses."""
     cands: dict[tuple[str, int], tuple[str | None, str, str | None]] = {}  # key -> (label, base, queue)
     for label, base in _explicit():
         cands.setdefault(_key(base), (label, base, None))
@@ -149,9 +159,11 @@ async def scanners(app) -> dict[str, Scanner]:
             base = f"http://{u.hostname}:{port}"
             prev = cands.get(_key(base))
             cands[_key(base)] = (prev[0] if prev else None, base, (prev[2] if prev else None) or q["name"])
-    found = await asyncio.gather(*[_probe(client, base) for _, base, _ in cands.values()])
-    busy = {r.get("base") for r in getattr(app.state, "web_scans", {}).values() if r.get("state") == "running"}
-    previous = cached[2] if cached and cached[0] == id(client) else {}
+    return cands
+
+
+def _name_scanners(cands: dict, found: list, previous: dict[str, Scanner], busy: set) -> dict[str, Scanner]:
+    """The candidates that answered, each with a name and a unique id."""
     out: dict[str, Scanner] = {}
     claimed: set[str] = set()  # one scanner per print queue, even if it answers on two ports
     for (label, base, queue), model in zip(cands.values(), found):
@@ -169,10 +181,13 @@ async def scanners(app) -> dict[str, Scanner]:
         while sid in out:
             sid, n = f"{_slug(queue or name)}-{n}", n + 1
         out[sid] = Scanner(sid, name, base, queue)
+    return out
+
+
+def _with_paths(out: dict[str, Scanner]) -> dict[str, Scanner]:
     ordered = {}
     for i, (sid, sc) in enumerate(out.items()):  # the first is the default and keeps the historic /eSCL path
         ordered[sid] = Scanner(sc.id, sc.name, sc.base, sc.queue, "eSCL" if i == 0 else f"eSCL-{sc.id}")
-    app.state.scanners_cache = (id(client), time.monotonic(), ordered)
     return ordered
 
 
@@ -192,10 +207,6 @@ async def scanner_device(app) -> str | None:
     return name
 
 
-def _tz() -> ZoneInfo:
-    return ZoneInfo(settings.timezone)
-
-
 def _public(request: Request) -> str:
     scheme = "https" if (settings.public_scheme or request.url.scheme) in ("https", "ipps") else "http"
     return f"{scheme}://{request.headers.get('host', 'localhost')}"
@@ -207,7 +218,7 @@ def _start(sm, user: User, title: str, options: dict, scanner: Scanner | None = 
     """Reserve the scan in the audit under the scanner's device name (so a blocked printer blocks its scanner too)."""
     options = {**options, "scanner": scanner.name} if scanner else options
     with sm() as s:
-        return audit.reserve(s, user, (scanner.queue or "scanner") if scanner else "scanner", title, options, _tz(), kind=JobKind.scan)
+        return audit.reserve(s, user, (scanner.queue or "scanner") if scanner else "scanner", title, options, local_tz(), kind=JobKind.scan)
 
 
 def _mark(sm, log_id: int, state: JobState, pages: int | None = None, reason: str | None = None) -> None:
@@ -233,17 +244,27 @@ async def _hostname(ip: str) -> str:
         return ""
 
 
-def _guest(sm) -> User:
-    """The shared identity of credential-less scans: a local account with no password, so nobody can log in as it."""
+def _guest(sm) -> User | None:
+    """The shared identity of credential-less scans (SPOOLSTEWARD_ESCL_GUEST_USERNAME): a local account with no password,
+    so nobody can log in as it. If an account with that name already exists and is a real one (a password, RADIUS, an
+    administrator), it is NEVER used: the scan would be credited to a real person. Returns None, tells the administrators
+    (bell, rate-limited, and the log) and the caller refuses the scan."""
+    name = settings.escl_guest_username
     with sm() as s:
-        user = s.scalars(select(User).where(User.username == GUEST)).first()
+        user = s.scalars(select(User).where(User.username == name)).first()
         if user is None:
             group = s.scalars(select(Group).where(Group.name == settings.default_group)).first()
-            user = User(provider="local", username=GUEST, enabled=True, is_admin=False, group_id=group.id if group else None)
+            user = User(provider="local", username=name, enabled=True, is_admin=False, group_id=group.id if group else None)
             s.add(user)
             s.commit()
+        elif user.provider != "local" or user.password_hash or user.is_admin:
+            taken = {"provider": user.provider, "admin": bool(user.is_admin), "has_password": bool(user.password_hash)}
+            s.rollback()
+            notices.report(sm, "escl_guest_name_taken", name, taken)
+            return None
         s.expunge(user)
-        return user
+    notices.resolve(sm, "escl_guest_name_taken", name)   # the problem is gone (another name, or the account was removed)
+    return user
 
 
 def _jobs(request: Request) -> dict:
@@ -317,16 +338,29 @@ async def escl_named(sid: str, path: str, request: Request) -> Response:
     return await _escl(request, path, sid)
 
 
-async def _escl(request: Request, path: str, sid: str | None) -> Response:
-    scan: httpx.AsyncClient | None = getattr(request.app.state, "scan", None)
-    parts = path.split("/")
-    ok_shape = (
+@dataclass
+class _Who:
+    """Who a scan request is: the account, and how it was recognised."""
+
+    user: User | None
+    peer: str
+    window_used: bool = False   # recognised by the scan window of their address
+    is_guest: bool = False      # the shared guest identity
+
+
+def _shape_ok(request: Request, path: str, parts: list[str]) -> bool:
+    return (
         (request.method == "GET" and path in OPEN_PATHS) or
         (request.method == "POST" and path == "ScanJobs") or
         (len(parts) == 3 and parts[0] == "ScanJobs" and request.method == "GET" and parts[2] in ("NextDocument", "ScanImageInfo")) or
         (len(parts) == 2 and parts[0] == "ScanJobs" and request.method == "DELETE")
-    ) and (len(parts) < 2 or ID_RE.match(parts[1]))
-    if scan is None or not ok_shape:
+    ) and (len(parts) < 2 or bool(ID_RE.match(parts[1])))
+
+
+async def _escl(request: Request, path: str, sid: str | None) -> Response:
+    scan: httpx.AsyncClient | None = getattr(request.app.state, "scan", None)
+    parts = path.split("/")
+    if scan is None or not _shape_ok(request, path, parts):
         return Response("not found", status_code=404, media_type="text/plain")
     if request.url.scheme != "https" and not settings.allow_insecure_auth:
         return Response("TLS required", status_code=403, media_type="text/plain")
@@ -336,11 +370,30 @@ async def _escl(request: Request, path: str, sid: str | None) -> Response:
     if scanner is None and (path in OPEN_PATHS or path == "ScanJobs"):
         return Response("not found", status_code=404, media_type="text/plain")  # nothing answers there (any more)
 
+    who = await _who_is_asking(request, path, parts, root)
+    if isinstance(who, Response):
+        return who
+    sm = request.app.state.sessionmaker
+    try:
+        if request.method == "GET" and path in OPEN_PATHS:
+            r = await scan.get(scanner.base + "/eSCL/" + path)
+            return Response(r.content, status_code=r.status_code, media_type=r.headers.get("content-type", "text/xml"))
+        if request.method == "POST":  # new scan job
+            return await _new_scan_job(request, scan, scanner, root, sm, who)
+        return await _scan_job_request(request, scan, parts, root, sm, who.user)
+    except httpx.HTTPError as exc:
+        log.error("scanner unreachable: %s", exc)
+        return Response("scanner unreachable", status_code=502, media_type="text/plain")
+
+
+async def _who_is_asking(request: Request, path: str, parts: list[str], root: str) -> _Who | Response:
+    """The account behind a scan request: the scan window, the guest identity, or a login. A Response = refused.
+    (The open discovery paths need nobody: then `user` is None.)"""
     user = None
     creds = _parse_basic(request.headers.get("authorization"))
     sm = request.app.state.sessionmaker
-    peer = normalize_ip(request.client.host if request.client else None) or (request.client.host if request.client else "?")
-    window_used = False
+    peer = normalize_ip(request.client.host if request.client else None) or client_ip(request)
+    window_used = is_guest = False
     if creds is None:
         user, window_used = await _without_credentials(request, parts, root, peer)
     if user is not None:
@@ -348,6 +401,9 @@ async def _escl(request: Request, path: str, sid: str | None) -> Response:
     elif creds is None and settings.escl_anonymous and path not in OPEN_PATHS:
         # many scan apps (NAPS2, ...) cannot send credentials: opt-in guest identity, audited with the client IP
         user = await run_in_threadpool(_guest, sm)
+        if user is None:
+            return _unauthorized()
+        is_guest = True
     elif not (path in OPEN_PATHS and settings.anonymous_discovery):
         if creds is None:
             if path not in OPEN_PATHS and not settings.escl_anonymous:  # an app that sends no credentials: tell the administrators once in a while
@@ -355,83 +411,90 @@ async def _escl(request: Request, path: str, sid: str | None) -> Response:
             if settings.escl_window:  # somebody is waiting for a scan from another address: tell them what went wrong
                 await run_in_threadpool(_report_mismatch, request.app, peer)
             return _unauthorized()
-        throttle, ip = request.app.state.throttle, peer
-        ukey, ikey = f"u:{creds[0].strip().lower()}|{ip}", f"ip:{ip}"
-        if throttle.blocked(ukey, USER_FAILS) or throttle.blocked(ikey, IP_FAILS):
-            return Response("too many failed attempts", status_code=429, headers={"Retry-After": "60"})
-        user = await service.print_login(request.app, creds[0], creds[1], ip)
-        if user is None:
-            register_failure(throttle, ukey, ikey, creds[1])
-            log.warning("scan auth failed user=%r ip=%s", creds[0], ip)
-            return _unauthorized("invalid credentials")
-        throttle.clear(ukey)
+        user = await _login(request, creds, peer)
+        if isinstance(user, Response):
+            return user
+    return _Who(user, peer, window_used, is_guest)
 
-    try:
-        if request.method == "GET" and path in OPEN_PATHS:
-            r = await scan.get(scanner.base + "/eSCL/" + path)
-            return Response(r.content, status_code=r.status_code, media_type=r.headers.get("content-type", "text/xml"))
 
-        if request.method == "POST":  # new scan job
-            body = await request.body()
-            if len(body) > MAX_SETTINGS:
-                return Response("too large", status_code=413, media_type="text/plain")
-            via = {"via": "escl"}
-            if window_used:
-                via.update(window_ip=peer, window_host=await _hostname(peer))
-            elif user.username == GUEST:
-                via.update(guest_ip=peer, guest_host=await _hostname(peer))
-            if b"Feeder" in body:  # the client asked for the document feeder (ADF)
-                via["source"] = "adf"
-            decision, log_id = await run_in_threadpool(_start, sm, user, "scan", via, scanner)
-            if not decision.allowed:
-                log.info("scan denied user=%s reason=%s", user.username, decision.reason)
-                return Response(decision.reason, status_code=503, media_type="text/plain")
-            r = await scan.post(scanner.base + "/eSCL/ScanJobs", content=body, headers={"Content-Type": request.headers.get("content-type", "text/xml")})
-            loc = r.headers.get("location", "")
-            job = loc.rstrip("/").rsplit("/", 1)[-1]
-            if r.status_code != 201 or not ID_RE.match(job):
-                await run_in_threadpool(_mark, sm, log_id, JobState.failed, None, f"scanner status {r.status_code}")
-                return Response(r.content, status_code=r.status_code if r.status_code != 201 else 502,
-                                media_type=r.headers.get("content-type", "text/plain"))
-            jobs = _jobs(request)
-            while len(jobs) >= 256:
-                jobs.pop(next(iter(jobs)))  # forgotten jobs never pile up
-            jobs[f"{root}/{job}"] = (log_id, user.id, scanner.base, peer if window_used else None, time.monotonic())  # a window scan: that address may finish it on its own
-            log.info("scan job %s on %s user=%s", job, scanner.name, user.username)
-            return Response(status_code=201, headers={"Location": f"{_public(request)}/{root}/ScanJobs/{job}"})
+async def _login(request: Request, creds: tuple[str, str], ip: str) -> User | Response:
+    """Basic credentials of a scan request: throttle, password or print key."""
+    throttle = request.app.state.throttle
+    ukey, ikey = f"u:{creds[0].strip().lower()}|{ip}", f"ip:{ip}"
+    if throttle.blocked(ukey, USER_FAILS) or throttle.blocked(ikey, IP_FAILS):
+        return Response("too many failed attempts", status_code=429, headers={"Retry-After": "60"})
+    user = await service.print_login(request.app, creds[0], creds[1], ip)
+    if user is None:
+        register_failure(throttle, ukey, ikey, creds[1])
+        log.warning("scan auth failed user=%r ip=%s", creds[0], ip)
+        return _unauthorized("invalid credentials")
+    throttle.clear(ukey)
+    return user
 
-        job = parts[1]
-        owner = _jobs(request).get(f"{root}/{job}")
-        if owner is None or (owner[1] != user.id and not user.is_admin):
-            return Response("not found", status_code=404, media_type="text/plain")
-        log_id, base = owner[0], owner[2]  # the scanner that took the job, even if it left the list meanwhile
 
-        if request.method == "DELETE":
-            r = await scan.delete(f"{base}/eSCL/ScanJobs/{job}")
-            await run_in_threadpool(_mark, sm, log_id, JobState.canceled, None, "canceled by the client")
-            _jobs(request).pop(f"{root}/{job}", None)
-            return Response(status_code=r.status_code)
+async def _new_scan_job(request: Request, scan: httpx.AsyncClient, scanner: Scanner, root: str, sm, who: _Who) -> Response:
+    """POST ScanJobs: reserve the scan in the audit, start it on the scanner, remember who owns it."""
+    user, peer = who.user, who.peer
+    body = await request.body()
+    if len(body) > MAX_SETTINGS:
+        return Response("too large", status_code=413, media_type="text/plain")
+    via = {"via": "escl"}
+    if who.window_used:
+        via.update(window_ip=peer, window_host=await _hostname(peer))
+    elif who.is_guest:
+        via.update(guest_ip=peer, guest_host=await _hostname(peer))
+    if b"Feeder" in body:  # the client asked for the document feeder (ADF)
+        via["source"] = "adf"
+    decision, log_id = await run_in_threadpool(_start, sm, user, "scan", via, scanner)
+    if not decision.allowed:
+        log.info("scan denied user=%s reason=%s", user.username, decision.reason)
+        return Response(decision.reason, status_code=503, media_type="text/plain")
+    r = await scan.post(scanner.base + "/eSCL/ScanJobs", content=body, headers={"Content-Type": request.headers.get("content-type", "text/xml")})
+    loc = r.headers.get("location", "")
+    job = loc.rstrip("/").rsplit("/", 1)[-1]
+    if r.status_code != 201 or not ID_RE.match(job):
+        await run_in_threadpool(_mark, sm, log_id, JobState.failed, None, f"scanner status {r.status_code}")
+        return Response(r.content, status_code=r.status_code if r.status_code != 201 else 502,
+                        media_type=r.headers.get("content-type", "text/plain"))
+    jobs = _jobs(request)
+    while len(jobs) >= 256:
+        jobs.pop(next(iter(jobs)))  # forgotten jobs never pile up
+    jobs[f"{root}/{job}"] = (log_id, user.id, scanner.base, peer if who.window_used else None, time.monotonic())  # a window scan: that address may finish it on its own
+    log.info("scan job %s on %s user=%s", job, scanner.name, user.username)
+    return Response(status_code=201, headers={"Location": f"{_public(request)}/{root}/ScanJobs/{job}"})
 
-        # NextDocument / ScanImageInfo: stream the page back and count it
-        upstream_req = scan.build_request("GET", f"{base}/eSCL/ScanJobs/{job}/{parts[2]}")
-        r = await scan.send(upstream_req, stream=True)
-        headers = {k: v for k, v in r.headers.items() if k.lower() in ("content-type", "content-length")}
-        if r.status_code == 200 and parts[2] == "NextDocument":
-            await run_in_threadpool(_mark, sm, log_id, JobState.completed, 1)
 
-        async def body_iter() -> AsyncIterator[bytes]:
-            try:
-                if r.is_stream_consumed:  # already read (small answers, test transports)
-                    yield r.content
-                else:
-                    async for chunk in r.aiter_raw():
-                        yield chunk
-            finally:
-                await r.aclose()
-        return StreamingResponse(body_iter(), status_code=r.status_code, headers=headers)
-    except httpx.HTTPError as exc:
-        log.error("scanner unreachable: %s", exc)
-        return Response("scanner unreachable", status_code=502, media_type="text/plain")
+async def _scan_job_request(request: Request, scan: httpx.AsyncClient, parts: list[str], root: str, sm, user: User) -> Response:
+    """DELETE of a scan job, or its NextDocument / ScanImageInfo: only the owner (or an administrator) may."""
+    job = parts[1]
+    owner = _jobs(request).get(f"{root}/{job}")
+    if owner is None or (owner[1] != user.id and not user.is_admin):
+        return Response("not found", status_code=404, media_type="text/plain")
+    log_id, base = owner[0], owner[2]  # the scanner that took the job, even if it left the list meanwhile
+
+    if request.method == "DELETE":
+        r = await scan.delete(f"{base}/eSCL/ScanJobs/{job}")
+        await run_in_threadpool(_mark, sm, log_id, JobState.canceled, None, "canceled by the client")
+        _jobs(request).pop(f"{root}/{job}", None)
+        return Response(status_code=r.status_code)
+
+    # NextDocument / ScanImageInfo: stream the page back and count it
+    upstream_req = scan.build_request("GET", f"{base}/eSCL/ScanJobs/{job}/{parts[2]}")
+    r = await scan.send(upstream_req, stream=True)
+    headers = {k: v for k, v in r.headers.items() if k.lower() in ("content-type", "content-length")}
+    if r.status_code == 200 and parts[2] == "NextDocument":
+        await run_in_threadpool(_mark, sm, log_id, JobState.completed, 1)
+
+    async def body_iter() -> AsyncIterator[bytes]:
+        try:
+            if r.is_stream_consumed:  # already read (small answers, test transports)
+                yield r.content
+            else:
+                async for chunk in r.aiter_raw():
+                    yield chunk
+        finally:
+            await r.aclose()
+    return StreamingResponse(body_iter(), status_code=r.status_code, headers=headers)
 
 
 # ---- portal: scan from the browser
@@ -511,14 +574,7 @@ async def scan_once(app, user: User, scanner: Scanner, source: str, color: str, 
     scan: httpx.AsyncClient | None = getattr(app.state, "scan", None)
     if scan is None:
         raise RuntimeError(_("Scanning is not enabled on this server"))
-    caps = await scanner_caps(app, scanner)
-    if source == "auto":
-        source = "adf" if "adf" in caps and await _adf_loaded(scan, scanner.base) else "platen"
-    if source not in caps:
-        raise RuntimeError(_("This scanner has no automatic feeder") if source == "adf" else _("Source not available"))
-    if dpi not in caps[source]["dpi"]:
-        raise RuntimeError(_("With the feeder the maximum quality is %(n)s dpi", n=max(caps[source]["dpi"])) if source == "adf"
-                           else _("With the glass the maximum quality is %(n)s dpi", n=max(caps[source]["dpi"])))
+    caps, source = await _check_scan_choice(app, scan, scanner, source, dpi)
     sm = app.state.sessionmaker
     decision, log_id = await run_in_threadpool(_start, sm, user, "scan", {"via": "web", "format": fmt, "dpi": dpi, "source": source}, scanner)
     if not decision.allowed:
@@ -527,6 +583,25 @@ async def scan_once(app, user: User, scanner: Scanner, source: str, color: str, 
         raise RuntimeError(_("%(reason)s. You can ask for more quota from your profile.", reason=decision.text()))
     area = (caps[source].get("w", A4[0]), caps[source].get("h", A4[1]))  # the whole sheet the scanner can read
     xml = SETTINGS_XML.format(source=SOURCES[source], color=COLORS[color], dpi=dpi, fmt=FORMATS[fmt], w=area[0], h=area[1])
+    pages = await _run_scan_job(scan, scanner, source, xml, sm, log_id)
+    return await _pack_pages(pages, fmt)
+
+
+async def _check_scan_choice(app, scan: httpx.AsyncClient, scanner: Scanner, source: str, dpi: int) -> tuple[dict, str]:
+    """What the scanner offers, and the source to use ("auto" = the feeder when it holds paper). RuntimeError if not possible."""
+    caps = await scanner_caps(app, scanner)
+    if source == "auto":
+        source = "adf" if "adf" in caps and await _adf_loaded(scan, scanner.base) else "platen"
+    if source not in caps:
+        raise RuntimeError(_("This scanner has no automatic feeder") if source == "adf" else _("Source not available"))
+    if dpi not in caps[source]["dpi"]:
+        raise RuntimeError(_("With the feeder the maximum quality is %(n)s dpi", n=max(caps[source]["dpi"])) if source == "adf"
+                           else _("With the glass the maximum quality is %(n)s dpi", n=max(caps[source]["dpi"])))
+    return caps, source
+
+
+async def _run_scan_job(scan: httpx.AsyncClient, scanner: Scanner, source: str, xml: str, sm, log_id: int) -> list[bytes]:
+    """Start the job, read the pages, close the audit row (completed or failed) and always delete the job on the scanner."""
     job, pages = None, []
     try:
         for attempt in range(3):  # a sleeping scanner answers "busy" once while it wakes up
@@ -561,6 +636,11 @@ async def scan_once(app, user: User, scanner: Scanner, source: str, color: str, 
                 await scan.delete(f"{scanner.base}/eSCL/ScanJobs/{job}")
             except httpx.HTTPError:
                 pass
+    return pages
+
+
+async def _pack_pages(pages: list[bytes], fmt: str) -> tuple[bytes, str, int, str]:
+    """The scanned pages as one file: (file, content-type, pages, extension)."""
     if fmt == "pdf":
         data = pages[0] if len(pages) == 1 else await run_in_threadpool(_merge_pdf, pages)
         return data, "application/pdf", len(pages), "pdf"
@@ -586,7 +666,7 @@ _SCAN_LABELS = {"running": N_("in progress"), "done": N_("ready"), "error": N_("
 
 
 def _default_scan_name() -> str:
-    return _("scan-%(stamp)s", stamp=datetime.now(_tz()).strftime("%Y%m%d-%H%M"))
+    return _("scan-%(stamp)s", stamp=datetime.now(local_tz()).strftime("%Y%m%d-%H%M"))
 
 
 def _scans(app) -> dict:

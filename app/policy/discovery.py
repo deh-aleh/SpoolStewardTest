@@ -8,8 +8,8 @@ USB printers reach CUPS in one of two ways, tried in this order:
      `usb://Maker/Model?serial=...` and needs a driver (PPD) that CUPS has. A device that ipp-usb serves is never
      taken this way.
 
-Every pass (a few seconds' work every `CUPSPL_DISCOVERY_INTERVAL`) creates the queue of each new device, notes which USB
-queues do not answer, and removes the queue of a USB device that stayed unreachable for `CUPSPL_OFFLINE_REMOVE_HOURS`.
+Every pass (a few seconds' work every `SPOOLSTEWARD_DISCOVERY_INTERVAL`) creates the queue of each new device, notes which USB
+queues do not answer, and removes the queue of a USB device that stayed unreachable for `SPOOLSTEWARD_OFFLINE_REMOVE_HOURS`.
 Queues of network printers are never removed by themselves: a printer switched off for the weekend must come back as it was
 (blocks, maintenance print). An administrator can still delete an unreachable queue by hand from the Printers page.
 """
@@ -17,12 +17,14 @@ Queues of network printers are never removed by themselves: a printer switched o
 import asyncio
 import logging
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlsplit
 
 import httpx
+from sqlalchemy import select
 from starlette.concurrency import run_in_threadpool
 
+from app.timeutil import aware
 from app.audit.adminlog import record
 from app.config import settings
 from app.cups_client import list_queues
@@ -51,10 +53,6 @@ def bridge_ports() -> list[int]:
 
 def remove_after() -> timedelta | None:
     return timedelta(hours=settings.offline_remove_hours) if settings.offline_remove_hours > 0 else None
-
-
-def _aware(dt: datetime) -> datetime:
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
 def parse_device_id(text: str) -> dict[str, str]:
@@ -261,13 +259,13 @@ def note_former(db, name: str, reason: str) -> None:
         raise ValueError(reason)
     key = ordering.key(name)
     row = db.get(PrinterFormer, key)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if row is None:
         db.add(PrinterFormer(name=key, display=name.strip()[:128], removed_at=now, reason=reason))
     else:
         row.display, row.removed_at, row.reason = name.strip()[:128], now, reason
     db.flush()
-    extra = db.query(PrinterFormer).order_by(PrinterFormer.removed_at.desc()).offset(FORMER_KEEP).all()
+    extra = db.scalars(select(PrinterFormer).order_by(PrinterFormer.removed_at.desc()).offset(FORMER_KEEP)).all()
     for old in extra:
         db.delete(old)
 
@@ -291,7 +289,7 @@ def forget_former(db, name: str) -> bool:
 def former_names(db, current: list[str]) -> list[PrinterFormer]:
     """The names of the past that no queue has now, most recent first (at most 20), for the rename dialog."""
     taken = {ordering.key(n) for n in current}
-    rows = db.query(PrinterFormer).order_by(PrinterFormer.removed_at.desc()).all()
+    rows = db.scalars(select(PrinterFormer).order_by(PrinterFormer.removed_at.desc())).all()
     return [r for r in rows if r.name not in taken][:20]
 
 
@@ -336,7 +334,7 @@ RETRY_REFUSED = timedelta(minutes=5)
 def _cooling(app, uri: str) -> bool:
     """A device CUPS refused a moment ago is not asked again at once (every pass would fill CUPS' log with the same error)."""
     t = getattr(app.state, "discovery_refused", {}).get(_norm_uri(uri))
-    return t is not None and datetime.now(timezone.utc) - t < RETRY_REFUSED
+    return t is not None and datetime.now(UTC) - t < RETRY_REFUSED
 
 
 def _refused(app, uri: str, ok: bool) -> None:
@@ -346,20 +344,13 @@ def _refused(app, uri: str, ok: bool) -> None:
     if ok:
         d.pop(_norm_uri(uri), None)
     else:
-        d[_norm_uri(uri)] = datetime.now(timezone.utc)
+        d[_norm_uri(uri)] = datetime.now(UTC)
 
 
-async def _create_new(app, notes: list[dict]) -> int:
-    upstream = app.state.upstream
-    queues = await all_queues(upstream)
-    if queues is None:  # CUPS did not say what exists: creating anything now could duplicate a queue
-        return 0
-    have = {_norm_uri(q["device_uri"]) for q in queues}
-    taken = {ordering.key(q["name"]) for q in queues}
+async def _create_from_bridge(app, bridge: list[dict], have: set, taken: set, notes: list[dict]) -> int:
+    """1. ipp-usb: driverless, preferred. Returns how many queues were made."""
     created = 0
-    bridge = await bridge_printers()
-    served = {(p["id"].get("mfg", "").lower(), p["id"].get("mdl", "").lower()) for p in bridge if p["id"].get("mdl")}
-    for p in bridge:  # 1. ipp-usb: driverless, preferred
+    for p in bridge:
         if _norm_uri(p["uri"]) in have:
             continue
         if _cooling(app, p["uri"]):
@@ -375,16 +366,15 @@ async def _create_new(app, notes: list[dict]) -> int:
             await run_in_threadpool(_created, app.state.sessionmaker, name, model=p["model"], via="ipp-usb")
         else:
             notes.append({"kind": "refused", "model": p["model"] or p["uri"]})
-    if not settings.usb_direct:
-        return created
-    devices = await usb_devices(upstream)
-    app.state.usb_present = {d["uri"] for d in devices} if devices is not None else None
-    # CUPS' usb backend also lists printers that ipp-usb serves. While ipp-usb restarts (it does, each time a USB device
-    # is plugged or unplugged) such a printer is briefly not on the bridge: a device is taken directly only when it has
-    # stayed unserved for two passes in a row, which is longer than the restart.
-    streak = {u: n for u, n in getattr(app.state, "usb_unserved", {}).items()}
-    app.state.usb_unserved = {}
-    for d in devices or []:  # 2. CUPS' own usb backend, only for what ipp-usb does not serve
+    return created
+
+
+async def _create_from_usb(app, devices: list[dict] | None, bridge: list[dict], have: set, served: set, taken: set,
+                           notes: list[dict], streak: dict) -> int:
+    """2. CUPS' own usb backend, only for what ipp-usb does not serve. Returns how many queues were made."""
+    upstream = app.state.upstream
+    created = 0
+    for d in devices or []:
         mdl = d["id"].get("mdl", "").lower()
         if _norm_uri(d["uri"]) in have or (d["id"].get("mfg", "").lower(), mdl) in served:
             continue
@@ -414,11 +404,33 @@ async def _create_new(app, notes: list[dict]) -> int:
     return created
 
 
+async def _create_new(app, notes: list[dict]) -> int:
+    upstream = app.state.upstream
+    queues = await all_queues(upstream)
+    if queues is None:  # CUPS did not say what exists: creating anything now could duplicate a queue
+        return 0
+    have = {_norm_uri(q["device_uri"]) for q in queues}
+    taken = {ordering.key(q["name"]) for q in queues}
+    bridge = await bridge_printers()
+    served = {(p["id"].get("mfg", "").lower(), p["id"].get("mdl", "").lower()) for p in bridge if p["id"].get("mdl")}
+    created = await _create_from_bridge(app, bridge, have, taken, notes)
+    if not settings.usb_direct:
+        return created
+    devices = await usb_devices(upstream)
+    app.state.usb_present = {d["uri"] for d in devices} if devices is not None else None
+    # CUPS' usb backend also lists printers that ipp-usb serves. While ipp-usb restarts (it does, each time a USB device
+    # is plugged or unplugged) such a printer is briefly not on the bridge: a device is taken directly only when it has
+    # stayed unserved for two passes in a row, which is longer than the restart.
+    streak = {u: n for u, n in getattr(app.state, "usb_unserved", {}).items()}
+    app.state.usb_unserved = {}
+    return created + await _create_from_usb(app, devices, bridge, have, served, taken, notes, streak)
+
+
 def _track(sm, offline: set[str], hours_td: timedelta | None) -> list[str]:
     """Note since when each USB queue does not answer; return the ones that have been gone long enough to be removed."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     with sm() as db:
-        rows = {r.printer: r for r in db.query(PrinterOffline)}
+        rows = {r.printer: r for r in db.scalars(select(PrinterOffline))}
         for name, row in rows.items():
             if name not in offline:  # back, or the queue is gone
                 db.delete(row)
@@ -427,12 +439,12 @@ def _track(sm, offline: set[str], hours_td: timedelta | None) -> list[str]:
         db.commit()
         if hours_td is None:
             return []
-        return sorted(n for n in offline if n in rows and _aware(rows[n].since) + hours_td <= now)
+        return sorted(n for n in offline if n in rows and aware(rows[n].since) + hours_td <= now)
 
 
 def offline_since(sm) -> dict[str, datetime]:
     with sm() as db:
-        return {r.printer: _aware(r.since) for r in db.query(PrinterOffline)}
+        return {r.printer: aware(r.since) for r in db.scalars(select(PrinterOffline))}
 
 
 async def run_once(app) -> dict:
@@ -467,7 +479,7 @@ async def run_once(app) -> dict:
         if out["removed"]:
             app.state.queues_cache = None
     notes[:] = [n for i, n in enumerate(notes) if n not in notes[:i]]
-    app.state.discovery = {"at": datetime.now(timezone.utc), "notes": notes, **{k: out[k] for k in ("created", "removed")}}
+    app.state.discovery = {"at": datetime.now(UTC), "notes": notes, **{k: out[k] for k in ("created", "removed")}}
     return out
 
 

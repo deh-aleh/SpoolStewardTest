@@ -1,5 +1,4 @@
 import time
-import pytest
 
 from app.auth.cache import CachedAuth
 from app.auth.radius import RadiusProvider

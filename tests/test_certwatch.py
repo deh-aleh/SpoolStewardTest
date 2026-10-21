@@ -2,7 +2,7 @@
 
 import ipaddress
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from cryptography import x509
@@ -13,10 +13,10 @@ from cryptography.x509.oid import NameOID
 from app import certwatch
 from app.config import settings
 from app.db.models import Notice
-from tests.conftest import csrf_of_page, make_user, portal_login
+from tests.conftest import make_user, portal_login
 
 GOOD = "correct horse battery"
-NOW = datetime(2026, 10, 14, 12, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 14, 12, 0, tzinfo=UTC)
 
 
 def make_cert(path, *, days_left=60, dns=("print.example.com",), ips=("192.168.1.50",)):

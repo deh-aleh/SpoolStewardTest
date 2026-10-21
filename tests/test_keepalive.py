@@ -3,7 +3,7 @@ printers are listed in (physical first, oldest connection first). A fake CUPS an
 
 import io
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pypdf
@@ -101,7 +101,7 @@ def test_interval_is_validated():
 
 
 def test_next_due_counts_from_the_last_success_not_from_attempts():
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     r = PrinterKeepalive(printer="p", enabled=True, interval_hours=24, enabled_at=now - timedelta(hours=30))
     assert keepalive.next_due(r) == now - timedelta(hours=6)
     r.last_ok_at, r.last_attempt_at, r.last_status = now - timedelta(hours=2), now - timedelta(minutes=10), "error"
@@ -217,7 +217,7 @@ async def test_test_print_sends_the_statistics_in_the_chosen_mode(cups):
 # ---------------------------------------------------------------- scheduler
 
 async def test_scheduler_prints_only_due_enabled_reachable_physical_queues(cups, monkeypatch):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     with cups.sm() as s:
         s.add_all([
             PrinterKeepalive(printer="col1", enabled=True, interval_hours=24, color=True, enabled_at=now - timedelta(hours=25)),     # due
@@ -239,7 +239,7 @@ async def test_scheduler_prints_only_due_enabled_reachable_physical_queues(cups,
 
 async def test_offline_printer_is_skipped_and_retried_when_back(cups, monkeypatch):
     import app.cups_client as cc
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     with cups.sm() as s:
         s.add(PrinterKeepalive(printer="col1", enabled=True, interval_hours=24, enabled_at=now - timedelta(days=2)))
         s.commit()
@@ -259,7 +259,7 @@ async def test_offline_printer_is_skipped_and_retried_when_back(cups, monkeypatc
 
 
 async def test_failed_print_is_recorded_and_retried_later(cups):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     with cups.sm() as s:
         s.add(PrinterKeepalive(printer="col1", enabled=True, interval_hours=24, enabled_at=now - timedelta(days=2)))
         s.commit()
@@ -290,7 +290,7 @@ async def test_printers_page_and_pages_it_prints_work_in_every_language(cups, co
 
 async def test_counter_labels_and_test_printer_names_follow_the_language(cups, monkeypatch):
     import app.admin.printers as printers_mod
-    from app.i18n import LOCALES, _catalog
+    from app.i18n import _catalog
 
     async def device(base):
         return {"ipp": {}, "usage": [(label, 1) for label in printers_mod.LEDM_USAGE.values()], "config": {}, "scanner": None}
@@ -307,26 +307,31 @@ async def test_counter_labels_and_test_printer_names_follow_the_language(cups, m
 
 # ---------------------------------------------------------------- automatic refresh switch
 
-def test_the_printers_refresh_interval_is_configurable_and_zero_means_the_default(monkeypatch):
+def test_the_printers_refresh_interval_is_configurable_and_out_of_range_is_an_error(monkeypatch):
+    from pydantic import ValidationError
+
     from app.config import Settings
-    for raw, want in (("0", 15), ("-3", 15), ("1", 5), ("30", 30), ("99999", 3600), ("15", 15)):
-        monkeypatch.setenv("CUPSPL_PRINTERS_REFRESH_SECONDS", raw)
+    for raw, want in (("5", 5), ("30", 30), ("3600", 3600), ("15", 15)):
+        monkeypatch.setenv("SPOOLSTEWARD_PRINTERS_REFRESH_SECONDS", raw)
         assert Settings().printers_refresh_seconds == want, raw
-    monkeypatch.delenv("CUPSPL_PRINTERS_REFRESH_SECONDS")
+    for raw in ("0", "-3", "1", "4", "3601", "99999", "", "soon"):      # no silent clamping any more
+        monkeypatch.setenv("SPOOLSTEWARD_PRINTERS_REFRESH_SECONDS", raw)
+        with pytest.raises(ValidationError):
+            Settings()
+    monkeypatch.delenv("SPOOLSTEWARD_PRINTERS_REFRESH_SECONDS")
     assert Settings().printers_refresh_seconds == 15
 
 
 async def test_printers_page_has_the_refresh_switch_and_uses_the_configured_interval(cups, monkeypatch):
     from app.config import settings
     page = (await cups.get("/admin/printers")).text
-    assert 'id="ar-printers"' in page and "secs = 15," in page and "def = false" in page      # off at first, 15 s by default
+    assert 'id="ar-printers"' in page and 'data-ar-secs="15"' in page and 'data-ar-on="0"' in page      # off at first, 15 s by default
     monkeypatch.setattr(settings, "printers_refresh_seconds", 40)
     page = (await cups.get("/admin/printers")).text
-    assert "secs = 40," in page
+    assert 'data-ar-secs="40"' in page
 
 
 async def test_the_cache_follows_the_configured_interval(cups, monkeypatch):
-    import app.admin.printers as printers_mod
     from app.config import settings
     monkeypatch.setattr(settings, "printers_refresh_seconds", 5)
     await cups.get("/admin/printers")
@@ -340,7 +345,7 @@ async def test_the_cache_follows_the_configured_interval(cups, monkeypatch):
 
 async def test_audit_page_has_the_switch_too(cups):
     page = (await cups.get("/admin/jobs")).text
-    assert 'id="ar-audit"' in page and "def = true" in page and "secs = 30," in page           # the user's setting (30 s) starts it on
+    assert 'id="ar-audit"' in page and 'data-ar-on="1"' in page and 'data-ar-secs="30"' in page           # the user's setting (30 s) starts it on
     assert (await cups.post("/me/settings/refresh", data={"csrf_token": await csrf_of_page(cups, "/me/settings"), "seconds": "0"})).status_code == 303
     page = (await cups.get("/admin/jobs")).text
-    assert "def = false" in page and "secs = 30," in page                                       # 0 = off at first, 30 s when switched on
+    assert 'data-ar-on="0"' in page and 'data-ar-secs="30"' in page                                       # 0 = off at first, 30 s when switched on

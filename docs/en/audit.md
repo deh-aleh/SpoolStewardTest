@@ -2,7 +2,7 @@
 
 [Documentation index](../README.md) · English · [Italiano](../it/audit.md)
 
-PrintMinder keeps **two append-only logs**:
+SpoolSteward keeps **two append-only logs**:
 
 | Log | Table | Content | Page |
 |---|---|---|---|
@@ -28,10 +28,7 @@ after a number of days you choose. The row always stays, with everything else. D
 | `failed` | Accepted but the printer or scanner could not carry it out. Does not count |
 | `canceled` | Stopped before printing, by the user, an administrator or the scanning program. Quota is freed |
 
-The page is readable on a phone: 30 actions per page, an **Automatic refresh** switch on the page itself (the interval is set in *Settings*, default 30 s; with 0 the switch starts off and uses 30 s when turned on; the choice is remembered by the browser), alternating
-rows, long texts shortened with «…» and a popup for the full text, columns *Device* / *Action* (feeder, colour, duplex), an
-adaptive layout and a menu that is always visible. Filters and **CSV export** are available (formula injection is neutralised).
-The *Cancel* button stops a queued job (the owner's identity is used).
+The page shows 30 rows at a time and is readable on a phone. It has an **Automatic refresh** switch (the interval is set in *Settings*, default 30 s; with 0 the switch starts off and uses 30 s when turned on; the browser remembers the choice). Long texts are shortened with «…» and open in full in a popup. Filters and **CSV export** are available (formula injection is neutralised). The *Cancel* button stops a queued job (the owner's identity is used).
 
 Scans without credentials (anonymous eSCL) show the caller's IP and host name in the information column. A scan made through a scan window shows the same icon with the address it came from. A request refused because it came from another address than the one the window was opened for is a *denied* row under the window's owner; the icon shows the two addresses.
 
@@ -62,7 +59,7 @@ the target and details. The page has filters with suggestions.
 
 ## 4. Archive
 
-When the active tables exceed `CUPSPL_AUDIT_MAX_MB` (default 50), the archiver (checks every `CUPSPL_AUDIT_CHECK_INTERVAL`,
+When the active tables exceed `SPOOLSTEWARD_AUDIT_MAX_MB` (default 50), the archiver (checks every `SPOOLSTEWARD_AUDIT_CHECK_INTERVAL`,
 default 1 h) moves the **oldest rows** to `data/audit-archive/audit-<table>-<from>-<to>.jsonl.gz`. Guarantees:
 
 1. Rows of the quota windows still in play (previous and current month, plus margin) are **never** archived, so limits do not change.
@@ -75,7 +72,7 @@ default 1 h) moves the **oldest rows** to `data/audit-archive/audit-<table>-<fro
 The **Audit archive** page (`/admin/archive`) lists archives with the path inside the container and on the host
 (`AUDIT_ARCHIVE_HOST_PATH`, informational), size and sha256; opens them with search and pagination (streaming), **downloads**
 them and **verifies integrity**. It can not delete them. The Audit page shows a banner when archives exist.
-`cups-policy-admin audit-archive [--force]` runs the archiver by hand; `cups-policy-admin jobs` shows the latest rows.
+`spoolsteward-admin audit-archive [--force]` runs the archiver by hand; `spoolsteward-admin jobs` shows the latest rows.
 
 File names in the archive stay **encrypted** (the portal decrypts them when it shows them and when you search); with retention on, rows past the limit are written without the name. Files already written are never modified.
 

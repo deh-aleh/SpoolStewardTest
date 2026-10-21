@@ -15,7 +15,7 @@ one-sided (instead of being made double-sided), to use some printers only, and t
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
@@ -154,7 +154,7 @@ def set_rule(session: Session, subject_type: SubjectType, subject_id: int, **fie
         session.add(row)
     for name, value in fields.items():
         setattr(row, name, value)
-    row.updated_at = datetime.now(timezone.utc)
+    row.updated_at = datetime.now(UTC)
     return row
 
 
@@ -198,7 +198,7 @@ def effective(session: Session, user: User, now: datetime | None = None) -> Perm
     if is_emergency(user):
         return Perms(exempt=True)
     perms = _layer(group_perms(session, user.group_id), get_rule(session, SubjectType.user, user.id))
-    return _with_grants(session, user, perms, now or datetime.now(timezone.utc))
+    return _with_grants(session, user, perms, now or datetime.now(UTC))
 
 
 def load(sm, user: User, now: datetime | None = None) -> Perms:
@@ -256,7 +256,7 @@ def notify_expired(sm, now: datetime | None = None) -> int:
     announced (they were told when it happened). Returns how many notices were sent."""
     from app import notices
 
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     sent = 0
     with sm() as db:
         for g in list(db.scalars(select(PermissionGrant).where(

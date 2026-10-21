@@ -42,6 +42,7 @@ from app.updates import run_checker as run_update_check
 from app.auth.throttle import Throttle
 from app.config import settings
 from app.i18n import LanguageMiddleware
+from app.secheaders import SecurityHeaders
 from app.db.session import SessionLocal, init_db
 from app.admin.printers import router as printers_router
 from app.policy import discovery
@@ -98,16 +99,17 @@ async def lifespan(app: FastAPI):
         await app.state.scan.aclose()
 
 
-app = FastAPI(title="CUPS policy gateway", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
+app = FastAPI(title="SpoolSteward", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
 
 _secret = settings.secret_key
 if not _secret:
     _secret = secrets.token_urlsafe(48)
-    logging.getLogger(__name__).warning("CUPSPL_SECRET_KEY not set: admin sessions reset on every restart")
-app.add_middleware(LanguageMiddleware)  # added first = inside the session middleware, which fills scope["session"]
+    logging.getLogger(__name__).warning("SPOOLSTEWARD_SECRET_KEY not set: admin sessions reset on every restart")
+app.add_middleware(SecurityHeaders)  # added first = innermost: the policy goes on the page the routes made
+app.add_middleware(LanguageMiddleware)  # inside the session middleware, which fills scope["session"]
 app.add_middleware(
     SessionMiddleware, secret_key=_secret, max_age=8 * 3600, same_site="strict",
-    https_only=not settings.allow_insecure_auth, session_cookie="cupspl_session",
+    https_only=not settings.allow_insecure_auth, session_cookie="spoolsteward_session",
 )
 
 @app.get("/", include_in_schema=False)
@@ -124,7 +126,7 @@ async def admin_no_slash():
 
 @app.get("/healthz", include_in_schema=False)
 async def healthz(request: Request):
-    """200 when the DB and CUPS answer. No error text. Version and printer counts only if CUPSPL_HEALTHZ_INFO lists them."""
+    """200 when the DB and CUPS answer. No error text. Version and printer counts only if SPOOLSTEWARD_HEALTHZ_INFO lists them."""
     def db_ok() -> bool:
         with request.app.state.sessionmaker() as s:
             return s.execute(text("select 1")).scalar() == 1

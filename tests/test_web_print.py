@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 from app.admin.printing import clean_filename, detect_type
 from app.config import settings
-from app.db.models import AdminAudit, JobLog, JobState, Metric, Period, SubjectType, User
+from app.db.models import JobLog, Metric, Period, SubjectType, User
 from app.policy.rules import set_limit
 from tests.conftest import CUPS_TEST_URL, csrf_of_page, make_user, portal_login, requires_cups
 
@@ -181,7 +181,7 @@ async def test_the_key_page_gives_a_ready_command_per_printer_and_never_logs_the
     web.app.state.queues_cache = (__import__("time").monotonic(), [{"name": "HP7305", "info": "", "model": ""}, {"name": "virtual", "info": "", "model": ""}])
     r = await web.post("/me/keys", data={"label": "pc", "csrf_token": web.token})
     key = re.search(r'class="secret">([^<]+)<', r.text).group(1)
-    cmds = re.findall(r'class="secret" style="font-size:13px[^>]*>([^<]+)<', r.text)
+    cmds = re.findall(r'class="secret ss-copy"[^>]*>([^<]+)<', r.text)
     cmds, urls = cmds[:2], cmds[2:]                                                  # terminal commands first (GNOME can not use the address), graphical addresses after
     assert "GNOME" in r.text and "add-printer-linux.sh" in r.text
     assert all(u.startswith("ipps://ann:") for u in urls) and urls[0] == f"ipps://ann:{key}@gw.test/printers/HP7305"

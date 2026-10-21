@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Backup") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/backups.css?v={{ app_version }}">{% endblock %}
+{% block scripts %}<script src="/admin/static/js/backups.js?v={{ app_version }}"></script>{% endblock %}
 {% block body %}
 {% set hl = {'ok': ('s-ok', _('succeeded')), 'stale': ('s-failed', _('too old')), 'error': ('s-failed', _('error')), 'never': ('s-pending', _('not run yet')), 'off': ('', _('suspended'))} %}
 <div class="card">
@@ -38,11 +40,11 @@
 
 {% for r in rows %}{% set t = r.t %}{% set h = hl[r.health] %}
 <div class="card">
-  <div class="row" style="justify-content:space-between;align-items:center">
-    <h2 style="margin:0">{{ t.name }}{% if t.is_global %} <span class="pill">.env</span>{% elif r.mine %} <span class="pill">{{ _("mine") }}</span>{% endif %}</h2>
+  <div class="row bk-head">
+    <h2 class="bk-h2">{{ t.name }}{% if t.is_global %} <span class="pill">.env</span>{% elif r.mine %} <span class="pill">{{ _("mine") }}</span>{% endif %}</h2>
     <span class="pill {{ h[0] }}">{{ h[1] }}</span>
   </div>
-  <dl class="kv" style="margin-top:8px">
+  <dl class="kv bk-kv">
     <dt>{{ _("Owner") }}</dt><dd>{{ t.owner_name or '—' }}</dd>
     <dt>{{ _("Folder") }}</dt><dd class="mono">{{ root }}/{{ t.folder }}{% if t.require_marker %} <span class="muted">({{ _("only written while mounted") }})</span>{% endif %}</dd>
     <dt>{{ _("When") }}</dt><dd>{{ _("every day at %(hour)s:00", hour='%02d' % t.hour) }}</dd>
@@ -56,10 +58,10 @@
     </dd>
   </dl>
   {% if r.files %}
-  <details style="margin-top:6px"><summary class="muted">{{ _("%(count)s copies in the folder (latest %(shown)s)", count=r.count, shown=r.files|length) }}</summary>
+  <details class="bk-det"><summary class="muted">{{ _("%(count)s copies in the folder (latest %(shown)s)", count=r.count, shown=r.files|length) }}</summary>
     <table>{% for f in r.files %}<tr><td class="mono">{{ f.name }}</td><td>{{ f.ts|localtime('%Y-%m-%d %H:%M') }}</td><td>{{ '%.1f'|format(f.size / 1048576) }} MB</td></tr>{% endfor %}</table>
   </details>{% endif %}
-  <div class="row" style="margin-top:10px">
+  <div class="row bk-actions">
     <form method="post" action="/admin/backups/{{ t.id }}/run"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button>{{ _("Run now") }}</button></form>
     {% if r.editable %}
     <a class="btn sec" href="/admin/backups/{{ t.id }}/edit">{{ _("Edit") }}</a>
@@ -73,43 +75,38 @@
 <div class="card"><p class="s-failed"><b>{{ _("No backup configured.") }}</b> {{ _("If the disk breaks, users, keys, quotas and audit are lost. Create one below.") }}</p></div>
 {% endfor %}
 
-<form class="card" method="post" action="/admin/backups" style="max-width:760px" data-keep>
+<form method="post" action="/admin/backups" class="card bk-new" data-keep>
   <h2>{{ _("New backup") }}</h2>
   <input type="hidden" name="csrf_token" value="{{ csrf }}">
-  <dl class="kv" style="align-items:center">
+  <dl class="kv bk-center">
     <dt>{{ _("Name") }}</dt><dd><input type="text" name="name" maxlength="80" required placeholder="{{ _('e.g. Office NAS') }}"></dd>
     <dt>{{ _("Folder") }}</dt><dd><input type="text" name="folder" maxlength="200" required list="folders" placeholder="{{ _('e.g. nas/%(user)s', user=me.username) }}">
       <datalist id="folders">{% for f in folders %}<option value="{{ f }}">{% endfor %}</datalist>
       <div class="muted">{{ _("inside %(root)s; the gateway creates it if missing", root=root) }}</div></dd>
     <dt>{{ _("Safety") }}</dt><dd><label><input type="checkbox" name="require_marker" value="1" checked> {{ _("The folder is a network disk or USB disk: write only if it is mounted") }}</label>
       <div class="muted">{{ _("Leave this ticked for a network disk or USB disk, and save while the disk is mounted now. The gateway puts a small marker file in the folder and refuses to back up when it is not there, so an unmounted disk never fills the server disk with copies.") }}</div></dd>
-    <dt>{{ _("Time") }}</dt><dd><input type="number" name="hour" min="0" max="23" value="{{ defaults.hour }}" style="width:5em"> :00</dd>
+    <dt>{{ _("Time") }}</dt><dd><input type="number" name="hour" min="0" max="23" value="{{ defaults.hour }}" class="bk-w5"> :00</dd>
     <dt>{{ _("Copies") }}</dt><dd>
-      <input type="number" name="keep_daily" min="1" value="{{ defaults.keep_daily }}" style="width:5em"> {{ _("daily") }}
-      <input type="number" name="keep_weekly" min="0" value="{{ defaults.keep_weekly }}" style="width:5em"> {{ _("weekly") }}
-      <input type="number" name="keep_monthly" min="0" value="{{ defaults.keep_monthly }}" style="width:5em"> {{ _("monthly") }}</dd>
+      <input type="number" name="keep_daily" min="1" value="{{ defaults.keep_daily }}" class="bk-w5"> {{ _("daily") }}
+      <input type="number" name="keep_weekly" min="0" value="{{ defaults.keep_weekly }}" class="bk-w5"> {{ _("weekly") }}
+      <input type="number" name="keep_monthly" min="0" value="{{ defaults.keep_monthly }}" class="bk-w5"> {{ _("monthly") }}</dd>
     <dt>{{ _("Encryption") }}</dt><dd>
-      <label><input type="radio" name="mode" value="passphrase" checked onchange="bk()"> {{ _("Passphrase") }} <span class="muted">({{ _("recommended") }})</span></label><br>
-      <label><input type="radio" name="mode" value="key" onchange="bk()"> {{ _("Ready-made recovery key") }}</label><br>
-      <label><input type="radio" name="mode" value="none" onchange="bk()"> {{ _("None") }}</label></dd>
+      <label><input type="radio" name="mode" value="passphrase" checked> {{ _("Passphrase") }} <span class="muted">({{ _("recommended") }})</span></label><br>
+      <label><input type="radio" name="mode" value="key"> {{ _("Ready-made recovery key") }}</label><br>
+      <label><input type="radio" name="mode" value="none"> {{ _("None") }}</label></dd>
   </dl>
   <div id="m-passphrase">
-    <dl class="kv" style="align-items:center">
+    <dl class="kv bk-center">
       <dt>{{ _("Passphrase") }}</dt><dd><input type="password" name="passphrase" autocomplete="new-password" minlength="{{ min_pass }}"> <span class="muted">{{ _("at least %(n)s characters", n=min_pass) }}</span></dd>
       <dt>{{ _("Repeat") }}</dt><dd><input type="password" name="passphrase2" autocomplete="new-password"></dd>
     </dl>
     <p class="muted">{{ _("<b>Do not use your account password:</b> the gateway does not know it (it only stores a hash), it changes over time, and for a RADIUS user it is not even theirs. Choose a dedicated one and keep it in a safe place (password manager). The gateway <b>does not store it</b>: it writes the backups without asking for it, but <b>without it nobody can open them</b>, not even another administrator.") }}</p>
   </div>
   <div id="m-key" hidden>
-    <dl class="kv"><dt>{{ _("Key") }}</dt><dd><input type="text" name="recipient" placeholder="cpgbk1.…" style="width:100%" class="mono">
-      <div class="muted">{{ _('created on the server with <span class="mono">docker compose exec -it gateway cups-policy-admin backup-key</span>: the passphrase never goes through the portal') }}</div></dd></dl>
+    <dl class="kv"><dt>{{ _("Key") }}</dt><dd><input type="text" name="recipient" placeholder="cpgbk1.…" class="mono bk-full">
+      <div class="muted">{{ _('created on the server with <span class="mono">docker compose exec -it gateway spoolsteward-admin backup-key</span>: the passphrase never goes through the portal') }}</div></dd></dl>
   </div>
   <div id="m-none" hidden><p class="s-failed">{{ _("Without encryption the file contains the database (users, names of printed files). That is why the secrets are <b>not</b> saved: the TLS key, <span class=\"mono\">SECRET_KEY</span> and the RADIUS secret must be kept separately.") }}</p></div>
   <div class="actions"><button>{{ _("Create backup") }}</button></div>
 </form>
-<script>
-function bk(){var m=document.querySelector('input[name=mode]:checked').value;
-  ['passphrase','key','none'].forEach(function(k){document.getElementById('m-'+k).hidden=(k!==m)})}
-bk();
-</script>
 {% endblock %}

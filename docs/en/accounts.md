@@ -7,21 +7,21 @@
 Every person is **one row** in the `user` table with a *provider*:
 
 - **local** — the password (argon2id) lives in the gateway database and is managed in the portal;
-- **RADIUS** (optional) — the password is checked by the office RADIUS server; the gateway never sees it stored.
+- **RADIUS** (optional) — the password is checked by the office RADIUS server; the gateway does not store it.
 
 **User names are unique across all sources.** CUPS and the audit only receive `gw:<name>`, so two people with the same name
 would share identity and quota. The method of login is decided by the *row*, never by who answers "yes": a local account
 can not be opened by RADIUS even if RADIUS knows the same name. An unknown RADIUS user is created at the first portal login
-(in the default group) when `CUPSPL_AUTO_CREATE_USERS=true`; if the name is already local, no.
+(in the default group) when `SPOOLSTEWARD_AUTO_CREATE_USERS=true`; if the name is already local, no.
 
-RADIUS is optional. With `CUPSPL_RADIUS_HOST` and `CUPSPL_RADIUS_SECRET` empty only local accounts exist. If RADIUS does
+RADIUS is optional. With `SPOOLSTEWARD_RADIUS_HOST` and `SPOOLSTEWARD_RADIUS_SECRET` set to `none` only local accounts exist. If RADIUS does
 not answer, access is denied (fail closed). RADIUS names are matched case-insensitively: `Mario` and `mario` are the same person.
 
 ## 2. The first administrator
 
-`cups_orchestrator` exists without a password. At the first start the gateway prints a **one-time code** in its log
+`administrator` exists without a password. At the first start the gateway prints a **one-time code** in its log
 (`docker compose logs gateway | grep "FIRST RUN"`); `/setup` asks for it and for the new password, then deactivates
-itself. The code is protected by throttling. Alternative: `cups-policy-admin set-admin-password`. There is deliberately no
+itself. The code is protected by throttling. Alternative: `spoolsteward-admin set-admin-password`. There is deliberately no
 page open to everybody for becoming an administrator.
 
 The emergency account cannot be disabled, demoted, deleted or have its source changed, and its name can not be given to any other account. It is the only account without a group: nothing limits it (no quota, no permission rule) and it cannot ask to change group. The other administrators live in the "administrator" group, whose limits and permissions you can edit (the group itself cannot be deleted). Nobody can disable, demote or
@@ -53,11 +53,11 @@ domain password: they use a **personal print key**.
   192 random bits.
 - Valid **only for printing and scanning** (the IPP and eSCL endpoints); it never opens the portal.
 - **The user chooses how long it lasts** with a menu in the creation form: 1 month, 3 months, 6 months, **1 year (suggested)**, 1 year and
-  6 months, 2 years, or **one print only**. The longest depends on the kind of account: `CUPSPL_KEY_TTL_DAYS_RADIUS` (90 days) for RADIUS users and
-  `CUPSPL_KEY_TTL_DAYS_LOCAL` (730 days) for local ones; the menu shows only the durations that fit. A RADIUS user therefore gets 30 or 90
+  6 months, 2 years, or **one print only**. The longest depends on the kind of account: `SPOOLSTEWARD_KEY_TTL_DAYS_RADIUS` (90 days) for RADIUS users and
+  `SPOOLSTEWARD_KEY_TTL_DAYS_LOCAL` (730 days) for local ones; the menu shows only the durations that fit. A RADIUS user therefore gets 30 or 90
   days and has to log in to the portal again for another — so someone who leaves the company stops printing at the expiry.
-- **Single-use key**: valid for one print. If nobody uses it, it stops working after `CUPSPL_KEY_ONCE_HOURS` hours (24). As soon as its print is
-  accepted the key disappears from the list; for `CUPSPL_KEY_ONCE_GRACE_SECONDS` seconds (120) it can still be used to ask how the job is
+- **Single-use key**: valid for one print. If nobody uses it, it stops working after `SPOOLSTEWARD_KEY_ONCE_HOURS` hours (24). As soon as its print is
+  accepted the key disappears from the list; for `SPOOLSTEWARD_KEY_ONCE_GRACE_SECONDS` seconds (120) it can still be used to ask how the job is
   going, not to print another. A print refused by the quota does not spend it; a print that was accepted and then failed does (create another).
 - A key is personal: whoever holds it prints and scans as that user, on that user's quota and in that user's audit. Passing it to somebody else is the owner's responsibility; if that happened, or the device is lost, revoke it.
 - Last use (time and IP) is recorded at most once a minute.
@@ -69,12 +69,12 @@ domain password: they use a **personal print key**.
 - Besides the keys, the user finds in their notices (same bell) when an administrator **changes their group** (also when a group is deleted and its members move
   to `default`), **makes them administrator or removes the right**, **gives or withdraws extra quota**, or when a **request is approved or rejected** (with the note,
   if there is one). Nothing is said about changes you make to yourself, and changing the limits of a group does not send notices. The command line (`set-group`) sends none either.
-- **Revoked** and **expired** keys disappear from the list `CUPSPL_KEY_HISTORY_DAYS` days later (14; 0 = they stay for ever). While they are there,
+- **Revoked** and **expired** keys disappear from the list `SPOOLSTEWARD_KEY_HISTORY_DAYS` days later (14; 0 = they stay for ever). While they are there,
   the list says when they will go.
-- Optional, off by default: `CUPSPL_KEY_EXPIRY_WARN_ENABLED=true` warns the user in the bell `CUPSPL_KEY_EXPIRY_WARN_DAYS` days (7) before the
+- Optional, off by default: `SPOOLSTEWARD_KEY_EXPIRY_WARN_ENABLED=true` warns the user in the bell `SPOOLSTEWARD_KEY_EXPIRY_WARN_DAYS` days (7) before the
   expiry, once per key.
 
-`CUPSPL_IPP_AUTH=keys` (default) accepts only keys for printing. `keys+radius` also accepts the RADIUS password for RADIUS
+`SPOOLSTEWARD_IPP_AUTH=keys` (default) accepts only keys for printing. `keys+radius` also accepts the RADIUS password for RADIUS
 users during a transition (never for local accounts): it encourages saving the domain password on clients, so use it only
 temporarily.
 
@@ -84,7 +84,7 @@ temporarily.
   same wrong password repeated by one client counts once (libcups retries 3–5 times), and a stranger can not lock another user out.
 - The lock is kept in a small file (`/data/login-lockout.json`, user names, addresses and times only), so a restart does not clear it. It blocks the (user, IP) pair for 5 minutes, it does **not** disable the account: the same
   user from another address is not affected. While blocked, the login page answers "Too many failed attempts, retry later" even if the
-  password is then right. To see it, try six *different* wrong passwords; repeating the same one never blocks.
+  password is then right. Repeating the same wrong password never blocks; it takes five different ones.
 - Disabling a user in the portal blocks portal login and keys immediately.
 - Portal sessions: signed, 8 hours, CSRF token on every POST, `Secure` + `SameSite=strict` cookies. Pages that show a secret
   are sent with `Cache-Control: no-store`.

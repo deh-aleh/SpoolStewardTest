@@ -10,7 +10,7 @@ import pytest
 from sqlalchemy import select
 
 from app.config import settings
-from app.db.models import AdminAudit, JobLog, User
+from app.db.models import AdminAudit, JobLog
 from app.escl import paper_label, parse_caps
 from tests.conftest import CUPS_SOCK, csrf_of_page, make_user, portal_login, requires_cups
 
@@ -192,14 +192,14 @@ async def test_test_printers_are_created_numbered_and_deleted(stack):
         page = (await stack.get("/admin/printers")).text
         created = [n for n in ("debugprinter0", "debugprinter1") if n in page]
         assert created == ["debugprinter0", "debugprinter1"] and "Test printer (debugprinter0)" in page or created
-        assert f'action="/admin/printers/debugprinter1/delete"' in page
+        assert 'action="/admin/printers/debugprinter1/delete"' in page
         r = await stack.post("/admin/printers/debugprinter0/delete", data={"csrf_token": tok})
         page = (await stack.get("/admin/printers")).text
         assert 'action="/admin/printers/debugprinter0/delete"' not in page and "debugprinter1" in page
         r = await stack.post("/admin/printers/debug", data={"csrf_token": tok})                       # the freed number is reused
         assert 'action="/admin/printers/debugprinter0/delete"' in (await stack.get("/admin/printers")).text
         # a test printer is a real queue: it can be printed on
-        web = await stack.post("/me/print", data={"queue": "debugprinter0", "copies": "1", "csrf_token": await csrf_of_page(stack, "/me")},
+        await stack.post("/me/print", data={"queue": "debugprinter0", "copies": "1", "csrf_token": await csrf_of_page(stack, "/me")},
                                files={"file": ("p.pdf", b"%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\ntrailer<</Root 1 0 R/Size 4>>\n%%EOF\n", "application/pdf")})
         with stack.sm() as s:
             assert s.scalars(select(JobLog)).one().state.value == "accepted"
@@ -231,7 +231,7 @@ async def test_key_page_has_a_copy_button_for_every_value(portal, monkeypatch):
     tok = await csrf_of_page(portal, "/me/keys")
     page = (await portal.post("/me/keys", data={"csrf_token": tok, "label": "portatile"})).text
     assert 'data-copy class="secret">' in page and page.count('class="copy"') >= 1
-    assert "navigator.clipboard" in page                                                              # the script that does the copying
+    assert "navigator.clipboard" in (await portal.get("/admin/static/js/app.js")).text               # the script that does the copying
 
 
 async def test_actions_filters_suggest_administrators_and_known_actions(portal):
@@ -248,7 +248,8 @@ async def test_actions_filters_suggest_administrators_and_known_actions(portal):
     actors, actions = json.loads(suggestions[0]), json.loads(suggestions[1])
     assert actors == ["boss", "emma"] and "plain" not in actors                                      # only administrators
     assert "group.create" in actions and "login" in actions and actions == sorted(set(actions))      # what really occurs, once
-    assert "ul.suggest" in page and "addEventListener('focus', show)" in page                       # opens on click, narrows as you type
+    app_js, app_css = (await portal.get("/admin/static/js/app.js")).text, (await portal.get("/admin/static/css/app.css")).text
+    assert "ul.suggest" in app_css and "addEventListener('focus', show)" in app_js                  # opens on click, narrows as you type
 
 
 async def test_print_and_scan_forms_are_centred(portal):

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ _("My profile") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block body %}
 <div class="card">
   <h1>{{ _("Hello, %(user)s", user=me.username) }}</h1>
@@ -14,7 +15,7 @@
       <td data-l="{{ _('Period') }}">{{ _('weekly') if o.period == 'weekly' else _('monthly') }}</td><td data-l="{{ _('Resets on') }}">{{ o.window_end|localtime('%Y-%m-%d %H:%M') }}</td></tr>
     {% else %}<tr><td colspan="5" class="muted">{{ _("No limit applies to you.") }}</td></tr>{% endfor %}
   </table>
-  <div class="row" style="margin-top:12px">
+  <div class="row me-gap">
     <a class="btn" href="/me/print">{{ _("Print a file") }}</a>
     <a class="btn sec" href="/me/scan">{{ _("Scan") }}</a>
     {% if options %}<a class="btn sec" href="/me/request/quota">{{ _("Ask for more quota") }}</a>{% endif %}

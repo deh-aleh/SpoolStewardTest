@@ -1,8 +1,7 @@
 """Administrator side of requests and grants."""
 
 import logging
-from datetime import date, datetime, timezone
-from zoneinfo import ZoneInfo
+from datetime import UTC, date, datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
@@ -10,9 +9,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import notices
+from app.timeutil import local_tz, now_utc
 from app.i18n import _, ngettext
 from app.admin.common import back, current_admin, flash, get_db, render, verify_csrf
-from app.config import settings
 from app.cups_client import list_queues
 from app.db.models import Group, PermissionGrant, QuotaGrant, QuotaRequest, RequestStatus, Resource, User
 from app.policy import grants, permissions
@@ -21,14 +20,6 @@ from app.policy.ordering import key as queue_key
 
 log = logging.getLogger("app.admin")
 router = APIRouter(prefix="/admin")
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
-
-
-def _tz() -> ZoneInfo:
-    return ZoneInfo(settings.timezone)
 
 
 def _what(db: Session, req: QuotaRequest) -> dict:
@@ -56,7 +47,7 @@ def _parse_until(duration: str, until: str) -> date | None:
 def _grant_state(g: QuotaGrant | PermissionGrant, now: datetime) -> str:
     if g.revoked_at is not None:
         return "revoked"
-    until = g.valid_until if g.valid_until is None or g.valid_until.tzinfo else g.valid_until.replace(tzinfo=timezone.utc)
+    until = g.valid_until if g.valid_until is None or g.valid_until.tzinfo else g.valid_until.replace(tzinfo=UTC)
     return "active" if until is None or until > now else "ended"
 
 
@@ -64,7 +55,7 @@ def _grant_state(g: QuotaGrant | PermissionGrant, now: datetime) -> str:
 async def requests_page(request: Request, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
     """One page for both sides of the same thing: the requests waiting for a decision, the grants they (or an
     administrator directly) produced, and the history."""
-    now = _now()
+    now = now_utc()
     grants.expire_requests(db, now)
     names = {u.id: u.username for u in db.scalars(select(User))}
     pending = db.scalars(select(QuotaRequest).where(QuotaRequest.status == RequestStatus.pending)
@@ -75,14 +66,14 @@ async def requests_page(request: Request, admin: User = Depends(current_admin), 
     rows = [{"g": g, "user": names.get(g.user_id, "?"), "state": _grant_state(g, now), "by": names.get(g.granted_by),
              "kind": "quota"} for g in db.scalars(select(QuotaGrant).order_by(QuotaGrant.id.desc()).limit(200))]
     rows += [{"g": g, "user": names.get(g.user_id, "?"), "state": _grant_state(g, now), "by": names.get(g.granted_by),
-              "kind": "permission", "what": permissions.describe_grant(g.perm, g.printer), "last_day": grants.last_day(g.valid_until, _tz())}
+              "kind": "permission", "what": permissions.describe_grant(g.perm, g.printer), "last_day": grants.last_day(g.valid_until, local_tz())}
              for g in db.scalars(select(PermissionGrant).order_by(PermissionGrant.id.desc()).limit(200))]
-    rows.sort(key=lambda x: x["g"].created_at.replace(tzinfo=timezone.utc) if x["g"].created_at.tzinfo is None else x["g"].created_at,
+    rows.sort(key=lambda x: x["g"].created_at.replace(tzinfo=UTC) if x["g"].created_at.tzinfo is None else x["g"].created_at,
               reverse=True)
     queues = sorted((q["name"] for q in await list_queues(request.app)), key=queue_key)
     return render(request, "requests.html", admin, pending=wrap(pending), done=wrap(done),
                   active=[x for x in rows if x["state"] == "active"], ended=[x for x in rows if x["state"] != "active"],
-                  usernames=sorted(u for u in names.values()), queues=queues, today=now.astimezone(_tz()).date().isoformat())
+                  usernames=sorted(u for u in names.values()), queues=queues, today=now.astimezone(local_tz()).date().isoformat())
 
 
 @router.get("/requests/lacks")
@@ -94,7 +85,7 @@ async def lacks(request: Request, username: str, admin: User = Depends(current_a
     user = db.scalars(select(User).where(User.username == username)).first()
     if user is None:
         raise HTTPException(404)
-    perms = permissions.effective(db, user, _now())
+    perms = permissions.effective(db, user, now_utc())
     printers = [q for q in sorted((q["name"] for q in await list_queues(request.app)), key=queue_key)
                 if not permissions.printer_allowed(perms, q)]
     return {"perms": [p for p, missing in (("color", not perms.color), ("one_sided", not perms.one_sided),
@@ -120,7 +111,7 @@ def approve(request: Request, req_id: int, amount: str = Form(""), scope: str = 
         if amount.strip() and amt is None:
             raise grants.RequestError("the amount must be a whole number")
         last_day = _parse_until(duration, until) if req.kind.value == "permission" else None
-        grant = grants.approve_request(db, req, admin, _now(), _tz(), amount=amt, scope=scope or None, note=note, until=last_day)
+        grant = grants.approve_request(db, req, admin, now_utc(), local_tz(), amount=amt, scope=scope or None, note=note, until=last_day)
         sm = request.app.state.sessionmaker
         if isinstance(grant, PermissionGrant):
             notices.notify_user(sm, req.user_id, "request_approved", {"what": "permission", "perm": grant.perm, "printer": grant.printer,
@@ -145,7 +136,7 @@ def reject(request: Request, req_id: int, note: str = Form(""), admin: User = De
            db: Session = Depends(get_db)):
     req = _get(db, req_id)
     try:
-        grants.reject_request(db, req, admin, _now(), note)
+        grants.reject_request(db, req, admin, now_utc(), note)
         detail = {"note": note.strip()[:200]}
         if req.kind.value == "permission":
             detail.update(what="permission", perm=(req.params_json or {}).get("perm"), printer=(req.params_json or {}).get("printer"))
@@ -170,14 +161,14 @@ def grant_create(request: Request, username: str = Form(""), kind: str = Form("q
             raise grants.RequestError(_("unknown user"))
         if kind == "permission":
             last_day = _parse_until(duration, until)
-            pg = grants.create_permission_grant(db, admin, user, perm, printer, last_day, note, _now(), _tz())
+            pg = grants.create_permission_grant(db, admin, user, perm, printer, last_day, note, now_utc(), local_tz())
             if user.id != admin.id:
                 notices.notify_user(sm, user.id, "grant_given", {"what": "permission", "perm": pg.perm, "printer": pg.printer,
                                                                  "until": last_day.isoformat() if last_day else None,
                                                                  "note": (note or "").strip()[:200]})
         elif kind == "quota":
             n = int(amount) if amount.strip().isascii() and amount.strip().isdigit() else 0
-            grant = grants.create_grant(db, admin, user, metric, n, scope, note, _now(), _tz())
+            grant = grants.create_grant(db, admin, user, metric, n, scope, note, now_utc(), local_tz())
             if user.id != admin.id:
                 notices.notify_user(sm, user.id, "grant_given",
                                     {"amount": grant.amount, "metric": grant.metric.value, "scope": grant.scope.value, "note": (note or "").strip()[:200]})
@@ -196,7 +187,7 @@ def grant_revoke(request: Request, grant_id: int, admin: User = Depends(current_
         raise HTTPException(404)
     try:
         user_id, amount, metric = g.user_id, g.amount, g.metric.value
-        grants.revoke_grant(db, g, admin, _now())
+        grants.revoke_grant(db, g, admin, now_utc())
         if user_id != admin.id:
             notices.notify_user(request.app.state.sessionmaker, user_id, "grant_revoked", {"amount": amount, "metric": metric})
         flash(request, _("Grant revoked"))
@@ -212,7 +203,7 @@ def permission_grant_revoke(request: Request, grant_id: int, admin: User = Depen
         raise HTTPException(404)
     try:
         user_id, perm, printer = g.user_id, g.perm, g.printer
-        grants.revoke_permission_grant(db, g, admin, _now())
+        grants.revoke_permission_grant(db, g, admin, now_utc())
         if user_id != admin.id:
             notices.notify_user(request.app.state.sessionmaker, user_id, "grant_revoked", {"what": "permission", "perm": perm, "printer": printer})
         flash(request, _("Grant revoked"))
@@ -225,6 +216,6 @@ def permission_grant_revoke(request: Request, grant_id: int, admin: User = Depen
 def grants_purge(request: Request, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
     """Delete the grants that no longer count (ended or revoked): they only fill the page. The history of who granted what
     stays in the administrators' log."""
-    n = grants.purge_ended(db, admin, _now())
+    n = grants.purge_ended(db, admin, now_utc())
     flash(request, ngettext("%(n)s ended grant deleted", "%(n)s ended grants deleted", n, n=n) if n else _("No ended grants to delete"))
     return back("/admin/requests")

@@ -1,21 +1,22 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Edit backup") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/backup_edit.css?v={{ app_version }}">{% endblock %}
 {% block body %}
-<form class="card" method="post" action="/admin/backups/{{ t.id }}" style="max-width:720px">
+<form class="card be-form" method="post" action="/admin/backups/{{ t.id }}">
   <h1>{{ _("Edit backup “%(name)s”", name=t.name) }}</h1>
   <input type="hidden" name="csrf_token" value="{{ csrf }}">
-  <dl class="kv" style="align-items:center">
+  <dl class="kv be-center">
     <dt>{{ _("Name") }}</dt><dd><input type="text" name="name" maxlength="80" value="{{ t.name }}" required></dd>
     <dt>{{ _("Folder") }}</dt><dd><input type="text" name="folder" maxlength="200" value="{{ t.folder }}" required list="folders">
       <datalist id="folders">{% for f in folders %}<option value="{{ f }}">{% endfor %}</datalist>
       <div class="muted">{{ _("inside %(root)s. Copies already written stay in the old folder.", root=root) }}</div></dd>
     <dt>{{ _("Safety") }}</dt><dd><label><input type="checkbox" name="require_marker" value="1"{{ " checked" if t.require_marker }}> {{ _("The folder is a network disk or USB disk: write only if it is mounted") }}</label>
       <div class="muted">{{ _("Leave this ticked for a network disk or USB disk, and save while the disk is mounted now. The gateway puts a small marker file in the folder and refuses to back up when it is not there, so an unmounted disk never fills the server disk with copies.") }}</div></dd>
-    <dt>{{ _("Time") }}</dt><dd><input type="number" name="hour" min="0" max="23" value="{{ t.hour }}" style="width:5em"> :00</dd>
+    <dt>{{ _("Time") }}</dt><dd><input type="number" name="hour" min="0" max="23" value="{{ t.hour }}" class="be-w5"> :00</dd>
     <dt>{{ _("Copies") }}</dt><dd>
-      <input type="number" name="keep_daily" min="1" value="{{ t.keep_daily }}" style="width:5em"> {{ _("daily") }}
-      <input type="number" name="keep_weekly" min="0" value="{{ t.keep_weekly }}" style="width:5em"> {{ _("weekly") }}
-      <input type="number" name="keep_monthly" min="0" value="{{ t.keep_monthly }}" style="width:5em"> {{ _("monthly") }}</dd>
+      <input type="number" name="keep_daily" min="1" value="{{ t.keep_daily }}" class="be-w5"> {{ _("daily") }}
+      <input type="number" name="keep_weekly" min="0" value="{{ t.keep_weekly }}" class="be-w5"> {{ _("weekly") }}
+      <input type="number" name="keep_monthly" min="0" value="{{ t.keep_monthly }}" class="be-w5"> {{ _("monthly") }}</dd>
     <dt>{{ _("Encryption") }}</dt><dd>{{ {'none': _('none'), 'passphrase': _('passphrase'), 'key': _('recovery key')}[t.mode] }}
       <div class="muted">{{ _("it cannot be changed from here, so you never lose the ability to open the copies: create a new backup with the encryption you want.") }}</div></dd>
   </dl>

@@ -19,9 +19,8 @@ credentials if the installation uses RADIUS. A temporary password must be change
   as the password when the computer or phone asks for credentials; the user name is yours. A key only prints and scans — it
   never opens the portal and your domain password is never needed on a device. Revoke a key (or all of them) in *My keys* if a device is lost.
   When you create one you choose how long it lasts (from 1 month to 2 years, or one print only); RADIUS users have a shorter maximum and renew by signing in to the portal again. The bell at the top tells you when an administrator revokes, switches off or extends one of your keys.
-- **Requests**: ask for more quota (temporary or permanent), for a change of group or for a permission (see below), with a reason. The administrator
-  approves, edits or rejects. You can have up to 3 open requests, and cancel them.
-
+- **Requests**: ask for more quota (temporary or permanent), for a change of group or for a permission (see below), and say why (a reason is optional unless the administrator requires one). The administrator
+  approves, edits or rejects. You can have up to 3 open requests (the default limit), and cancel them.
 - **Your permissions**: whether you may print in colour and one-sided, on which printers, and at which hours. If you may not print in
   colour, your prints come out in black and white; if you may not print one-sided, they come out double-sided. Scanning is not affected.
   Next to what you lack there is an **Ask** link (and **Ask for another printer**): choose what you need, write why, and an
@@ -39,8 +38,7 @@ This holds for prints refused because of your permissions, prints refused becaus
 (weekly or monthly, jobs or pages: the notice says how much you used and that you can ask for more quota) and prints changed by your permissions.
 
 **Secondary notices.** Some notices are only information about one print. They are marked as read by themselves after a while, so they do not
-pile up. Today the secondary ones are the prints **forced** by your permissions (made in black and white, made double-sided; more kinds of forced
-print will join them). The delay is in *Settings* (`/me/settings`, "Secondary notices"): 20 minutes by default, counted from the last such
+pile up. The secondary ones are the prints **forced** by your permissions (made in black and white, made double-sided). The delay is in *Settings* (`/me/settings`, "Secondary notices"): 20 minutes by default, counted from the last such
 print; 0 means they stay until you dismiss them. A notice marked as read is not deleted: it is in the list under *Show dismissed too*.
 All the other notices (refused prints, quota reached, keys, group, requests) stay until you dismiss them.
 
@@ -80,9 +78,13 @@ Limits, because the gateway can only compare addresses:
 - **Reverse proxy**: if you opened the portal through a proxy, the server sees the proxy's address, not your device's, and the scan
   app will be refused (or, if it goes through the proxy too, any device behind it could scan). Open the portal directly on the
   server's port (`https://<server>:8631`) before pressing the button. The box warns you when it detects a proxy.
+
+## 5. Settings (`/me/settings`: click the logo and name at the top left)
+
 - **Theme**: light, dark or automatic.
 - **Language**: English, Italiano, Español, Русский, 中文. Saved for your account.
 - **Auto-refresh** interval of the audit page (administrators); the Audit and Printers pages also have an *Automatic refresh* switch.
+- **Secondary notices**: how long before the notices about a forced print are marked as read (20 minutes by default, 0 = never).
 - **Change password** (local accounts).
 
 ## 6. Good to know

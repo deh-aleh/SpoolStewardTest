@@ -2,7 +2,7 @@
 themselves after a day's... after `offline_remove_hours` without an answer. A fake CUPS answers over IPP."""
 
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
@@ -42,7 +42,7 @@ class FakeCups:
                     codec.Attr("printer-state", [codec.Val(codec.TAG_ENUM, 3)])]))
         elif msg.code == 0x400B:
             # like CUPS: include-schemes is honoured only as a NAME (a keyword is silently ignored and every backend is listed)
-            inc = msg.get(codec.TAG_OPERATION, "include-schemes")
+            msg.get(codec.TAG_OPERATION, "include-schemes")
             attr = msg.group(codec.TAG_OPERATION).get("include-schemes")
             honoured = attr is not None and attr.values[0].tag == codec.TAG_NAME
             for uri, mfg, mdl in (self.devices + ([] if honoured else [("beh", "", ""), ("cups-pdf:/", "Generic", "CUPS-PDF Printer"), ("ipp", "", "")])):
@@ -195,7 +195,7 @@ async def test_an_unreachable_usb_queue_is_removed_after_the_wait_but_a_network_
     await discovery.run_once(usb.app)
     assert usb.fake.deleted == []                                 # not yet
     with usb.sm() as s:
-        s.get(PrinterOffline, "hp").since = datetime.now(timezone.utc) - timedelta(hours=8, minutes=1)
+        s.get(PrinterOffline, "hp").since = datetime.now(UTC) - timedelta(hours=8, minutes=1)
         s.commit()
     out = await discovery.run_once(usb.app)
     assert out["removed"] == ["hp"] and usb.fake.deleted == ["hp"] and [q[0] for q in usb.fake.queues] == ["lan"]
@@ -219,7 +219,7 @@ async def test_the_wait_can_be_switched_off(usb, monkeypatch):
     usb.state["down"] = {BRIDGE}
     await discovery.run_once(usb.app)
     with usb.sm() as s:
-        s.get(PrinterOffline, "hp").since = datetime.now(timezone.utc) - timedelta(days=30)
+        s.get(PrinterOffline, "hp").since = datetime.now(UTC) - timedelta(days=30)
         s.commit()
     assert (await discovery.run_once(usb.app))["removed"] == [] and usb.fake.deleted == []
 
@@ -275,7 +275,7 @@ async def test_a_printer_that_ipp_usb_serves_is_not_taken_while_the_bridge_resta
     usb.state["bridge"] = []                                        # ipp-usb is restarting: nothing on the bridge yet
     assert (await discovery.run_once(usb.app))["created"] == 0
     usb.state["bridge"] = [bridge_printer(60007, "HP", "Smart Tank 7300 series")]   # it is back
-    out = await discovery.run_once(usb.app)
+    await discovery.run_once(usb.app)
     assert [a[1] for a in usb.fake.added] == ["ipp://ipp-usb:60007/ipp/print"]       # only the driverless queue
     await discovery.run_once(usb.app)
     assert len(usb.fake.added) == 1
@@ -508,7 +508,8 @@ async def test_a_usb_queue_keeps_its_driver_when_renamed(usb):
 
 async def test_the_page_offers_rename_with_the_warning(usb):
     page = (await usb.get("/admin/printers")).text
-    assert "/admin/printers/hp/rename" in page and 'name="new_name"' in page and "confirm(" in page
+    assert "/admin/printers/hp/rename" in page and 'name="new_name"' in page
+    assert "data-confirm=" in page and "confirm(" in (await usb.get("/admin/static/js/app.js")).text   # the warning before the rename
 
 
 async def test_move_refuses_bad_input(usb):

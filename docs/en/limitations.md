@@ -2,7 +2,7 @@
 
 [Documentation index](../README.md) · English · [Italiano](../it/limiti.md)
 
-What PrintMinder does **not** do (yet) or does with caveats. The short version is in the
+What SpoolSteward does **not** do (yet) or does with caveats. The short version is in the
 [README](../../README.md#limits).
 
 ## 1. Installation
@@ -22,7 +22,7 @@ What PrintMinder does **not** do (yet) or does with caveats. The short version i
   by default (it must be turned on and prepared by hand, see [backup.md](backup.md)).
 - Going back to an older version after a database migration requires restoring a backup: `scripts/update.sh` offers it by itself when the old version does not start.
   New migrations may only add (the old version can still read the database), but that is not a guarantee in every case.
-- The **names of printed files are encrypted** in the database and in the audit archive (key derived from `CUPSPL_SECRET_KEY`: if you change it they can no longer be read). The rest of the
+- The **names of printed files are encrypted** in the database and in the audit archive (key derived from `SPOOLSTEWARD_SECRET_KEY`: if you change it they can no longer be read). The rest of the
   database is not encrypted (user names, groups, printer names, admin log): to protect everything, encrypt the disk, see [data-protection.md](data-protection.md).
   CUPS also keeps the names of its latest jobs (up to 2,000) in its own volume: the button and the retention of names do not touch them.
 - Certificates: devices must trust the company CA; the announcement uses the IP, so the certificate must list it (the portal gives a notice if it does not).
@@ -38,7 +38,7 @@ What PrintMinder does **not** do (yet) or does with caveats. The short version i
 - Page counting applies only when a pages limit exists and the document is readable.
 - If RADIUS tells `Mario` from `mario`, for the gateway they are one person (same quota).
 - Limits for paper size do not exist. Colour, one-sided, printers and hours do ([quotas.md](quotas.md#5-advanced-permissions)), with these limits:
-  - **Forced black and white may not work** with some printers and drivers, above all with images a phone has already turned into colour pixels (iPhone / AirPrint). For a guarantee use `CUPSPL_PERMISSION_MODE=refuse`. Double-sided uses the standard `sides` attribute and is more reliable, as long as the queue declares its duplex unit.
+  - **Forced black and white may not work** with some printers and drivers, above all with images a phone has already turned into colour pixels (iPhone / AirPrint). For a guarantee use `SPOOLSTEWARD_PERMISSION_MODE=refuse`. Double-sided uses the standard `sides` attribute and is more reliable, as long as the queue declares its duplex unit.
   - With `refuse`, Windows and Android often refuse many jobs, because they send one-sided or colour in every job. The default `adjust` avoids it.
   - The network announcement (mDNS) is the same for everybody: printers a person may not use are still visible to them, and the job is refused. The printer list the gateway gives after the login hides them.
   - The hours are checked when the job is sent, not while it prints. There is one window (days + two times) per group or user.
@@ -60,16 +60,14 @@ What PrintMinder does **not** do (yet) or does with caveats. The short version i
 
 - Automatic USB discovery: a printer served by `ipp-usb` is never taken through CUPS' usb backend. Printers without IPP-over-USB need a driver present in the `cups` image (brlaser, gutenprint, splix, foo2zjs are included). Whether CUPS' usb backend and `ipp-usb` coexist on the same USB bus with several printers has been tested with one device at a time only. Printers tested so far: HP Smart Tank 7300 (through ipp-usb) and Brother DCP-7055 (CUPS usb backend, brlaser).
 - USB queues unreachable for 8 h (configurable) are removed by themselves; network queues never are.
-
 - Disconnected-device detection lags by up to ~30 s; for network queues it is a TCP probe (no paper information).
-- Scanners are found automatically only if they answer eSCL on the queue's IPP port or on port 80; otherwise `CUPSPL_SCAN_URL`.
+- Scanners are found automatically only if they answer eSCL on the queue's IPP port or on port 80; otherwise `SPOOLSTEWARD_SCAN_URL`.
 - Lifetime counters come from HP's web service only; other brands show IPP data.
 - A scan delivered to the client counts as completed even if the user does not save the file.
 - A sleeping feeder may be declared empty: in *Automatic* the glass is used (blank page).
 - Native eSCL clients that authenticate have not been tried (sane-airscan, Image Capture).
 - Pages printed by the gateway (test, maintenance) are always in English; Russian/Chinese need an embedded font.
 - If the gateway is off, a missed maintenance interval is not made up: the page prints as soon as it restarts.
-
 - Printing from the browser, *Landscape*: PDFs with portrait pages are turned and shrunk (the text is not re-flowed as a word processor would do); plain text files cannot be turned; photos are turned by CUPS. Details in [printing.md](printing.md).
 - A queue of `CUPS_QUEUES` is created once: if you delete it, it stays deleted (`scripts/queue-restore.sh NAME --reboot` brings it back).
 

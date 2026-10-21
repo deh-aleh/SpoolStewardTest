@@ -6,9 +6,9 @@ and tells the administrators when something is wrong:
 
     cert_sync_failed   the last run of cert-sync.sh failed (the message of the script is shown)
     cert_expired       the certificate has expired: devices refuse to connect          (always on)
-    cert_expiring      it expires within CUPSPL_CERT_EXPIRY_WARN_DAYS days             (off unless CUPSPL_CERT_EXPIRY_WARN_ENABLED)
+    cert_expiring      it expires within SPOOLSTEWARD_CERT_EXPIRY_WARN_DAYS days             (off unless SPOOLSTEWARD_CERT_EXPIRY_WARN_ENABLED)
     cert_name_missing  none of the addresses/names announced on the network (mDNS) is in the certificate
-                       (CUPSPL_CERT_NAME_CHECK=false turns it off)
+                       (SPOOLSTEWARD_CERT_NAME_CHECK=false turns it off)
 
 A notice closes by itself when the cause is gone.
 """
@@ -18,7 +18,7 @@ import ipaddress
 import json
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -130,7 +130,7 @@ def check_once(app, now: datetime | None = None) -> dict[str, dict | None]:
         announce = {"addresses": [a.strip() for a in settings.mdns_addresses.split(",") if a.strip()],
                     "names": [host] if host else []}
     results = evaluate(read_cert(settings.tls_certfile), sync_status(settings.tls_certfile), announce,
-                       now or datetime.now(timezone.utc))
+                       now or datetime.now(UTC))
     apply(app.state.sessionmaker, results)
     return results
 

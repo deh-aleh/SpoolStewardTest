@@ -2,15 +2,17 @@
 # CUPS as a private backend: unix socket only (config mounted from deploy/cupsd.conf).
 # Queues are created from CUPS_QUEUES="NAME=URI NAME2=URI2" (retried until the printer answers)
 # and CUPS_VIRTUAL_QUEUE=1 adds a "virtual" queue that writes PDFs: handy to try quotas without paper.
-# Each queue is created ONCE: its name is written to /etc/cups/printminder-queues (the CUPS volume). A queue that was
+# Each queue is created ONCE: its name is written to /etc/cups/spoolsteward-queues (the CUPS volume). A queue that was
 # deleted later, by hand or because its USB printer stayed away, is not brought back at the next start.
 # To bring one back: scripts/queue-restore.sh NAME --reboot (it removes the name from that file and restarts this container).
 set -u
+# CUPS_QUEUES=none (the .env way to say "no queues") is the same as empty
+case "${CUPS_QUEUES:-}" in [Nn][Oo][Nn][Ee]) CUPS_QUEUES= ;; esac
 cupsd
 
 for i in $(seq 1 40); do lpstat -r >/dev/null 2>&1 && break; sleep 0.5; done
 
-STATE=/etc/cups/printminder-queues
+STATE=/etc/cups/spoolsteward-queues
 touch "$STATE"
 done_before() { grep -qx -- "$1" "$STATE"; }
 remember() { done_before "$1" || echo "$1" >> "$STATE"; }

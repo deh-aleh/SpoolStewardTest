@@ -9,12 +9,13 @@ administrator chooses (the end of that day in the portal's time zone) or never. 
 ones that are active to what the user's group and own rule give.
 """
 
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
+from app.timeutil import aware
 from app.auth.users import is_emergency
 from app.i18n import _
 from app.audit.adminlog import record
@@ -34,11 +35,6 @@ def _update(model):
     """Conditional UPDATE decided by the database alone. No in-Python re-evaluation against objects already in the
     session (they carry timezone-less datetimes from SQLite): callers re-read what they need."""
     return update(model).execution_options(synchronize_session=False)
-
-
-def _aware(dt: datetime) -> datetime:
-    """SQLite gives datetimes back without tzinfo; everything we store is UTC."""
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
 class RequestError(ValueError):
@@ -179,7 +175,7 @@ def _make_grant(session: Session, user: User, metric: Metric, amount: int, scope
 
 def end_of_day(day: date, tz: ZoneInfo) -> datetime:
     """The moment the given date is over in `tz` (UTC), so "until 2026-11-30" includes the whole of the 30th."""
-    return datetime.combine(day + timedelta(days=1), time.min, tzinfo=tz).astimezone(timezone.utc)
+    return datetime.combine(day + timedelta(days=1), time.min, tzinfo=tz).astimezone(UTC)
 
 
 def last_day(valid_until: datetime | None, tz: ZoneInfo) -> str | None:
@@ -187,7 +183,7 @@ def last_day(valid_until: datetime | None, tz: ZoneInfo) -> str | None:
     None = no end."""
     if valid_until is None:
         return None
-    return (_aware(valid_until).astimezone(tz) - timedelta(seconds=1)).date().isoformat()
+    return (aware(valid_until).astimezone(tz) - timedelta(seconds=1)).date().isoformat()
 
 
 def _make_permission_grant(session: Session, user: User, perm: str, printer: str | None, until: date | None, admin: User,
@@ -214,7 +210,7 @@ def approve_request(session: Session, req: QuotaRequest, admin: User, now: datet
     user = session.get(User, req.user_id)
     if user is None or not user.enabled:
         raise RequestError(_("the user is disabled"))
-    if _aware(req.expires_at) <= now and req.status is RequestStatus.pending:
+    if aware(req.expires_at) <= now and req.status is RequestStatus.pending:
         expire_requests(session, now)
         raise RequestError(_("the request has expired"))
     claimed = session.execute(_update(QuotaRequest).where(

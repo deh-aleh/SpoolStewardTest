@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
 from app.i18n import _
-from app.admin.common import PAGE, back, current_admin, flash, get_db, render, verify_csrf
+from app.admin.common import back, current_admin, flash, get_db, render, verify_csrf
 from app.audit import archive
 from app.audit.adminlog import record
 from app.config import settings

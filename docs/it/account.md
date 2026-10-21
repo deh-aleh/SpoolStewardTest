@@ -12,16 +12,16 @@ Ogni persona è **una riga** nella tabella `user` con un *provider*:
 **I nomi utente sono unici fra tutte le origini.** A CUPS e all'audit arriva solo `gw:<nome>`: due persone con lo stesso nome
 condividerebbero identità e quota. Il metodo di accesso lo decide la *riga*, mai chi risponde "sì": un account locale non può essere
 aperto dal RADIUS nemmeno se il RADIUS conosce lo stesso nome. Un utente RADIUS sconosciuto viene creato al primo accesso al portale
-(nel gruppo predefinito) se `CUPSPL_AUTO_CREATE_USERS=true`; se il nome è già locale, no.
+(nel gruppo predefinito) se `SPOOLSTEWARD_AUTO_CREATE_USERS=true`; se il nome è già locale, no.
 
-RADIUS è facoltativo. Con `CUPSPL_RADIUS_HOST` e `CUPSPL_RADIUS_SECRET` vuoti esistono solo account locali. Se il RADIUS non risponde,
+RADIUS è facoltativo. Con `SPOOLSTEWARD_RADIUS_HOST` e `SPOOLSTEWARD_RADIUS_SECRET` impostati a `none` esistono solo account locali. Se il RADIUS non risponde,
 l'accesso è negato (fail closed). I nomi RADIUS si confrontano senza distinguere maiuscole: `Mario` e `mario` sono la stessa persona.
 
 ## 2. Il primo amministratore
 
-`cups_orchestrator` esiste senza password. Al primo avvio il gateway scrive nei log un **codice monouso**
+`administrator` esiste senza password. Al primo avvio il gateway scrive nei log un **codice monouso**
 (`docker compose logs gateway | grep "FIRST RUN"`); `/setup` lo chiede insieme alla nuova password e poi si disattiva.
-Il codice è protetto da throttling. In alternativa: `cups-policy-admin set-admin-password`. Di proposito non esiste una pagina aperta
+Il codice è protetto da throttling. In alternativa: `spoolsteward-admin set-admin-password`. Di proposito non esiste una pagina aperta
 a tutti per diventare amministratore.
 
 L'account di emergenza non si può disattivare, declassare, eliminare né cambiargli origine, e il suo nome non si può dare a nessun altro account. È l'unico account senza gruppo: niente lo limita (nessuna quota, nessuna regola di permessi) e non può chiedere di cambiare gruppo. Gli altri amministratori stanno nel gruppo "administrator", di cui puoi modificare limiti e permessi (il gruppo però non si può eliminare). Nessuno può disattivare, declassare o
@@ -53,11 +53,11 @@ password di dominio: usano una **chiave di stampa personale**.
   come hash sha256 di 192 bit casuali.
 - Vale **solo per stampare e scansionare** (gli endpoint IPP ed eSCL); non apre mai il portale.
 - **La durata la sceglie l'utente** con una tendina nel modulo di creazione: 1 mese, 3 mesi, 6 mesi, **1 anno (proposto)**, 1 anno e 6 mesi,
-  2 anni, oppure **una sola stampa**. Il massimo dipende dal tipo di account: `CUPSPL_KEY_TTL_DAYS_RADIUS` (90 giorni) per gli utenti RADIUS e
-  `CUPSPL_KEY_TTL_DAYS_LOCAL` (730 giorni) per i locali; la tendina mostra solo le durate che ci stanno. Un utente RADIUS ha quindi 30 o 90
+  2 anni, oppure **una sola stampa**. Il massimo dipende dal tipo di account: `SPOOLSTEWARD_KEY_TTL_DAYS_RADIUS` (90 giorni) per gli utenti RADIUS e
+  `SPOOLSTEWARD_KEY_TTL_DAYS_LOCAL` (730 giorni) per i locali; la tendina mostra solo le durate che ci stanno. Un utente RADIUS ha quindi 30 o 90
   giorni e deve rifare il login nel portale per averne un'altra — così chi lascia l'azienda smette di stampare alla scadenza.
-- **Chiave monouso**: vale per una sola stampa. Se nessuno la usa smette di valere dopo `CUPSPL_KEY_ONCE_HOURS` ore (24). Appena la stampa è
-  accettata la chiave sparisce dall'elenco; per `CUPSPL_KEY_ONCE_GRACE_SECONDS` secondi (120) può ancora servire a chiedere lo stato del lavoro,
+- **Chiave monouso**: vale per una sola stampa. Se nessuno la usa smette di valere dopo `SPOOLSTEWARD_KEY_ONCE_HOURS` ore (24). Appena la stampa è
+  accettata la chiave sparisce dall'elenco; per `SPOOLSTEWARD_KEY_ONCE_GRACE_SECONDS` secondi (120) può ancora servire a chiedere lo stato del lavoro,
   non a stamparne un altro. Una stampa respinta dalla quota non la consuma; una stampa accettata ma poi non riuscita sì (se ne crea un'altra).
 - Una chiave è personale: chi la possiede stampa e scansiona come quell'utente, sulla sua quota e nel suo audit. Cederla a un altro è responsabilità del titolare; se è successo, o il dispositivo è perso, va revocata.
 - L'ultimo uso (ora e IP) è annotato al massimo una volta al minuto.
@@ -69,12 +69,12 @@ password di dominio: usano una **chiave di stampa personale**.
 - Oltre alle chiavi, l'utente trova negli avvisi (stessa campanella) quando un amministratore **cambia il suo gruppo** (anche quando un gruppo viene eliminato e i suoi membri passano a
   `default`), **lo rende amministratore o gli toglie il diritto**, **gli dà o gli ritira quota extra**, oppure quando una **richiesta è approvata o rifiutata** (con la nota, se c'è).
   Non c'è nessun avviso per le modifiche che fai a te stesso, e cambiare i limiti di un gruppo non manda avvisi. Neppure la riga di comando (`set-group`) ne manda.
-- Le chiavi **revocate** e quelle **scadute** spariscono dall'elenco dopo `CUPSPL_KEY_HISTORY_DAYS` giorni (14; 0 = restano per sempre). Finché ci
+- Le chiavi **revocate** e quelle **scadute** spariscono dall'elenco dopo `SPOOLSTEWARD_KEY_HISTORY_DAYS` giorni (14; 0 = restano per sempre). Finché ci
   sono, l'elenco dice quando se ne andranno.
-- Facoltativo, spento di default: `CUPSPL_KEY_EXPIRY_WARN_ENABLED=true` avvisa l'utente nella campanella `CUPSPL_KEY_EXPIRY_WARN_DAYS` giorni
+- Facoltativo, spento di default: `SPOOLSTEWARD_KEY_EXPIRY_WARN_ENABLED=true` avvisa l'utente nella campanella `SPOOLSTEWARD_KEY_EXPIRY_WARN_DAYS` giorni
   (7) prima della scadenza, una volta sola per chiave.
 
-`CUPSPL_IPP_AUTH=keys` (predefinito) accetta per stampare solo le chiavi. `keys+radius` accetta anche la password RADIUS per gli utenti
+`SPOOLSTEWARD_IPP_AUTH=keys` (predefinito) accetta per stampare solo le chiavi. `keys+radius` accetta anche la password RADIUS per gli utenti
 RADIUS durante una transizione (mai per gli account locali): incoraggia a salvare la password di dominio sui client, quindi usala solo
 temporaneamente.
 
@@ -84,7 +84,7 @@ temporaneamente.
   stessa password sbagliata ripetuta da un client conta una volta (libcups riprova 3–5 volte) e un estraneo non può bloccare un altro utente.
 - Il blocco è salvato in un piccolo file (`/data/login-lockout.json`, solo nomi utente, indirizzi e orari), quindi un riavvio non lo azzera. Blocca la coppia (utente, IP) per 5 minuti e **non** disattiva l'account: lo stesso utente da un altro
   indirizzo non è toccato. Durante il blocco la pagina di accesso risponde "Troppi tentativi falliti, riprova più tardi" anche se poi la password è giusta.
-  Per vederlo prova sei password *diverse* sbagliate; ripetere sempre la stessa non blocca mai.
+  Ripetere la stessa password sbagliata non blocca mai: ne servono cinque diverse.
 - Disabilitare un utente nel portale blocca subito login e chiavi.
 - Sessioni del portale: firmate, 8 ore, token CSRF su ogni POST, cookie `Secure` + `SameSite=strict`. Le pagine che mostrano un segreto
   sono inviate con `Cache-Control: no-store`.

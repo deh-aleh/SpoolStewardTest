@@ -1,0 +1,23 @@
+/* printers.html */
+.pr-title { margin:0 0 4px; font-size:18px }
+.pr-sub { font-size:13px }
+.pr-ar { margin:0 0 12px }
+.pr-between { justify-content:space-between }
+.pr-err { color:var(--err) }
+svg.pr-x24 { stroke:currentColor; fill:none; stroke-width:2.4; stroke-linecap:round }
+svg.pr-x26 { stroke:currentColor; fill:none; stroke-width:2.6; stroke-linecap:round }
+.pill.blocked.pr-warn { display:block; border-radius:8px; padding:8px 12px }
+.pr-mt8 { margin-top:8px }
+.pr-mb0 { margin-bottom:0 }
+.pr-kanote { margin:-4px 0 8px }
+.row.pr-row-a { margin:4px 0 8px }
+.row.pr-row-b { margin-bottom:10px }
+h3.pr-h3 { margin-top:0 }
+.row.pr-row-c { margin-bottom:6px }
+.row.pr-row-d { margin-bottom:12px }
+.pr-mt6 { margin-top:6px }
+.grid2.pr-mt12 { margin-top:12px }
+.pr-ink { margin-bottom:8px }
+.pr-right { text-align:right }
+.pr-m6 { margin:6px 0 0 }
+.pr-m0 { margin:0 }

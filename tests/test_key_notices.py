@@ -1,7 +1,7 @@
 """Administrators switch off, extend and revoke keys; the owner finds it in their own bell; old keys are tidied up."""
 
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
@@ -84,7 +84,7 @@ async def test_extending_cannot_go_beyond_what_the_account_may_have(boss):
     with boss.sm() as s:
         user = s.scalars(select(User).where(User.username == "rad")).one()
         kid, _p = keys.create_key(s, user, "x", 30)[0].id, None
-    r = await boss.post(f"/admin/users/{uid(boss, 'rad')}/keys/{kid}/extend", data={"csrf_token": boss.token, "validity": "730"})
+    await boss.post(f"/admin/users/{uid(boss, 'rad')}/keys/{kid}/extend", data={"csrf_token": boss.token, "validity": "730"})
     with boss.sm() as s:
         assert (s.get(PrintKey, kid).expires_at - s.get(PrintKey, kid).created_at).days <= 31   # refused, not changed
     assert own_notices(boss, "rad") == []
@@ -180,7 +180,7 @@ def test_housekeeping_forgets_old_keys(portal):
     make_user(portal.sm, "ann", password=GOOD)
     kid, _p = key_of(portal, "ann", "old")
     with portal.sm() as s:
-        keys.revoke_key(s, s.get(PrintKey, kid), datetime.now(timezone.utc) - timedelta(days=15))
+        keys.revoke_key(s, s.get(PrintKey, kid), datetime.now(UTC) - timedelta(days=15))
     assert run_once(portal.sm) == (1, 0)
     with portal.sm() as s:
         assert s.scalars(select(PrintKey)).all() == []
@@ -200,7 +200,7 @@ def test_a_repeated_event_renews_one_notice_and_counts_it(portal):
     [n] = own_notices(portal, "ann")
     assert n.count == 3
     with portal.sm() as s:   # once dismissed, the next event opens a new notice
-        s.get(Notice, n.id).dismissed_at = datetime.now(timezone.utc)
+        s.get(Notice, n.id).dismissed_at = datetime.now(UTC)
         s.commit()
     notices.notify_user_counted(portal.sm, uid(portal, "ann"), "job_adjusted", "adjusted:hp", {"printer": "hp", "changed": ["color"]})
     assert [x.count for x in own_notices(portal, "ann")] == [1]
@@ -211,7 +211,7 @@ def test_secondary_notices_are_read_after_the_chosen_time_and_others_are_not(por
     a = uid(portal, "ann")
     notices.notify_user_counted(portal.sm, a, "job_adjusted", "adjusted:hp", {"printer": "hp", "changed": ["color"]})
     notices.notify_user_counted(portal.sm, a, "quota_reached", "weekly:jobs", {"printer": "hp", "period": "weekly", "metric": "jobs", "used": 5, "limit": 5})
-    soon, later = datetime.now(timezone.utc) + timedelta(minutes=10), datetime.now(timezone.utc) + timedelta(minutes=25)
+    soon, later = datetime.now(UTC) + timedelta(minutes=10), datetime.now(UTC) + timedelta(minutes=25)
     assert notices.read_secondary(portal.sm, a, 20, now=soon) == 0
     assert notices.read_secondary(portal.sm, a, 0, now=later) == 0            # 0 = never
     assert notices.read_secondary(portal.sm, a, 20, now=later) == 1

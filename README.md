@@ -1,24 +1,23 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="app/admin/static/icon-light.svg">
-  <img src="app/admin/static/icon-dark.svg" alt="PrintMinder icon" width="96" align="right">
+  <img src="app/admin/static/icon-dark.svg" alt="SpoolSteward icon" width="96" align="right">
 </picture>
 
-# PrintMinder
+# SpoolSteward
 
 **English** · [Italiano](README.it.md)
 
-Authentication, quotas and an audit trail in front of CUPS (IPP), with a web portal. CUPS and ipp-usb stay unmodified
-dependencies. The gateway is the only entry point: it authenticates users (local accounts and/or RADIUS), **imposes** their
-identity, enforces print limits, records who printed and scanned what, and forwards the job to CUPS.
+A printer on a shared network lets anyone print as much as they like, and nobody can tell afterwards who printed what. SpoolSteward sits between people and the printer: everyone signs in, each person or group gets a limit (pages, colour, one-sided), and every print and scan is written down. It is for homes, offices and schools that share a printer and want to decide who prints how much, and to see what was printed.
+
+Technically it is a gateway in front of CUPS (IPP) with a web portal. It signs people in (local accounts and/or RADIUS), decides the
+user name CUPS sees, applies the limits, records who printed and scanned what, and forwards the job to CUPS. CUPS and ipp-usb are used
+unmodified, and the gateway is the only way in.
 
 ```
 IPP client ──ipps (TLS + Basic)──▶ gateway ──unix socket──▶ CUPS ──internal net──▶ ipp-usb ──USB──▶ printer
 browser ───────https───────────▶     │  └─▶ DB (SQLite): users, groups, rules, audit
                                      └────▶ RADIUS (optional)           portal: /login, /admin (admins), /me (users)
 ```
-
-> Internal names such as `CUPSPL_*`, `cups-policy-admin` and the compose project `printgw` predate the name PrintMinder and are
-> kept so existing installations keep working.
 
 ## What it does
 
@@ -63,14 +62,14 @@ browser ───────https───────────▶     │  
 | | Portal in English, Italian, Spanish, Russian, Chinese | ✅ Spanish/Russian/Chinese need native review |
 | | Notifications (email/webhook) for pending requests | ⬜ |
 | | Permission requests (colour, one-sided, printers, hours) | ✅ |
-| **Operations** | Docker stack (ipp-usb + CUPS + gateway + mDNS), nothing installed on the host | ✅ |
+| **Operations** | Docker stack (ipp-usb + CUPS + portal + mDNS, from one image), nothing installed on the host | ✅ |
 | | Scheduled backups per administrator (folder, hour, rotation, passphrase/recovery-key encryption), restore from CLI | ✅ |
 | | Database migrations (Alembic), health check, logs, admin CLI | ✅ |
 | | Images for amd64 and arm64 on ghcr.io; update script that downloads a checked release package, makes a backup first and goes back by itself (and offers to restore the backup) if the new version does not start; notice of new versions; one `.env` file that an update never touches | ✅ amd64; arm64 run on a Raspberry Pi 4B (64-bit) |
 | | Update button in the portal (optional `updater` container, needs the Docker socket) | ✅ |
 | | Backups on a network disk or USB disk: marker file against an unmounted disk (on by default), a notice in the bell when a backup fails, time limit for a disk that stops answering | ✅ tested with an SMB share |
 | | TLS certificate: notices (expired, announced address missing, optional expiry warning) and `scripts/cert-sync.sh` to copy a renewed certificate from Nginx Proxy Manager or certbot | 🟡 script tested with simulations, not yet with a real Nginx Proxy Manager |
-| | Bell with notices for administrators (one bell, their own notices first); printer problems (jam, paper, ink) for administrators and for the users waiting; users are told when their group, rights, quota or request change; a one-time reminder to save `CUPSPL_SECRET_KEY` and a notice if it changes; `/healthz` shows only the status unless you ask for more | ✅ |
+| | Bell with notices for administrators (one bell, their own notices first); printer problems (jam, paper, ink) for administrators and for the users waiting; users are told when their group, rights, quota or request change; a one-time reminder to save `SPOOLSTEWARD_SECRET_KEY` and a notice if it changes; `/healthz` shows only the status unless you ask for more | ✅ |
 
 ## Limits
 
@@ -84,13 +83,13 @@ The full list, with workarounds, is in [docs/en/limitations.md](docs/en/limitati
 - **One gateway per USB printer** and **one per SQLite database** (no high availability). Going back to an older version after a migration may need a backup.
 - **TLS is mandatory**: install the self-signed certificate on clients or use your CA's.
 - Printer disconnection is detected within ~30 s (network queues: a TCP check, not paper).
-- Printed **file names are encrypted** in the database (key from `CUPSPL_SECRET_KEY`: do not change it); the rest of the database is not. For everything else encrypt the disk: [data-protection.md](docs/en/data-protection.md).
+- Printed **file names are encrypted** in the database (key from `SPOOLSTEWARD_SECRET_KEY`: do not change it); the rest of the database is not. For everything else encrypt the disk: [data-protection.md](docs/en/data-protection.md).
 - Spanish, Russian and Chinese translations are not reviewed by native speakers; pages printed by the gateway stay English.
 
 
 ## How it was developed
 
-PrintMinder started as a solution to a problem of my own, and I published it because it may be useful to others. I used AI tools in a significant way, and I would rather say so plainly:
+SpoolSteward started as a solution to a problem of my own, and I published it because it may be useful to others. I used AI tools in a significant way, and I would rather say so plainly:
 
 - **Documentation, automated tests and code comments** were written mostly with AI assistance.
 - **The application code** was written partly by me and partly with AI assistance.
@@ -107,15 +106,15 @@ Requirements: a **Linux** server, Docker Engine with Compose, `openssl`, `curl`,
 reachable by clients (default 8631). Nothing is installed on the host.
 
 ```sh
-# 0. download the release package (newest version: https://github.com/deh-aleh/PrintMinder/releases)
+# 0. download the release package (newest version: https://github.com/deh-aleh/SpoolSteward/releases)
 VERSION=x.y.z
-curl -LO https://github.com/deh-aleh/PrintMinder/releases/download/v$VERSION/printminder-$VERSION.tar.gz
-tar xzf printminder-$VERSION.tar.gz && cd printminder-$VERSION      # (the guide also shows how to check the download)
+curl -LO https://github.com/deh-aleh/SpoolSteward/releases/download/v$VERSION/spoolsteward-$VERSION.tar.gz
+tar xzf spoolsteward-$VERSION.tar.gz && cd spoolsteward-$VERSION      # (the guide also shows how to check the download)
 
 # 1. names / IPs clients will use to reach the server (they go into the TLS certificate)
 scripts/docker-init.sh print.lan 192.168.1.50      # creates .env (all the settings), config/tls/, data/
 
-# 2. settings: RADIUS is optional (leave host and secret empty for local accounts only)
+# 2. settings: RADIUS is optional (write none in host and secret for local accounts only)
 $EDITOR .env
 
 # 3. printers, in .env — USB (stop the host's ipp-usb first: sudo systemctl disable --now ipp-usb && sudo systemctl mask ipp-usb)
@@ -126,7 +125,7 @@ $EDITOR .env
 # 4. start
 docker compose up -d
 
-# 5. read the one-time code and set the password of the administrator "cups_orchestrator"
+# 5. read the one-time code and set the password of the administrator "administrator"
 docker compose logs gateway | grep "FIRST RUN"
 #    then open https://<server>:8631/setup
 ```
@@ -165,5 +164,5 @@ Everything is also available in Italian: [docs/it](docs/it) · [docs/README.md](
 
 ## License
 
-PrintMinder is released under the [Apache License 2.0](LICENSE). You may use, modify and distribute it, commercially included, as long as you keep
+SpoolSteward is released under the [Apache License 2.0](LICENSE). You may use, modify and distribute it, commercially included, as long as you keep
 the copyright notice and the [NOTICE](NOTICE) file (credit to Alessio Paccino) and state the changes you make. Copyright 2026 Alessio Paccino.

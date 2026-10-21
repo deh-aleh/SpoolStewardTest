@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Audit archive") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block body %}
 <div class="card">
   <h1>{{ _("Audit archive") }}</h1>
@@ -14,8 +15,8 @@
     <tr><th>{{ _("File") }}</th><th>{{ _("Content") }}</th><th>{{ _("Period") }}</th><th>{{ _("Rows") }}</th><th>{{ _("Size") }}</th><th>{{ _("State") }}</th><th></th></tr>
     {% for r in rows %}{% set a = r.a %}
     <tr>
-      <td><span class="mono">{{ r.name }}</span><div class="muted mono" style="font-size:12px">{{ a.path }}{% if r.host %}<br>{{ r.host }}{% endif %}</div>
-        <div class="muted mono" style="font-size:11px">sha256 {{ a.sha256 }}</div></td>
+      <td><span class="mono">{{ r.name }}</span><div class="muted mono ar-path">{{ a.path }}{% if r.host %}<br>{{ r.host }}{% endif %}</div>
+        <div class="muted mono ar-sha">sha256 {{ a.sha256 }}</div></td>
       <td>{{ _('prints') if a.source_table == 'job_log' else _('admin actions') }}</td>
       <td class="nowrap">{{ a.first_ts|localtime('%Y-%m-%d') }} → {{ a.last_ts|localtime('%Y-%m-%d') }}</td>
       <td>{{ a.rows }}</td><td>{{ '%.1f'|format(a.bytes / 1024) }} KB</td>

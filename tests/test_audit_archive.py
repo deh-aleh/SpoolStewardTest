@@ -4,7 +4,7 @@ import gzip
 import hashlib
 import json
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -14,15 +14,15 @@ from sqlalchemy import func, select
 from app.audit import archive
 from app.audit.adminlog import record
 from app.config import settings
-from app.db.models import AdminAudit, AuditArchive, JobKind, JobLog, JobState, Metric, PolicyRule, Resource, SubjectType, User
+from app.db.models import AdminAudit, AuditArchive, JobKind, JobLog, JobState, Metric, PolicyRule, SubjectType, User
 from app.policy.engine import usage
 from tests.conftest import csrf_of_page, make_user, portal_login
 
 GOOD = "correct horse battery"
 TZ = ZoneInfo("Europe/Rome")
-NOW = datetime(2026, 10, 7, 12, 0, tzinfo=timezone.utc)
-OLD = datetime(2026, 4, 10, 9, 0, tzinfo=timezone.utc)      # long before the protected window (starts 2026-09-01)
-RECENT = datetime(2026, 10, 2, 9, 0, tzinfo=timezone.utc)   # inside the quota windows in play
+NOW = datetime(2026, 10, 7, 12, 0, tzinfo=UTC)
+OLD = datetime(2026, 4, 10, 9, 0, tzinfo=UTC)      # long before the protected window (starts 2026-09-01)
+RECENT = datetime(2026, 10, 2, 9, 0, tzinfo=UTC)   # inside the quota windows in play
 
 
 def add_jobs(sm, user_id, n, ts, title="file", state=JobState.completed, pages=1, start=0):
@@ -94,7 +94,7 @@ def test_old_rows_go_to_a_verified_file_and_quotas_do_not_change(world):
     with world.sm() as s:
         a = s.scalars(select(AuditArchive).where(AuditArchive.source_table == "job_log")).one()
         assert (a.rows, a.sha256, a.bytes, Path(a.path)) == (300, res.sha256, res.bytes, res.path)
-        assert (a.first_ts.replace(tzinfo=timezone.utc), a.first_id) == (OLD, 1)
+        assert (a.first_ts.replace(tzinfo=UTC), a.first_id) == (OLD, 1)
         # the active table keeps exactly the protected rows, and nobody's quota moved
         assert s.scalar(select(func.count(JobLog.id))) == 7
         assert [usage(s, s.get(User, world.uid), r, NOW, TZ) for r in s.scalars(select(PolicyRule))] == before
@@ -206,7 +206,7 @@ def test_cli_archives_on_demand(world, monkeypatch, capsys):
 # ---------------------------------------------------------------- the portal
 
 @pytest.fixture
-async def admin(world):
+async def admin(world):          # own fixture on purpose: built on `world` (archive data, own db), not on the shared `portal`
     make_user(world.sm, "boss", password=GOOD, admin=True)
     add_jobs(world.sm, world.uid, 250, OLD, title="relazione")
     add_jobs(world.sm, world.uid, 3, RECENT, title="recente")

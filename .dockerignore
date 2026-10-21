@@ -16,9 +16,11 @@ docker/run/
 *.db-wal
 *.db-shm
 tests/
-# the gateway image needs only pyproject.toml and app/
+# the image needs pyproject.toml, app/, docs/ and the start scripts of docker/stack/ (cups, ipp-usb)
 deploy/
 docker/*
+!docker/stack/
+docker/stack/updater/
 scripts/
 docker-compose*.yml
 README.md

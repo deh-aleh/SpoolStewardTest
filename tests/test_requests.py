@@ -1,9 +1,8 @@
 """Phases 4-5: requests for more quota / another group, approvals, grants (temporary vs permanent)."""
 
 import base64
-import re
 import threading
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -11,11 +10,10 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.orm import sessionmaker
 
-from app.audit.adminlog import record
 from app.auth import keys
 from app.config import settings
 from app.db.models import (
-    AdminAudit, Base, Group, JobKind, JobLog, JobState, Metric, Period, PolicyRule, QuotaGrant, QuotaRequest,
+    AdminAudit, Base, Group, JobKind, JobLog, JobState, Metric, Period, QuotaGrant, QuotaRequest,
     RequestScope, RequestStatus, Resource, SubjectType, User,
 )
 from app.db.session import make_engine
@@ -29,13 +27,13 @@ from tests.conftest import (
 
 GOOD = "correct horse battery"
 TZ = ZoneInfo("Europe/Rome")
-NOW = datetime(2026, 10, 7, 12, 0, tzinfo=timezone.utc)          # a Wednesday
-WEEK_END = datetime(2026, 10, 11, 22, 0, tzinfo=timezone.utc)    # Monday 12 Oct 00:00 in Rome
-MONTH_END = datetime(2026, 10, 31, 23, 0, tzinfo=timezone.utc)   # 1 Nov 00:00 in Rome (DST ended on the 25th)
+NOW = datetime(2026, 10, 7, 12, 0, tzinfo=UTC)          # a Wednesday
+WEEK_END = datetime(2026, 10, 11, 22, 0, tzinfo=UTC)    # Monday 12 Oct 00:00 in Rome
+MONTH_END = datetime(2026, 10, 31, 23, 0, tzinfo=UTC)   # 1 Nov 00:00 in Rome (DST ended on the 25th)
 
 
 def aware(dt):
-    return dt if dt is None or dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    return dt if dt is None or dt.tzinfo else dt.replace(tzinfo=UTC)
 
 
 @pytest.fixture
@@ -84,8 +82,8 @@ def test_window_end_weekly_monthly_and_across_dst_and_year():
     assert window_end(Period.weekly, NOW, TZ) == WEEK_END
     assert window_end(Period.monthly, NOW, TZ) == MONTH_END
     # DST ends on Sun 25 Oct: that week really is 7*24h + 1h long, and still ends on a Monday midnight
-    assert window_end(Period.weekly, datetime(2026, 10, 22, 8, tzinfo=timezone.utc), TZ) == datetime(2026, 10, 25, 23, tzinfo=timezone.utc)
-    assert window_end(Period.monthly, datetime(2026, 12, 15, tzinfo=timezone.utc), TZ) == datetime(2026, 12, 31, 23, tzinfo=timezone.utc)
+    assert window_end(Period.weekly, datetime(2026, 10, 22, 8, tzinfo=UTC), TZ) == datetime(2026, 10, 25, 23, tzinfo=UTC)
+    assert window_end(Period.monthly, datetime(2026, 12, 15, tzinfo=UTC), TZ) == datetime(2026, 12, 31, 23, tzinfo=UTC)
     # the very first instant of a window belongs to the NEW window
     assert window_end(Period.weekly, WEEK_END, TZ) == WEEK_END + timedelta(days=7)
 
@@ -195,9 +193,9 @@ def test_each_metric_ends_with_its_own_period(org):
 
 
 def test_approving_after_the_boundary_uses_the_window_of_the_approval(org):
-    asked = datetime(2026, 10, 11, 21, 50, tzinfo=timezone.utc)                             # Sunday 23:50 in Rome
+    asked = datetime(2026, 10, 11, 21, 50, tzinfo=UTC)                             # Sunday 23:50 in Rome
     rid = decide(org.sm, org.ann, asked=asked)
-    decided = datetime(2026, 10, 12, 8, 0, tzinfo=timezone.utc)                             # Monday morning
+    decided = datetime(2026, 10, 12, 8, 0, tzinfo=UTC)                             # Monday morning
     approve(org.sm, rid, org.boss, now=decided)
     with org.sm() as s:
         g = s.scalars(select(QuotaGrant)).one()
@@ -362,7 +360,7 @@ def test_grants_count_inside_the_atomic_quota_check(tmp_path):
     with sm() as s:
         set_limit(s, SubjectType.user, ann, Metric.jobs, 3, Period.weekly)
         s.commit()
-        grants.create_grant(s, s.get(User, boss), s.get(User, ann), "jobs", 2, "temporary", "", datetime.now(timezone.utc), TZ)
+        grants.create_grant(s, s.get(User, boss), s.get(User, ann), "jobs", 2, "temporary", "", datetime.now(UTC), TZ)
     allowed = []
 
     def submit():
@@ -485,7 +483,7 @@ async def test_users_can_not_see_or_decide_other_peoples_requests_or_admin_pages
     rid = decide(web.sm, web.ann)
     r = await web.post(f"/admin/requests/{rid}/approve", data={"csrf_token": web.ann_token})
     assert r.status_code == 403
-    other = make_user(web.sm, "bob", password=GOOD)
+    make_user(web.sm, "bob", password=GOOD)
     bob = httpx.AsyncClient(transport=httpx.ASGITransport(app=web.app, client=("10.0.0.10", 1)), base_url="https://gw.test")
     async with bob:
         await portal_login(bob, "bob", GOOD)
@@ -541,7 +539,7 @@ async def test_grants_live_in_the_requests_page_create_and_revoke(web):
 
 @pytest.mark.usefixtures("english")
 async def test_deleting_ended_grants_keeps_the_active_ones_and_is_logged(web):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     with web.sm() as s:
         s.add_all([
             QuotaGrant(user_id=web.ann, metric=Metric.jobs, amount=1, scope=RequestScope.permanent, valid_from=now),
@@ -601,7 +599,7 @@ async def test_a_refusal_tells_the_user_where_to_ask_and_a_grant_unblocks_printi
     assert denied.code == c.STATUS_NOT_POSSIBLE and "weekly job limit reached (2/2)" in msg
     assert "https://gw.test/me" in msg                                                      # where to ask for more
     with ipp.sm() as s:
-        grants.create_grant(s, s.get(User, ipp.boss), s.get(User, ipp.ann), "jobs", 1, "temporary", "", datetime.now(timezone.utc), TZ)
+        grants.create_grant(s, s.get(User, ipp.boss), s.get(User, ipp.ann), "jobs", 1, "temporary", "", datetime.now(UTC), TZ)
     assert (await ipp_post(ipp, pj(10))).code < 0x0100                                      # one more allowed...
     assert (await ipp_post(ipp, pj(11))).code == c.STATUS_NOT_POSSIBLE                      # ...and not two
     with ipp.sm() as s:

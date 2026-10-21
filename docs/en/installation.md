@@ -2,7 +2,7 @@
 
 [Documentation index](../README.md) · English · [Italiano](../it/installazione.md)
 
-Two ways to install PrintMinder:
+Two ways to install SpoolSteward:
 
 - **Docker (recommended)** — everything runs in containers (`ipp-usb`, CUPS, gateway, mDNS). Nothing is installed or
   changed on the host.
@@ -25,17 +25,17 @@ Problems? See [troubleshooting.md](troubleshooting.md).
 ## 2. Quick path (Docker)
 
 ```sh
-# 0. download the package; VERSION = the newest release (https://github.com/deh-aleh/PrintMinder/releases)
+# 0. download the package; VERSION = the newest release (https://github.com/deh-aleh/SpoolSteward/releases)
 VERSION=x.y.z
-curl -LO https://github.com/deh-aleh/PrintMinder/releases/download/v$VERSION/printminder-$VERSION.tar.gz
-curl -LO https://github.com/deh-aleh/PrintMinder/releases/download/v$VERSION/SHA256SUMS
+curl -LO https://github.com/deh-aleh/SpoolSteward/releases/download/v$VERSION/spoolsteward-$VERSION.tar.gz
+curl -LO https://github.com/deh-aleh/SpoolSteward/releases/download/v$VERSION/SHA256SUMS
 sha256sum -c --ignore-missing SHA256SUMS            # must answer "OK"
-tar xzf printminder-$VERSION.tar.gz && cd printminder-$VERSION
+tar xzf spoolsteward-$VERSION.tar.gz && cd spoolsteward-$VERSION
 
 # 1. names / IPs by which clients will reach the server (they go into the TLS certificate)
 scripts/docker-init.sh print.lan 192.168.1.50
 
-# 2. settings (RADIUS is optional: leave host and secret empty to use local accounts only)
+# 2. settings (RADIUS is optional: write none in host and secret to use local accounts only)
 $EDITOR .env
 
 # 3. printers: see §5 (USB) and §6 (network); then start
@@ -46,8 +46,8 @@ docker compose logs gateway | grep "FIRST RUN"
 #    open https://<server>:8631/setup
 ```
 
-The administrator account is `cups_orchestrator`. From a shell you can do the same with
-`docker compose exec -it gateway cups-policy-admin set-admin-password`.
+The administrator account is `administrator`. From a shell you can do the same with
+`docker compose exec -it gateway spoolsteward-admin set-admin-password`.
 
 ## 3. Step by step
 
@@ -57,7 +57,7 @@ The administrator account is `cups_orchestrator`. From a shell you can do the sa
 
 | Created | What |
 |---|---|
-| `.env` | **all** the settings in one file. Part A is for compose: `PRINTGW_REGISTRY`/`PRINTGW_VERSION` (which published images run), `PUID`/`PGID` (your user), `PROJECT_DIR`, `GATEWAY_PORT`, `CUPS_QUEUES`, `CUPS_VIRTUAL_QUEUE`, host paths. Part B holds the settings of the program, `CUPSPL_*`, with a freshly generated `CUPSPL_SECRET_KEY`. Mode 600 (it holds secrets) |
+| `.env` | **all** the settings in one file. Part A is for compose: `SPOOLSTEWARD_REGISTRY`/`SPOOLSTEWARD_VERSION` (which published images run), `PUID`/`PGID` (your user), `PROJECT_DIR`, `PORTAL_PORT`, `CUPS_QUEUES`, `CUPS_VIRTUAL_QUEUE`, host paths. Part B holds the settings of the program, `SPOOLSTEWARD_*`, with a freshly generated `SPOOLSTEWARD_SECRET_KEY`. Mode 600 (it holds secrets) |
 | `config/tls/` | a self-signed certificate (825 days) whose alternative names are the names/IPs you passed |
 | `data/audit-archive/`, `data/backups/` | host folders for compressed audit and backups |
 
@@ -71,22 +71,22 @@ The settings most often changed (all have a default):
 
 | Setting | When |
 |---|---|
-| `CUPSPL_RADIUS_HOST`, `CUPSPL_RADIUS_SECRET` | You want office (RADIUS) logins. Register this machine as a RADIUS *client* with the same secret. Fill both or neither. |
-| `CUPSPL_PORTAL_URL` | Set `https://print.lan:8631` so messages sent to print clients contain the right link |
-| `CUPSPL_TIMEZONE` | Quota weeks/months and displayed times follow it (default `UTC`: set yours, for example `Europe/Rome`); the times in the logs (`docker compose logs`) follow it too and show the offset from UTC |
-| `CUPSPL_LANGUAGE` | Default portal language (`en`, `it`, `es`, `ru`, `zh`) |
-| `CUPSPL_MDNS_HOSTNAME` | If the machine name is not in the certificate |
-| `CUPSPL_BACKUP_*` | The general scheduled backup (see [backup.md](backup.md)) |
-| `CUPSPL_HEALTHZ_INFO` | What `/healthz` shows besides the status (nothing by default): `version`, `printers` |
-| `CUPSPL_UPDATE_CHECK` | `false` stops the daily question to GitHub about a newer version |
-| `CUPSPL_ESCL_ANONYMOUS` | `true` accepts scans from apps that cannot send a password (see [scanning.md](scanning.md)) |
+| `SPOOLSTEWARD_RADIUS_HOST`, `SPOOLSTEWARD_RADIUS_SECRET` | You want office (RADIUS) logins. Register this machine as a RADIUS *client* with the same secret. Fill both or neither. |
+| `SPOOLSTEWARD_PORTAL_URL` | Set `https://print.lan:8631` so messages sent to print clients contain the right link |
+| `SPOOLSTEWARD_TIMEZONE` | Quota weeks/months and displayed times follow it (default `UTC`: set yours, for example `Europe/Rome`); the times in the logs (`docker compose logs`) follow it too and show the offset from UTC |
+| `SPOOLSTEWARD_LANGUAGE` | Default portal language (`en`, `it`, `es`, `ru`, `zh`) |
+| `SPOOLSTEWARD_MDNS_HOSTNAME` | If the machine name is not in the certificate |
+| `SPOOLSTEWARD_BACKUP_*` | The general scheduled backup (see [backup.md](backup.md)) |
+| `SPOOLSTEWARD_HEALTHZ_INFO` | What `/healthz` shows besides the status (nothing by default): `version`, `printers` |
+| `SPOOLSTEWARD_UPDATE_CHECK` | `false` stops the daily question to GitHub about a newer version |
+| `SPOOLSTEWARD_ESCL_ANONYMOUS` | `true` accepts scans from apps that cannot send a password (see [scanning.md](scanning.md)) |
 
 The file is fully commented. Every variable, with its default and when to change it, is in [configuration.md](configuration.md). After any change: `docker compose up -d`.
 
 ### 3.3 The compose variables (part A of `.env`)
 
-Also in `.env`, edit the printer queues (`CUPS_QUEUES`), the published port (`GATEWAY_PORT=631` to replace port 631), the
-user (`PUID`/`PGID`) and, for downloaded images, `PRINTGW_REGISTRY` + `PRINTGW_VERSION` (pin a fixed version in
+Also in `.env`, edit the printer queues (`CUPS_QUEUES`), the published port (`PORTAL_PORT=631` if no other CUPS uses it), the
+user (`PUID`/`PGID`) and, for downloaded images, `SPOOLSTEWARD_REGISTRY` + `SPOOLSTEWARD_VERSION` (pin a fixed version in
 production, never `latest`).
 
 ### 3.4 TLS certificate
@@ -106,7 +106,7 @@ gateway use that same certificate itself, with no proxy in between:
 2. Copy the pair from the machine that holds it (NPM: `data/letsencrypt/live/npm-<n>/fullchain.pem` and `privkey.pem`; custom certificates:
    `data/custom_ssl/npm-<n>/`) to `config/tls/fullchain.pem` and `config/tls/privkey.pem`, make the key readable by the `PUID` user
    (`chmod 600`), and run `docker compose restart gateway`.
-3. Set `CUPSPL_PORTAL_URL=https://print.example.com:8631` in `.env`, and use `ipps://print.example.com:8631/printers/<queue>`.
+3. Set `SPOOLSTEWARD_PORTAL_URL=https://print.example.com:8631` in `.env`, and use `ipps://print.example.com:8631/printers/<queue>`.
 4. Let's Encrypt certificates are renewed about every 60 days. To avoid copying them by hand each time, run `scripts/cert-sync.sh` from cron: it copies the
    two files, checks them and restarts the gateway only if they changed. It is explained step by step, including how to create a user that can
    only read, in [certificates.md](certificates.md).
@@ -124,7 +124,7 @@ carry the `Host` the proxy forwards, without `:443`, so devices must keep the ad
 
 ```sh
 docker compose up -d --build          # build from source
-# or, with published images (set PRINTGW_REGISTRY and PRINTGW_VERSION in .env):
+# or, with published images (set SPOOLSTEWARD_REGISTRY and SPOOLSTEWARD_VERSION in .env):
 docker compose pull && docker compose up -d
 ```
 
@@ -133,8 +133,8 @@ Check: `curl -sk https://<server>:8631/healthz` answers 200; `docker compose ps`
 ### 3.6 First administrator
 
 `docker compose logs gateway | grep "FIRST RUN"` prints a one-time code. Open `https://<server>:8631/setup`, enter
-the code and choose the password of `cups_orchestrator` (minimum 12 characters). The code is single-use and protected
-against guessing. If nothing appears, the account probably already has a password (this folder ran before and the Docker volume kept the database): the log then says "already has a password"; sign in, or reset it with `docker compose exec -it gateway cups-policy-admin set-admin-password`. More causes: [troubleshooting.md](troubleshooting.md).
+the code and choose the password of `administrator` (minimum 12 characters). The code is single-use and protected
+against guessing. If nothing appears, the account probably already has a password (this folder ran before and the Docker volume kept the database): the log then says "already has a password"; sign in, or reset it with `docker compose exec -it gateway spoolsteward-admin set-admin-password`. More causes: [troubleshooting.md](troubleshooting.md).
 
 ### 3.7 First users
 
@@ -157,7 +157,7 @@ The device must trust the certificate. Details in [printing.md](printing.md).
 
 **New USB printers are added by themselves** (within about a minute): plug the printer in and it appears in the Printers page. If it has
 IPP-over-USB it is served by `ipp-usb`; if not (many older lasers), the `cups` container uses it directly and needs a driver — the image
-includes brlaser, gutenprint, splix and foo2zjs (add others in `docker/stack/cups/Dockerfile`). `CUPS_QUEUES` is only needed to give a
+includes brlaser, gutenprint, splix and foo2zjs (add others in `docker/stack/Dockerfile`). `CUPS_QUEUES` is only needed to give a
 fixed name to a queue; a queue named there is created once, and stays deleted if you delete it later (or if the gateway removes an unplugged USB printer). To bring one back: `scripts/queue-restore.sh NAME --reboot`. See [printers.md](printers.md#2-new-and-unplugged-usb-printers).
 
 `ipp-usb` needs exclusive use of the printer. If it is installed on the host, stop and mask it (SANE too):
@@ -181,12 +181,12 @@ by itself within seconds.
 
 Give `CUPS_QUEUES` the printer's IPP address: `CUPS_QUEUES="OFFICE=ipp://192.168.1.60/ipp/print"` (several queues are
 separated by spaces). Scanners that answer eSCL on the printer's IPP port (or port 80) are found automatically;
-otherwise list them in `CUPSPL_SCAN_URL`.
+otherwise list them in `SPOOLSTEWARD_SCAN_URL`.
 
 ## 7. Try it without a printer or RADIUS
 
 ```sh
-# in .env:  CUPS_VIRTUAL_QUEUE=1   CUPSPL_RADIUS_HOST=radius   CUPSPL_RADIUS_SECRET=testing123
+# in .env:  CUPS_VIRTUAL_QUEUE=1   SPOOLSTEWARD_RADIUS_HOST=radius   SPOOLSTEWARD_RADIUS_SECRET=testing123
 docker compose --profile radius-test up -d --build
 ```
 
@@ -204,23 +204,23 @@ Printers page. Never leave test accounts on a real installation.
 
 ### Updates
 
-The images are published for each release (`ghcr.io/deh-aleh/{gateway,cups,ipp-usb,updater}:<version>`, amd64 + arm64) and
-`.env` holds the version that runs (`PRINTGW_VERSION`). A version is only changed **on purpose**: nothing updates by itself.
+The images are published for each release (`ghcr.io/deh-aleh/spoolsteward:<version>`, plus `spoolsteward-updater` for the optional updater; amd64 + arm64) and
+`.env` holds the version that runs (`SPOOLSTEWARD_VERSION`). A version is only changed **on purpose**: nothing updates by itself.
 Database migrations run at start.
 
-Each release also has a **package** (`printminder-<version>.tar.gz` with its `SHA256SUMS`) holding `docker-compose.yml`, the scripts,
+Each release also has a **package** (`spoolsteward-<version>.tar.gz` with its `SHA256SUMS`) holding `docker-compose.yml`, the scripts,
 `docker/env.example` and the documentation. It never holds `.env`, `config/` or `data/`: an update cannot touch them.
 
 | How | When |
 |---|---|
 | `scripts/update.sh` | **Normal way.** Makes a full backup (`data/backups/pre-update/`), downloads the package of the new version and checks its sha256 sum, replaces `docker-compose.yml` and the scripts (the old ones stay in `.update-prev/`), writes the new version in `.env`, downloads the images, restarts and waits until the gateway is healthy. If it is not, it puts the previous files and version back; if even the previous version does not start (the new one already changed the database), it offers to restore the backup it has just made. `scripts/update.sh 1.2.0` picks a version; `--check` only tells if a newer one exists. A change of major version (1.x → 2.x) asks for confirmation: read the release notes first. |
-| Button *Update* in the portal | Optional. Menu *Backup*, box *Update*. Needs the `updater` container (below) **and** a scheduled backup that is on and succeeded in the last 48 h: a fresh backup is made, then the update starts. If there is no working scheduled backup the button stays off and says why. Only updates inside the same major version. If the new version does not start it puts the old one back, but restoring the backup, if needed, is up to you: from the *Backup* menu or with `scripts/backup.sh restore`. |
-| `git pull && docker compose up -d --build` | Only in a folder cloned with git (development) and for images you build yourself (`PRINTGW_REGISTRY` empty in `.env`). `scripts/update.sh` refuses to run in a folder with `.git`, so it does not fight with git. |
+| Button *Update* in the portal | Optional. Menu *Backup*, box *Update*. Needs the `updater` container (below) **and** a scheduled backup that is on and succeeded in the last 48 h: a fresh backup is made, then the update starts. If there is no working scheduled backup the button stays off and says why. Only updates inside the same major version. If the new version does not start it puts the old one back, but restoring the backup, if needed, is up to you, with `scripts/backup.sh restore` (see "Going back to an older version" below). |
+| `git pull && docker compose up -d --build` | Only in a folder cloned with git (development) and for images you build yourself (`SPOOLSTEWARD_REGISTRY` empty in `.env`). `scripts/update.sh` refuses to run in a folder with `.git`, so it does not fight with git. |
 
 The compose file and the images always change together, so a new image never runs with an old compose file. `.env` is not touched.
 
 **Notice of a new version.** Every 24 hours (the first time 2 minutes after the gateway starts, so a restart checks again at once) the gateway asks GitHub for the newest release and shows a note to administrators.
-Only that one request goes out and it sends nothing about your server. Switch it off with `CUPSPL_UPDATE_CHECK=false`.
+Only that one request goes out and it sends nothing about your server. Switch it off with `SPOOLSTEWARD_UPDATE_CHECK=false`.
 
 **The optional `updater` container** applies updates asked for in the portal. It is **off by default** because it needs the
 Docker socket (`/var/run/docker.sock`), and whoever controls that socket controls the whole machine (root): if someone found a flaw in
@@ -242,9 +242,9 @@ copy its line into your `.env` and run `docker compose up -d`.
 
 ```sh
 ls data/backups/pre-update/
-#   printgw-v0.3.0-20261016-132831.tar.gz   <- made while 0.3.0 was running
-#   printgw-v0.2.2-20261016-101500.tar.gz   <- made while 0.2.2 was running (before the update to 0.3.0)
-scripts/backup.sh restore data/backups/pre-update/printgw-v0.2.2-20261016-101500.tar.gz    # asks you to type YES
+#   spoolsteward-v0.3.0-20261016-132831.tar.gz   <- made while 0.3.0 was running
+#   spoolsteward-v0.2.2-20261016-101500.tar.gz   <- made while 0.2.2 was running (before the update to 0.3.0)
+scripts/backup.sh restore data/backups/pre-update/spoolsteward-v0.2.2-20261016-101500.tar.gz    # asks you to type YES
 scripts/update.sh 0.2.2                    # puts the files of that version back (the restore brought back its .env)
 ```
 
@@ -252,22 +252,22 @@ The version in the file name is the one that was running when the backup was mad
 
 **Betas.** A version such as `0.4.0-beta.1` is a test release, published as a GitHub pre-release. `scripts/update.sh` without arguments, the *Update* button and the "new version" note never offer it; you get it only by naming it: `scripts/update.sh 0.4.0-beta.1`. From a beta, the final release (`0.4.0`) is offered normally. Do not use a beta on a server people depend on.
 
-**Pin the version.** Never use `latest`: leave `PRINTGW_VERSION` at a number, so an update is a decision.
+**Pin the version.** Never use `latest`: leave `SPOOLSTEWARD_VERSION` at a number, so an update is a decision.
 
 ## 9. Alternative: install on the host (no docker)
 
-> This **modifies the system**: it creates the user `cupspl`, files in `/opt` and `/etc`, a systemd unit, and replaces
+> This **modifies the system**: it creates the user `spoolsteward`, files in `/opt` and `/etc`, a systemd unit, and replaces
 > `/etc/cups/cupsd.conf` (the original is saved as `cupsd.conf.pre-gateway`).
 
 ```sh
-sudo sh deploy/install.sh                 # user, venv in /opt/cups-policy-gateway, /etc/cups-policy-gateway/env, unit file
-sudoedit /etc/cups-policy-gateway/env     # RADIUS (optional), TLS paths, …; put the certificate in /etc/cups-policy-gateway/tls
+sudo sh deploy/install.sh                 # user, venv in /opt/spoolsteward, /etc/spoolsteward/env, unit file
+sudoedit /etc/spoolsteward/env     # RADIUS (optional), TLS paths, …; put the certificate in /etc/spoolsteward/tls
 sudo sh deploy/setup-cups.sh              # makes CUPS a private backend (unix socket, no TCP); --revert goes back
-sudo systemctl enable --now cups-policy-gateway
-journalctl -u cups-policy-gateway | grep "FIRST RUN"
+sudo systemctl enable --now spoolsteward
+journalctl -u spoolsteward | grep "FIRST RUN"
 ```
 
-Needs Python ≥ 3.12 with `venv`. The service runs as `cupspl`, sandboxed, and binds port 631 through
+Needs Python ≥ 3.12 with `venv`. The service runs as `spoolsteward`, sandboxed, and binds port 631 through
 `CAP_NET_BIND_SERVICE`. `deploy/env.example` lists the settings. The mDNS announcer is a separate process
 (`python -m app.mdns`) that you must run yourself if you want it.
 

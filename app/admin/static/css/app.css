@@ -1,0 +1,287 @@
+:root { --bg:#f6f7f9; --card:#fff; --fg:#1d2330; --muted:#667085; --line:#e3e6ec; --accent:#2457d6; --ok:#12805c; --err:#b42318; --warn:#9a6700; --extra:#7a3fd0; --orange:#c2570c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#12151c; --card:#1a1f2b; --fg:#e7eaf0; --muted:#98a2b3; --line:#2b3242; --accent:#6c93f5; --ok:#4cc29a; --err:#f97066; --warn:#e3b341; --extra:#b794f4; --orange:#ffa733; } }
+:root[data-theme="dark"] { --bg:#12151c; --card:#1a1f2b; --fg:#e7eaf0; --muted:#98a2b3; --line:#2b3242; --accent:#6c93f5; --ok:#4cc29a; --err:#f97066; --warn:#e3b341; --extra:#b794f4; --orange:#ffa733; }
+:root { color-scheme: light dark; } :root[data-theme="light"] { color-scheme: light; } :root[data-theme="dark"] { color-scheme: dark; }
+* { box-sizing:border-box }
+:lang(zh) { font-family:system-ui,"PingFang SC","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif }  /* the browser picks the right Han glyphs from lang */
+body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.45 system-ui,sans-serif; -webkit-text-size-adjust:100% }
+header { display:flex; flex-wrap:wrap; gap:8px 16px; align-items:center; padding:10px 16px; background:var(--card); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:100 }
+/* brand block: logo, name and (user name) under it; the whole block opens the settings */
+a.brand { display:flex; align-items:center; gap:10px; color:var(--fg); text-decoration:none; padding:3px 10px 3px 4px; margin-right:4px; border-radius:8px; border:1px solid transparent }
+a.brand:hover, a.brand.on { background:var(--bg); border-color:var(--line) }
+a.brand .bname { display:flex; flex-direction:column; line-height:1.15 }
+a.brand .bname b { font-size:16px }
+a.brand .bname small { color:var(--muted); font-size:12px; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.logo img { display:block } a.brand .logo img { width:34px; height:34px }
+a.brand .gear { width:16px; height:16px; color:var(--muted) }
+a.brand:hover .gear, a.brand.on .gear { color:var(--orange) }
+/* two logos, one per theme: ink tile on a light page, paper tile on a dark one (same rules as the colours above) */
+.logo img.logo-l { display:none }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .logo img.logo-d { display:none } :root:not([data-theme="light"]) .logo img.logo-l { display:block } }
+:root[data-theme="dark"] .logo img.logo-d { display:none } :root[data-theme="dark"] .logo img.logo-l { display:block }
+.hactions { display:flex; align-items:center; gap:8px } .hactions form { margin:0 }
+.iconbtn { width:40px; height:40px; padding:0; display:inline-flex; align-items:center; justify-content:center }
+.iconbtn svg { width:20px; height:20px }
+a.bell, a.helpbtn { position:relative; color:var(--muted); text-decoration:none; border:1px solid var(--line); border-radius:6px }
+a.bell:hover, a.bell.on, a.helpbtn:hover, a.helpbtn.on { color:var(--orange); background:var(--bg) }
+a.bell .belln { position:absolute; top:-6px; right:-6px; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:#b42318; color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center }
+nav { display:flex; flex-wrap:wrap; gap:2px }
+nav a { color:var(--muted); text-decoration:none; padding:6px 10px; border-radius:6px; white-space:nowrap }
+nav a.on { background:var(--bg) }
+/* top bar: the background stays, the text turns orange on hover and for the page you are on (the maintenance
+   button is the exception: it is red/green on purpose) */
+nav a:hover, nav a.on, .who:hover, .who.on, header button.sec:hover { color:var(--orange) }
+nav a:hover, .who:hover { background:var(--bg) }
+header button.sec:hover { border-color:var(--orange) }
+.spacer { flex:1 }
+.who { color:var(--muted); text-decoration:none; padding:6px 10px; border-radius:6px; border:1px solid var(--line) }
+.who.on { background:var(--bg) }
+main { max-width:1200px; margin:0 auto; padding:16px }
+/* narrow pages (settings): centred; on a computer a little bigger text */
+.narrow { max-width:680px; margin:0 auto }
+@media (min-width:701px) { .narrow { font-size:15.5px } .narrow h1 { font-size:20px } .narrow h2 { font-size:16.5px } }
+a { color:var(--accent) }
+.card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin-bottom:16px; overflow-x:auto }
+h1 { font-size:18px; margin:0 0 12px } h2 { font-size:15px; margin:14px 0 8px } .card > h2:first-child { margin-top:0 }
+table { border-collapse:collapse; width:100% }
+th, td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:middle }
+th { color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.03em }
+input, select, button, .btn { font:inherit; color:inherit; background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:5px 8px }
+input[type=number] { width:90px } input[type=text], input[type=password] { min-width:140px }
+button, .btn { cursor:pointer; background:var(--accent); color:#fff; border-color:var(--accent); text-decoration:none; display:inline-block }
+button.sec, .btn.sec { background:transparent; color:var(--fg); border-color:var(--line) }
+button.danger, .btn.danger { background:transparent; color:var(--err); border-color:var(--err) }
+button.danger:hover, .btn.danger:hover { background:var(--err); color:var(--card); border-color:var(--err) }  /* colours swap on hover */
+button:disabled { opacity:.5; cursor:not-allowed }
+.row { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center }
+/* the buttons that finish a form (save, cancel, send…): a clear gap between them and from the fields above */
+.actions { display:flex; flex-wrap:wrap; gap:12px 16px; align-items:center; margin-top:18px } .actions form { margin:0 }
+.flash { padding:8px 12px; border-radius:6px; margin-bottom:12px; border:1px solid var(--line); background:var(--card) }
+.flash.ok { color:var(--ok) } .flash.err { color:var(--err) }
+.pill { display:inline-block; padding:1px 8px; border-radius:99px; font-size:12px; border:1px solid var(--line) }
+.s-accepted,.s-completed { color:var(--ok) } .s-denied,.s-failed { color:var(--err) } .s-canceled,.s-held,.s-pending { color:var(--warn) } .s-approved,.s-ok,.s-active { color:var(--ok) } .s-disabled { color:var(--warn) } .s-rejected,.s-revoked,.s-expired,.s-ended,.s-missing,.s-modified { color:var(--err) }
+.muted { color:var(--muted) } .mono { font-family:ui-monospace,monospace; font-size:13px } .nowrap { white-space:nowrap }
+.extra { color:var(--extra); font-weight:600 } .inherited { color:var(--muted); font-style:italic }
+.badge { background:var(--err); color:#fff; border-radius:99px; padding:0 7px; font-size:12px }
+.secret { font:600 17px ui-monospace,monospace; padding:12px; border:1px dashed var(--accent); border-radius:8px; word-break:break-all; user-select:all; background:var(--bg) }
+textarea { font:inherit; color:inherit; background:var(--bg); border:1px solid var(--line); border-radius:6px; padding:6px 8px; width:100%; min-height:70px }
+.grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px }
+.grid2 > div { min-width:0 }  /* a long queue name must not push the next column */
+.grid2 td.mono, .grid2 dd { overflow-wrap:anywhere }
+/* login and first-start pages: one centred box, no menu */
+main.authmain { max-width:none; min-height:100vh; display:grid; place-items:center; padding:24px 16px }
+.authbox { width:100%; max-width:540px; padding:44px 46px 34px; margin:0; overflow:visible; box-shadow:0 8px 30px rgba(0,0,0,.08) }
+.authbrand { display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:26px }
+.authbrand .logo img { width:72px; height:72px } .authbrand .authname { font-size:36px; font-weight:700; letter-spacing:-.01em }
+.authbox h1 { font-size:18px; text-align:center; margin:0 0 14px }
+.authbox input { width:100%; font-size:17px; min-height:54px; padding:10px 14px; margin-bottom:14px }
+.authbox button.primary { width:100%; min-height:54px; font-size:17px; display:flex; align-items:center; justify-content:center; gap:10px }
+.authbox button.primary svg { width:20px; height:20px }
+.authbox .muted { text-align:center; margin:16px 0 0 }
+.pwrow { position:relative } .pwrow input { padding-right:50px }
+.pwcell .pwrow input { width:100% }
+.pwtoggle { position:absolute; right:4px; top:50%; transform:translateY(-50%); width:40px; height:40px; min-height:0; padding:0; background:transparent; border:0; color:var(--muted); display:flex; align-items:center; justify-content:center }
+.pwtoggle:hover { color:var(--orange) } .pwtoggle svg { width:22px; height:22px }
+.pwtoggle .off { display:none } .pwtoggle.shown .on { display:none } .pwtoggle.shown .off { display:block }
+.bar { height:10px; border-radius:99px; background:var(--line); overflow:hidden; min-width:80px } .bar i { display:block; height:100% }
+button.maint { background:#b42318; border-color:#b42318; color:#fff; box-shadow:0 1px 0 rgba(0,0,0,.2) }
+button.maint.on { background:#12805c; border-color:#12805c }
+.updbar { background:var(--card); border-bottom:1px solid var(--line); padding:8px 16px; text-align:center }
+.maintbar { background:#b42318; color:#fff; padding:8px 16px; text-align:center; font-weight:600 }
+.pill.blocked { color:#fff; background:#b42318; border-color:#b42318 }
+button.dots { background:transparent; color:var(--accent); border:1px solid var(--line); padding:0 7px; min-height:0; line-height:1.3; border-radius:6px; font-weight:700 }
+.cardhead { display:flex; justify-content:space-between; align-items:flex-start; gap:8px } .cardhead h2 { margin:0 0 8px !important }
+.tools { display:flex; gap:6px; flex:none }
+button.icon { position:relative; width:34px; height:34px; min-height:0; padding:0; display:flex; align-items:center; justify-content:center; background:transparent; color:var(--accent); border:1px solid var(--line); border-radius:8px }
+button.icon:hover { border-color:var(--accent) }
+button.icon:disabled { opacity:.35; cursor:not-allowed; border-color:var(--line) }
+.tools form { margin:0 }
+button.icon svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round } button.icon svg .bg { fill:var(--card) }
+button.icon .dot { position:absolute; top:3px; right:3px; width:8px; height:8px; border-radius:50%; background:var(--ok) }
+.dlghead { display:flex; align-items:center; gap:10px } .dlghead h3 { margin:0; flex:1; font-size:16px } .dlghead form { margin:0 }
+button.switch { width:42px; height:24px; min-height:0; padding:2px; border-radius:99px; background:var(--line); border:1px solid var(--line); display:flex; align-items:center }
+button.switch i { width:18px; height:18px; border-radius:50%; background:#fff; transition:transform .15s } button.switch.on { background:var(--ok); border-color:var(--ok) } button.switch.on i { transform:translateX(18px) }
+.dlghead .x button { min-height:0; padding:2px 9px }
+label.check { display:flex; gap:8px; align-items:flex-start; margin:6px 0 }
+dialog { border:1px solid var(--line); border-radius:10px; background:var(--card); color:var(--fg); width:min(560px,92vw); padding:20px 22px }
+dialog.wide { width:min(700px,94vw) } dialog .dlghead { margin-bottom:12px } dialog .actions { justify-content:flex-end }
+dialog .dlgfield { margin:14px 0 6px; color:var(--muted); font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.03em }
+dialog .qname { display:inline-block; margin:0 0 10px; padding:3px 12px; border:1px solid var(--line); border-radius:99px; background:var(--bg) }
+dialog::backdrop { background:rgba(0,0,0,.45) }
+dialog .kv { margin:8px 0 14px } dialog .kv dd { overflow-wrap:anywhere }
+.wrap { overflow-wrap:anywhere; word-break:break-word }
+.sg { position:relative; display:inline-block }
+ul.suggest { position:absolute; left:0; right:0; top:100%; margin:2px 0 0; padding:4px 0; list-style:none; background:var(--card); border:1px solid var(--line); border-radius:6px; max-height:240px; overflow:auto; z-index:70; min-width:180px; box-shadow:0 6px 18px rgba(0,0,0,.18) }
+ul.suggest li { padding:6px 10px; cursor:pointer } ul.suggest li.on, ul.suggest li:hover { background:var(--bg) } ul.suggest mark { background:none; color:var(--accent); font-weight:700 }
+.copybox { position:relative } .copybox > [data-copy] { padding-right:46px; white-space:pre-wrap; overflow-wrap:anywhere }
+.copybox > .copy { position:absolute; top:6px; right:6px; width:32px; height:32px; min-height:0; padding:0; display:flex; align-items:center; justify-content:center; background:var(--card); color:var(--muted); border:1px solid var(--line); border-radius:6px }
+.copybox > .copy:hover { color:var(--fg) }
+.copybox > .copy svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round }
+.copybox > .copy .ok { display:none } .copybox > .copy.done .ok { display:block; color:var(--ok) } .copybox > .copy.done .cp { display:none }
+/* audit: alternate rows (a few shades off, enough to follow a line across) and bigger text */
+table.zebra tr:nth-child(even) td { background:color-mix(in srgb, var(--fg) 5%, transparent) }
+table.zebra td { font-size:15.5px } table.zebra td.mono { font-size:14.5px } table.zebra td .pill { font-size:13px }
+table.roomy th, table.roomy td { padding:9px 16px } table.roomy th { font-size:13.5px }
+button.info-lg { background:transparent; color:var(--accent); border:1px solid var(--line); border-radius:50%; width:28px; height:28px; padding:0; min-height:0; font-size:17px; line-height:1; vertical-align:middle }
+.states dt { font-weight:700 } .states dd { margin:0 0 8px }
+.kv { display:grid; grid-template-columns:max-content 1fr; gap:4px 16px } .kv dt { color:var(--muted) } .kv dd { margin:0 }
+/* advanced permissions: a block that opens and closes, its title looks like a button and its arrow turns when open */
+details.adv { margin-top:14px }
+details.adv > summary { list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border:1px solid var(--line); border-radius:6px; font-weight:600; user-select:none }
+details.adv > summary::-webkit-details-marker { display:none }
+details.adv > summary:hover { border-color:var(--accent) }
+details.adv > summary svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; transition:transform .15s }
+details.adv[open] > summary svg { transform:rotate(180deg) }
+details.adv .advbody { margin-top:10px; padding:12px; border:1px solid var(--line); border-radius:8px }
+details.adv fieldset { border:0; padding:0; margin:0; min-width:0 }
+details.adv fieldset:disabled { opacity:.55 }
+details.adv [hidden] { display:none !important }
+.ghostin { position:relative; flex:1; min-width:160px; display:flex }  /* a field with the rest of a suggestion in grey inside it */
+.ghostin input { flex:1; min-width:0 }
+.ghostin .ghost { position:absolute; inset:0; padding:0 9px; display:flex; align-items:center; white-space:pre; overflow:hidden; color:var(--muted); opacity:.7; pointer-events:none }
+.ghostin .ghost .typed { visibility:hidden }
+.rnhint { margin:4px 0 0; min-height:1.2em } .rnhint.err { color:var(--err) }
+ul.formerlist { list-style:none; margin:0; padding:0 } ul.formerlist li { padding:3px 0; display:flex; align-items:center; gap:8px; flex-wrap:wrap } ul.formerlist li .muted { flex:1 1 auto }
+ul.formerlist form { margin:0 } button.forget { width:24px; height:24px; min-height:0; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:6px }
+/* one row per permission: name and hint on the left, the choice on the right (stacked on phones) */
+.permrow { display:grid; grid-template-columns:minmax(140px,200px) 1fr; gap:6px 16px; padding:12px 0; border-top:1px solid var(--line) }
+.permrow:first-of-type { border-top:0 }
+.permhead { font-weight:600 } .permhead small { display:block; font-weight:400; color:var(--muted); font-size:12px; margin-top:2px }
+.permsub { grid-column:2; display:flex; flex-direction:column; gap:8px; padding:10px 12px; background:var(--bg); border-radius:8px }
+/* segmented control: radio inputs drawn as one row of buttons */
+.seg { display:inline-flex; flex-wrap:wrap; align-self:start; justify-self:start; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--card) }
+.seg label { position:relative; margin:0 } .seg label + label { border-left:1px solid var(--line) }
+.seg input, .chip input { position:absolute; opacity:0; width:1px; height:1px; margin:0; pointer-events:none }
+.seg span { display:block; padding:6px 12px; cursor:pointer; white-space:nowrap }
+.seg span:hover { background:var(--bg) }
+.seg input:checked + span { background:var(--accent); color:#fff }
+.seg input:focus-visible + span, .chip input:focus-visible + span { outline:2px solid var(--accent); outline-offset:-2px }
+/* chips: checkboxes drawn as pills (printers, days) */
+.chips { display:flex; flex-wrap:wrap; gap:6px }
+.chip { position:relative; margin:0 }
+.chip > span { display:inline-flex; align-items:center; gap:4px; padding:5px 12px; border:1px solid var(--line); border-radius:99px; cursor:pointer; background:var(--card) }
+.chip > span:hover { border-color:var(--accent) }
+.chip input:checked + span { background:var(--accent); border-color:var(--accent); color:#fff }
+.chip input:checked + span::before { content:"✓" }
+.chip i { font-style:normal; opacity:.8 }
+.times { display:flex; flex-wrap:wrap; gap:8px 16px } .times label { display:inline-flex; align-items:center; gap:6px }
+/* form pages (group, user, scan, print): one centred column, a title with an icon, then one row per setting
+   (name and hint on the left, the choice on the right: the same layout as the advanced permissions) */
+.formpage { max-width:760px; margin:0 auto }
+.pagehead { display:flex; align-items:center; gap:14px; margin-bottom:14px }
+.pagehead .pico { flex:none; width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center; color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, var(--card)); border:1px solid color-mix(in srgb, var(--accent) 28%, var(--line)) }
+.pagehead .pico svg { width:24px; height:24px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round }
+.pagehead h1 { margin:0; font-size:20px } .pagehead p { margin:2px 0 0 }
+.frows { margin-top:4px }
+.frow { display:grid; grid-template-columns:minmax(140px,200px) 1fr; gap:6px 16px; padding:12px 0; border-top:1px solid var(--line); align-items:center }
+.frow:first-child { border-top:0 }
+.frow > .fctl { min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:6px }
+.frow > .fctl > .row { gap:8px 12px }
+.formpage .frow input[type=text], .formpage .frow select { min-height:38px; width:100%; max-width:380px }
+.formpage .frow input[type=text], .formpage .frow select, .formpage .stepper input { font-size:15px }
+.formpage select { padding-right:6px }
+.frow label.check { margin:0 }
+.hint { color:var(--muted); font-size:12.5px }
+button.ico, .btn.ico { display:inline-flex; align-items:center; justify-content:center; gap:8px }
+button.ico svg, .btn.ico svg { width:17px; height:17px; flex:none; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round }
+/* number with − and + */
+.stepper { display:inline-flex; align-items:stretch; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:var(--card) }
+.stepper:focus-within { border-color:var(--accent) }
+.stepper button { width:40px; min-height:38px; padding:0; border:0; border-radius:0; background:transparent; color:var(--muted); font-size:19px; line-height:1; display:flex; align-items:center; justify-content:center }
+.stepper button:hover { background:var(--bg); color:var(--accent) }
+.stepper input[type=number] { width:84px; min-width:0; border:0; border-radius:0; background:var(--card); text-align:center; font-weight:600; -moz-appearance:textfield; appearance:textfield }
+.stepper input[type=number]:focus { outline:0 }
+.stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
+.stepper input::placeholder { font-weight:400 }
+.seg.compact { gap:1px; background:var(--line) } .seg.compact label { background:var(--card) } .seg.compact label + label { border-left:0 }
+/* password form (settings): one box per line, big text, eye button */
+.pwform .pwrow { margin-bottom:12px }
+.pwform .pwrow input { width:100%; font-size:17px; min-height:50px; padding:10px 52px 10px 14px }
+.pwform button.ico { min-height:46px; padding:8px 20px; font-size:15px }
+/* a progress bar that only says "working" */
+.bar.indet { position:relative } .bar.indet i { position:absolute; width:35%; background:var(--accent); animation:indet 1.3s ease-in-out infinite }
+@keyframes indet { 0% { left:-35% } 100% { left:100% } }
+@media (prefers-reduced-motion: reduce) { .bar.indet i { animation:none; width:100% } }
+/* the application's own question window (replaces the browser's confirm box) */
+dialog.confirm { width:min(460px,92vw) }
+dialog.confirm .cico { flex:none; width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:var(--accent); background:color-mix(in srgb, var(--accent) 14%, var(--card)) }
+dialog.confirm.danger .cico { color:var(--err); background:color-mix(in srgb, var(--err) 14%, var(--card)) }
+dialog.confirm .cico svg { width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round }
+dialog.confirm [hidden] { display:none !important }  /* label.check is display:flex, which would show the empty tick box */
+dialog.confirm .ctext { white-space:pre-line; margin:0 0 14px; overflow-wrap:anywhere }
+dialog.confirm label.check { padding:10px 12px; border:1px solid var(--line); border-radius:8px; background:var(--bg); margin:0 0 14px; cursor:pointer }
+dialog.confirm button.go.danger-fill { background:var(--err); border-color:var(--err); color:#fff }
+/* the page of the documentation */
+.doctiles { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; margin:14px 0 0; padding:0; list-style:none }
+.doctiles a { display:flex; align-items:center; justify-content:space-between; gap:10px; height:100%; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--fg); text-decoration:none }
+.doctiles a:hover { border-color:var(--orange); color:var(--orange) }
+.doctiles svg { flex:none; width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; opacity:.6 }
+.faq { margin-top:26px; border:1px solid var(--line); border-radius:10px; background:var(--bg) }
+.faq > summary { list-style:none; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 16px; font-weight:600 }
+.faq > summary::-webkit-details-marker { display:none }
+.faq > summary svg { flex:none; width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; transition:transform .15s }
+.faq[open] > summary svg { transform:rotate(180deg) }
+.faq .faqbody { padding:0 16px 14px } .faq .faqbody p { margin:0 0 10px }
+.badges { display:flex; flex-wrap:wrap; gap:8px }
+a.badge2 { display:inline-flex; align-items:stretch; border-radius:6px; overflow:hidden; text-decoration:none; font-size:13px; font-weight:600; line-height:1; box-shadow:0 1px 2px rgba(0,0,0,.25) }
+a.badge2 span { display:flex; align-items:center; gap:6px; padding:8px 11px; color:#fff }
+a.badge2 .l { background:#24292f } a.badge2 .r { background:var(--orange) }
+a.badge2 svg { width:16px; height:16px; fill:currentColor }
+a.badge2:hover { filter:brightness(1.12) }
+/* scan and print */
+.dev { display:inline-flex; align-items:center; gap:8px; padding:5px 12px; border:1px solid var(--line); border-radius:99px; background:var(--bg); font-weight:600 }
+.dev::before { content:""; width:8px; height:8px; border-radius:50%; background:var(--ok) }
+.scanlist { list-style:none; margin:0; padding:0; display:grid; gap:8px }
+.scanlist li { display:flex; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--bg) }
+.scanlist .st { flex:none; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff }
+.scanlist .st svg { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round }
+.scanlist .st.done { background:var(--ok) } .scanlist .st.fail { background:var(--err) } .scanlist .st.run { background:var(--accent) }
+.scanlist .what { flex:1; min-width:0; overflow-wrap:anywhere } .scanlist .what small { display:block; color:var(--muted) }
+.scanlist .st.run svg { animation:spin 1.2s linear infinite } @keyframes spin { to { transform:rotate(360deg) } }
+@media (prefers-reduced-motion: reduce) { .scanlist .st.run svg { animation:none } }
+/* tables marked .stack-md become stacked cards already below 1000px (too many columns for a tablet) */
+@media (max-width:1000px) {
+  table.stack-md, table.stack-md tbody, table.stack-md tr, table.stack-md td { display:block; width:100% }
+  table.stack-md thead, table.stack-md tr:first-child:has(th) { display:none }
+  table.stack-md tr { border:1px solid var(--line); border-radius:8px; margin-bottom:10px; padding:4px 0 }
+  table.stack-md td { border:0; padding:4px 10px; display:flex; justify-content:space-between; gap:12px; text-align:right }
+  table.stack-md td[data-l]::before { content:attr(data-l); color:var(--muted); font-size:12px; text-transform:uppercase; flex:0 0 30%; text-align:left }
+  table.stack-md td > * { max-width:68% }
+}
+/* phones: bigger touch targets, 16px inputs (iOS zooms below that), tables become stacked cards when marked .stack */
+@media (max-width:700px) {
+  body { font-size:15px } main { padding:10px } .card { padding:12px; border-radius:8px }
+  .authbox { padding:28px 20px 22px } .authbrand .logo img { width:56px; height:56px } .authbrand .authname { font-size:30px }
+  /* top row: logo and name on the left, the three icon buttons on the right; the menu below, wrapped so every entry is visible */
+  header { padding:8px 10px; gap:6px 10px } .spacer { display:none }
+  a.brand { order:1; margin-right:auto } .hactions { order:2 } nav { order:3; width:100%; flex-wrap:wrap; gap:2px }
+  nav a { padding:6px 9px }
+  input, select, button, .btn, textarea { font-size:16px; min-height:42px; padding:8px 10px }
+  .sg { display:block; width:100% }
+  button.dots { min-height:30px; padding:0 9px } .copybox > .copy { min-height:0; width:36px; height:36px; padding:0 } .iconbtn { width:42px; height:42px; min-height:42px }
+  input[type=text], input[type=password], input[type=number], select { width:100%; min-width:0 }
+  .row { gap:12px } .row > * { flex:1 1 auto } .row form { flex:1 1 auto } .row button { width:100% }
+  .actions { gap:12px } .actions > *, .actions form { flex:1 1 100% } .actions button, .actions .btn { width:100%; text-align:center } dialog { padding:16px 16px }
+  table.stack, table.stack tbody, table.stack tr, table.stack td { display:block; width:100% }
+  table.stack thead, table.stack tr:first-child:has(th) { display:none }
+  table.stack tr { border:1px solid var(--line); border-radius:8px; margin-bottom:10px; padding:4px 0 }
+  table.stack td { border:0; padding:4px 10px; display:flex; justify-content:space-between; gap:12px }
+  table.stack td[data-l]::before { content:attr(data-l); color:var(--muted); font-size:12px; text-transform:uppercase; flex:0 0 38% }
+  table.stack td > * { max-width:60% }
+  .kv { grid-template-columns:1fr } .kv dt { margin-top:6px }
+  details.adv > summary { width:100%; justify-content:space-between; box-sizing:border-box } details.adv .advbody { padding:10px }
+  .permrow { grid-template-columns:1fr } .permsub { grid-column:1 }
+  .seg { display:flex; flex-direction:column; width:100% } .seg label + label { border-left:0; border-top:1px solid var(--line) }
+  .seg span { padding:10px 12px; white-space:normal }
+  .chip > span { padding:8px 14px } .times input[type=time] { width:auto }
+  .frow { grid-template-columns:1fr; gap:8px } .frow > .fctl { align-items:stretch }
+  .formpage .frow input[type=text], .formpage .frow select { max-width:none }
+  .frow > .fctl > .stepper, .frow > .fctl > .seg.compact { align-self:flex-start }
+  .stepper button { width:40px; min-height:40px } .seg.compact { flex-direction:row; width:auto } .seg.compact label { flex:1 1 auto; text-align:center }
+  .pagehead .pico { width:40px; height:40px } .doctiles { grid-template-columns:1fr }
+}
+/* classes that replace the style="" attributes of the shared templates */
+.ar { display:inline-flex; align-items:center; gap:8px }  /* autorefresh.html */
+.authbox .muted.su-note { text-align:left; margin:0 0 14px }  /* setup.html */
+.on-actions { margin-top:12px }  /* _own_notices.html */
+.secret.cb-fs13 { font-size:13px } .secret.cb-fs15 { font-size:15px }  /* macros.html copybox(): size argument */

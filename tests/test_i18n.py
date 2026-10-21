@@ -2,7 +2,7 @@
 
 import importlib.util
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -124,7 +124,7 @@ async def test_every_page_renders_in_every_language(portal, code):
         s.add(Group(name="power", requestable=True))
         permissions.set_rule(s, SubjectType.user, boss, color=False, one_sided=False, hours_mode="window",
                              hours_days="01234", hours_start=480, hours_end=1020)   # something to ask for on /me/request/permission
-        s.add(PermissionGrant(user_id=ann, perm="color", valid_from=datetime.now(timezone.utc), valid_until=datetime.now(timezone.utc) + timedelta(days=9)))
+        s.add(PermissionGrant(user_id=ann, perm="color", valid_from=datetime.now(UTC), valid_until=datetime.now(UTC) + timedelta(days=9)))
         s.commit()
     await portal_login(portal, "boss", GOOD)
     for path in PAGES:

@@ -5,14 +5,14 @@ A problem must be seen twice in a row before it is reported, so a printer that f
 
     administrators   a notice per printer and problem (kind "printer_problem"; ink that is only running low is for them alone)
     users            whoever has a print waiting on that printer gets a notice in their own bell, once per problem
-                     (CUPSPL_PRINTER_ALERTS_USERS=false turns this off)
+                     (SPOOLSTEWARD_PRINTER_ALERTS_USERS=false turns this off)
 
 A notice closes by itself when the problem is gone.
 """
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
 from starlette.concurrency import run_in_threadpool
@@ -75,7 +75,7 @@ def _waiting_users(sm, printer: str, now: datetime) -> list[int]:
 
 def apply(sm, found: dict[str, dict], names: list[str], now: datetime | None = None) -> None:
     """Report what `found`, close what is gone. `names`: every physical queue that was looked at."""
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     for name in names:
         info = found.get(name, {"label": name, "problems": {}})
         for problem in PROBLEMS:

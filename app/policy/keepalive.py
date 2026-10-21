@@ -8,13 +8,14 @@ administrators' audit when someone starts it and in the row's `last_*` fields wh
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
+from datetime import UTC, datetime, timedelta
 
 import httpx
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
+from app.timeutil import aware, local_tz
 from app.config import settings
 from app.cups_client import list_queues
 from app.db.models import PrinterKeepalive, User
@@ -30,10 +31,6 @@ PRESETS = [(24, N_("1 day")), (72, N_("3 days")), (168, N_("1 week (recommended)
 UNITS = {"hours": 1, "days": 24}
 RETRY_AFTER = timedelta(hours=1)  # after a failed attempt
 TICK = 60
-
-
-def _aware(dt: datetime | None) -> datetime | None:
-    return dt if dt is None or dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
 def parse_interval(amount: str, unit: str) -> int:
@@ -61,7 +58,7 @@ def split(hours: int) -> tuple[int, str]:
 
 
 def settings_of(db: Session) -> dict[str, PrinterKeepalive]:
-    return {r.printer: r for r in db.query(PrinterKeepalive)}
+    return {r.printer: r for r in db.scalars(select(PrinterKeepalive))}
 
 
 def save(db: Session, printer: str, hours: int, color: bool, admin: User) -> PrinterKeepalive:
@@ -71,7 +68,7 @@ def save(db: Session, printer: str, hours: int, color: bool, admin: User) -> Pri
         row = PrinterKeepalive(printer=key(printer))
         db.add(row)
     row.interval_hours, row.color = hours, color
-    row.updated_at, row.updated_by = datetime.now(timezone.utc), admin.username
+    row.updated_at, row.updated_by = datetime.now(UTC), admin.username
     return row
 
 
@@ -80,7 +77,7 @@ def set_enabled(db: Session, printer: str, on: bool, admin: User) -> PrinterKeep
     if row is None:
         row = PrinterKeepalive(printer=key(printer), interval_hours=DEFAULT_HOURS, color=False)
         db.add(row)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     if on and not row.enabled:
         row.enabled_at = now  # the first page is due one interval from now, not immediately
         row.last_status = row.last_error = None
@@ -92,11 +89,11 @@ def set_enabled(db: Session, printer: str, on: bool, admin: User) -> PrinterKeep
 def next_due(row: PrinterKeepalive) -> datetime | None:
     if not row.enabled:
         return None
-    anchor = _aware(row.last_ok_at) or _aware(row.enabled_at)
+    anchor = aware(row.last_ok_at) or aware(row.enabled_at)
     if anchor is None:
         return None
     due = anchor + timedelta(hours=row.interval_hours)
-    tried = _aware(row.last_attempt_at)
+    tried = aware(row.last_attempt_at)
     if row.last_status == "error" and tried is not None:
         due = max(due, tried + RETRY_AFTER)
     return due
@@ -123,7 +120,7 @@ async def send(app, queue: str, pdf: bytes, title: str, *, color: bool) -> tuple
 
 
 def maintenance_page(queue: str, title: str, color: bool, hours: int) -> bytes:
-    now = datetime.now(ZoneInfo(settings.timezone))
+    now = datetime.now(local_tz())
     with i18n.using(testpage.pdf_language()):
         return testpage.build(
             _("Maintenance page"), _("%(title)s · queue %(queue)s · %(when)s · %(mode)s", title=title, queue=queue, when=f"{now:%Y-%m-%d %H:%M}",
@@ -138,7 +135,7 @@ def _record(sm, name: str, status: str, error: str | None, *, attempt: bool = Tr
         row = db.get(PrinterKeepalive, key(name))
         if row is None:
             return
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if attempt:
             row.last_attempt_at = now
         if status == "ok":
@@ -155,7 +152,7 @@ async def run_due(app) -> int:
         await list_queues(app)  # still notes newly connected queues (their listing order)
         return 0
     queues = {key(q["name"]): q for q in await list_queues(app)}
-    now, sent = datetime.now(timezone.utc), 0
+    now, sent = datetime.now(UTC), 0
     for name, (hours, color, status, due) in rows.items():
         q = queues.get(name)
         if q is None or q.get("virtual") or due is None or now < due:
@@ -179,7 +176,7 @@ async def run_due(app) -> int:
 def _enabled(sm) -> dict:
     with sm() as db:
         out = {}
-        for r in db.query(PrinterKeepalive).filter(PrinterKeepalive.enabled):
+        for r in db.scalars(select(PrinterKeepalive).where(PrinterKeepalive.enabled)):
             out[r.printer] = (r.interval_hours, r.color, r.last_status, next_due(r))
         return out
 

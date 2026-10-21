@@ -8,7 +8,7 @@ Two different things on purpose:
 
 import hashlib
 import hmac
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -66,7 +66,7 @@ def set_printer_flag(db: Session, printer: str, field: str, value: bool) -> None
         row = PrinterControl(printer=key(printer), blocked=False, mdns_hidden=False)
         db.add(row)
     setattr(row, field, value)
-    row.updated_at = datetime.now(timezone.utc)
+    row.updated_at = datetime.now(UTC)
 
 
 def block_reason(db: Session, user: User | None, printer: str | None) -> str | None:
@@ -87,7 +87,7 @@ def mdns_policy(db: Session) -> dict:
 
 
 def mdns_token() -> str:
-    """Shared secret between the gateway and the announcer (both read the same CUPSPL_SECRET_KEY)."""
+    """Shared secret between the gateway and the announcer (both read the same SPOOLSTEWARD_SECRET_KEY)."""
     return hmac.new((settings.secret_key or "").encode(), b"mdns-policy", hashlib.sha256).hexdigest()
 
 

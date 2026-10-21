@@ -18,8 +18,8 @@ l'installazione usa RADIUS. Una password temporanea va cambiata al primo accesso
   copia). Usala come password quando il computer o il telefono chiede le credenziali; il nome utente è il tuo. Una chiave serve solo a
   stampare e scansionare — non apre mai il portale e la tua password di dominio non serve mai su un dispositivo. Revoca una chiave (o
   tutte) in *Le mie chiavi* se perdi un dispositivo. Quando la crei scegli per quanto tempo vale (da 1 mese a 2 anni, o una sola stampa); gli utenti RADIUS hanno un massimo più corto e la rinnovano rifacendo il login nel portale. La campanella in alto ti dice quando un amministratore revoca, disattiva o prolunga una tua chiave.
-- **Richieste**: chiedi più quota (temporanea o permanente), il cambio di gruppo o un permesso (vedi sotto), con un motivo. L'amministratore approva, modifica o
-  rifiuta. Puoi avere fino a 3 richieste aperte e annullarle.
+- **Richieste**: chiedi più quota (temporanea o permanente), il cambio di gruppo o un permesso (vedi sotto), e scrivi perché (il motivo è facoltativo, a meno che l'amministratore lo richieda). L'amministratore approva, modifica o
+  rifiuta. Puoi avere fino a 3 richieste aperte (il limite di base) e annullarle.
 
 - **I tuoi permessi**: se puoi stampare a colori e solo fronte, su quali stampanti e in quali orari. Se non puoi stampare a colori, le tue
   stampe escono in bianco e nero; se non puoi stampare solo fronte, escono in fronte-retro. La scansione non cambia.
@@ -38,8 +38,7 @@ Vale per le stampe rifiutate per i tuoi permessi, per le stampe rifiutate perch�
 (settimanale o mensile, lavori o pagine: l'avviso dice quanto hai usato e che puoi chiedere più quota) e per le stampe modificate dai tuoi permessi.
 
 **Avvisi secondari.** Alcuni avvisi sono solo un'informazione su una stampa. Vengono segnati come letti da soli dopo un po', così non si accumulano.
-Oggi sono secondarie le stampe **forzate** dai tuoi permessi (fatte in bianco e nero, fatte in fronte-retro; si aggiungeranno altri tipi di
-stampa forzata). Il tempo si sceglie in *Impostazioni* (`/me/settings`, «Notifiche secondarie»): 20 minuti di base, contati dall'ultima stampa
+Oggi sono secondarie le stampe **forzate** dai tuoi permessi (fatte in bianco e nero, fatte in fronte-retro). Il tempo si sceglie in *Impostazioni* (`/me/settings`, «Notifiche secondarie»): 20 minuti di base, contati dall'ultima stampa
 di questo tipo; con 0 restano finché non le chiudi tu. Un avviso segnato come letto non viene cancellato: lo trovi nell'elenco con *Mostra anche i chiusi*.
 Tutti gli altri avvisi (stampe rifiutate, quota raggiunta, chiavi, gruppo, richieste) restano finché non li chiudi.
 
@@ -84,11 +83,12 @@ Limiti, perché il gateway può solo confrontare gli indirizzi:
 Se l'indirizzo nel riquadro non è quello del tuo dispositivo, chiedi all'amministratore: la finestra non può funzionare su quella rete.
 Dettagli: [scansione.md](scansione.md).
 
-## 5. Impostazioni (clic sul tuo nome, in alto a destra)
+## 5. Impostazioni (`/me/settings`: clic sul logo e sul nome, in alto a sinistra)
 
 - **Tema**: chiaro, scuro o automatico.
 - **Lingua**: English, Italiano, Español, Русский, 中文. Salvata con il tuo account.
 - Intervallo di **aggiornamento automatico** della pagina Audit (amministratori); le pagine Audit e Stampanti hanno anche un interruttore *Aggiornamento automatico*.
+- **Notifiche secondarie**: dopo quanto tempo gli avvisi sulle stampe forzate vengono segnati come letti (20 minuti di base, 0 = mai).
 - **Cambio password** (account locali).
 
 ## 6. Da sapere

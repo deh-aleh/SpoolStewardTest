@@ -3,7 +3,7 @@ import sys
 
 import uvicorn
 
-from app.config import escl_window_problem, settings
+from app.config import settings
 from app.logsetup import setup_logging
 
 
@@ -12,15 +12,8 @@ def main() -> int:
     for noisy in ("httpx", "alembic"):
         logging.getLogger(noisy).setLevel(logging.WARNING)  # one INFO line per CUPS call drowns the real events
     if not (settings.tls_certfile and settings.tls_keyfile) and not settings.allow_insecure_auth:
-        print("refusing to start without TLS: set CUPSPL_TLS_CERTFILE and CUPSPL_TLS_KEYFILE "
+        print("refusing to start without TLS: set SPOOLSTEWARD_TLS_CERTFILE and SPOOLSTEWARD_TLS_KEYFILE "
               "(dev: scripts/gen_dev_cert.sh)", file=sys.stderr)
-        return 2
-    if bool(settings.radius_host) != bool(settings.radius_secret):
-        print("refusing to start: set both CUPSPL_RADIUS_HOST and CUPSPL_RADIUS_SECRET, or neither (local accounts only)",
-              file=sys.stderr)
-        return 2
-    if (problem := escl_window_problem(settings.escl_window_seconds)):
-        print(f"refusing to start: {problem}", file=sys.stderr)
         return 2
     uvicorn.run(
         "app.main:app", host=settings.host, port=settings.port,

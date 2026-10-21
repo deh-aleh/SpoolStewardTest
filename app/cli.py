@@ -3,7 +3,7 @@
 import argparse
 import getpass
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from sqlalchemy import select
@@ -56,7 +56,7 @@ def _backup_offline(args) -> int:
     try:
         if args.cmd == "backup-key":
             print(crypto.make_recipient(_passphrase(confirm=True)))
-            print("\nPut it in .env as CUPSPL_BACKUP_RECIPIENT=<the line above> or paste it in the portal "
+            print("\nPut it in .env as SPOOLSTEWARD_BACKUP_RECIPIENT=<the line above> or paste it in the portal "
                   "(Backup > New backup > ready-made recovery key). Keep the passphrase: without it the backups cannot be opened.", file=sys.stderr)
             return 0
         path = Path(args.file)
@@ -87,7 +87,7 @@ def _backup_offline(args) -> int:
         return 1
 
 
-def main(argv=None) -> int:
+def _build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="python -m app.cli")
     sub = ap.add_subparsers(dest="cmd", required=True)
     for cmd, who in (("group-limit", "group"), ("user-limit", "username")):
@@ -104,96 +104,133 @@ def main(argv=None) -> int:
     p = sub.add_parser("audit-archive", help="archive old audit rows now")
     p.add_argument("--force", action="store_true", help="ignore the size threshold (rows in the protected window stay)")
     p = sub.add_parser("jobs", help="show the audit log"); p.add_argument("-n", type=int, default=20)
-    sub.add_parser("backup-key", help="make a backup recovery key from a passphrase (for CUPSPL_BACKUP_RECIPIENT or the portal)")
+    sub.add_parser("backup-key", help="make a backup recovery key from a passphrase (for SPOOLSTEWARD_BACKUP_RECIPIENT or the portal)")
     p = sub.add_parser("backup-run", help="run the enabled backups now (all, or one id)"); p.add_argument("--id", type=int)
     p = sub.add_parser("backup-verify", help="check a backup file (asks the passphrase when encrypted)"); p.add_argument("file")
     p = sub.add_parser("backup-restore", help="restore the database and audit files from a backup (stop the gateway first)")
     p.add_argument("file")
     p.add_argument("--config-out", default="/data/restored-config", help="where the configuration files of the backup are put")
-    args = ap.parse_args(argv)
+    return ap
+
+
+# The commands below work on the open session `s`. They return an exit code to stop at once (nothing is committed),
+# or None to commit and finish with 0.
+
+def _cmd_limit(s, args) -> int | None:
+    limit = None if args.limit.lower() == "none" else int(args.limit)
+    if args.cmd == "group-limit":
+        stype, sid = SubjectType.group, get_group(s, args.group).id
+    else:
+        u = get_user(s, args.username)
+        if u is None:
+            print("unknown user (created at first login, or use make-admin)", file=sys.stderr)
+            return 1
+        stype, sid = SubjectType.user, u.id
+    set_limit(s, stype, sid, Metric(args.metric), limit, Period(args.period))
+    return None
+
+
+def _cmd_set_group(s, args) -> int | None:
+    u = get_user(s, args.username)
+    if u is None:
+        print("unknown user", file=sys.stderr)
+        return 1
+    if is_emergency(u):
+        print(f"{u.username} is the emergency administrator: it has no group", file=sys.stderr)
+        return 1
+    u.group_id = get_group(s, args.group).id
+    return None
+
+
+def _cmd_set_admin_password(s, args) -> int | None:
+    name = args.username.strip().lower()
+    u = s.scalars(select(User).where(User.username == name)).first()
+    if u is not None and u.provider != "local":
+        print(f"{name} is a RADIUS account: its password is managed there", file=sys.stderr)
+        return 1
+    pw = getpass.getpass(f"New password for {name}: ")
+    if pw != getpass.getpass("Repeat: "):
+        print("the two passwords differ", file=sys.stderr)
+        return 1
+    error = validate_new_password(pw, name)
+    if error:
+        print(error, file=sys.stderr)
+        return 1
+    if u is None:
+        u = User(provider="local", username=name)
+        s.add(u)
+        s.flush()
+        set_admin(s, u, True)
+    u.password_hash, u.must_change_password, u.enabled = hash_password(pw), False, True
+    u.password_changed_at = datetime.now(UTC)
+    s.flush()
+    record(s, None, "admin.set_password", "user", u.id, username=name, via="cli")
+    print(f"password set for {name}")
+    return None
+
+
+def _cmd_audit_archive(s, args) -> int | None:
+    done = archive_all(SessionLocal, force=args.force)
+    for r in done:
+        print(f"{r.table}: {r.rows} rows -> {r.path} ({r.bytes} bytes, sha256 {r.sha256[:12]}…)")
+    if not done:
+        print(f"nothing to archive (threshold {settings.audit_max_mb} MB; use --force to ignore it)")
+    return None
+
+
+def _cmd_backup_run(s, args) -> int | None:
+    from sqlalchemy import select as _select
+
+    from app.backup import service
+    from app.db.models import BackupTarget
+
+    service.sync_global(s)
+    ids = [args.id] if args.id else [t.id for t in s.scalars(_select(BackupTarget)) if t.enabled]
+    if not ids:
+        print("no enabled backup: set one up in the portal (Backup) or in .env")
+    failed = 0
+    for tid in ids:
+        ok, msg = service.run_target(SessionLocal, tid)
+        print(f"{'OK  ' if ok else 'FAIL'} #{tid}: {msg}")
+        failed += not ok
+    return 1 if failed else 0
+
+
+def _cmd_make_admin(s, args) -> int | None:
+    set_admin(s, get_user(s, args.username, create=True), True)
+    return None
+
+
+def _cmd_jobs(s, args) -> int | None:
+    rows = s.execute(
+        select(JobLog, User.username).join(User, User.id == JobLog.user_id, isouter=True)
+        .order_by(JobLog.id.desc()).limit(args.n)
+    ).all()
+    for j, name in reversed(rows):
+        extra = f"  [{j.denied_reason}]" if j.denied_reason else ""
+        pages = f" {j.pages}p" if j.pages else ""
+        print(f"{j.ts:%Y-%m-%d %H:%M:%S}Z {name or '-':<12} {j.state.value:<9} "
+              f"{j.printer or '-':<12} {j.title!r}{pages}{extra}")
+    return None
+
+
+_COMMANDS = {
+    "group-limit": _cmd_limit, "user-limit": _cmd_limit, "set-group": _cmd_set_group,
+    "set-admin-password": _cmd_set_admin_password, "audit-archive": _cmd_audit_archive,
+    "backup-run": _cmd_backup_run, "make-admin": _cmd_make_admin, "jobs": _cmd_jobs,
+}
+
+
+def main(argv=None) -> int:
+    args = _build_parser().parse_args(argv)
     if args.cmd in ("backup-key", "backup-verify", "backup-restore"):
         return _backup_offline(args)
 
     init_db()
     with SessionLocal() as s:
-        if args.cmd in ("group-limit", "user-limit"):
-            limit = None if args.limit.lower() == "none" else int(args.limit)
-            if args.cmd == "group-limit":
-                stype, sid = SubjectType.group, get_group(s, args.group).id
-            else:
-                u = get_user(s, args.username)
-                if u is None:
-                    print("unknown user (created at first login, or use make-admin)", file=sys.stderr)
-                    return 1
-                stype, sid = SubjectType.user, u.id
-            set_limit(s, stype, sid, Metric(args.metric), limit, Period(args.period))
-        elif args.cmd == "set-group":
-            u = get_user(s, args.username)
-            if u is None:
-                print("unknown user", file=sys.stderr)
-                return 1
-            if is_emergency(u):
-                print(f"{u.username} is the emergency administrator: it has no group", file=sys.stderr)
-                return 1
-            u.group_id = get_group(s, args.group).id
-        elif args.cmd == "set-admin-password":
-            name = args.username.strip().lower()
-            u = s.scalars(select(User).where(User.username == name)).first()
-            if u is not None and u.provider != "local":
-                print(f"{name} is a RADIUS account: its password is managed there", file=sys.stderr)
-                return 1
-            pw = getpass.getpass(f"New password for {name}: ")
-            if pw != getpass.getpass("Repeat: "):
-                print("the two passwords differ", file=sys.stderr)
-                return 1
-            error = validate_new_password(pw, name)
-            if error:
-                print(error, file=sys.stderr)
-                return 1
-            if u is None:
-                u = User(provider="local", username=name)
-                s.add(u)
-                s.flush()
-                set_admin(s, u, True)
-            u.password_hash, u.must_change_password, u.enabled = hash_password(pw), False, True
-            u.password_changed_at = datetime.now(timezone.utc)
-            s.flush()
-            record(s, None, "admin.set_password", "user", u.id, username=name, via="cli")
-            print(f"password set for {name}")
-        elif args.cmd == "audit-archive":
-            done = archive_all(SessionLocal, force=args.force)
-            for r in done:
-                print(f"{r.table}: {r.rows} rows -> {r.path} ({r.bytes} bytes, sha256 {r.sha256[:12]}…)")
-            if not done:
-                print(f"nothing to archive (threshold {settings.audit_max_mb} MB; use --force to ignore it)")
-        elif args.cmd == "backup-run":
-            from sqlalchemy import select as _select
-
-            from app.backup import service
-            from app.db.models import BackupTarget
-
-            service.sync_global(s)
-            ids = [args.id] if args.id else [t.id for t in s.scalars(_select(BackupTarget)) if t.enabled]
-            if not ids:
-                print("no enabled backup: set one up in the portal (Backup) or in .env")
-            failed = 0
-            for tid in ids:
-                ok, msg = service.run_target(SessionLocal, tid)
-                print(f"{'OK  ' if ok else 'FAIL'} #{tid}: {msg}")
-                failed += not ok
-            return 1 if failed else 0
-        elif args.cmd == "make-admin":
-            set_admin(s, get_user(s, args.username, create=True), True)
-        elif args.cmd == "jobs":
-            rows = s.execute(
-                select(JobLog, User.username).join(User, User.id == JobLog.user_id, isouter=True)
-                .order_by(JobLog.id.desc()).limit(args.n)
-            ).all()
-            for j, name in reversed(rows):
-                extra = f"  [{j.denied_reason}]" if j.denied_reason else ""
-                pages = f" {j.pages}p" if j.pages else ""
-                print(f"{j.ts:%Y-%m-%d %H:%M:%S}Z {name or '-':<12} {j.state.value:<9} "
-                      f"{j.printer or '-':<12} {j.title!r}{pages}{extra}")
+        code = _COMMANDS[args.cmd](s, args)
+        if code is not None:
+            return code
         s.commit()
     return 0
 

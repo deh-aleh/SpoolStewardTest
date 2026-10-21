@@ -15,6 +15,8 @@ GET_PRINTER_ATTRIBUTES = 0x000B
 STATUS_OK = 0x0000
 STATUS_BAD_REQUEST = 0x0400
 STATUS_FORBIDDEN = 0x0401
+# 0x0402 and 0x0403 are defined by the standard (RFC 8011); the gateway answers HTTP 401 for missing credentials
+# (see `_unauthorized` in app/ipp/gateway.py) and 0x0401 for refusals.
 STATUS_NOT_AUTHENTICATED = 0x0402
 STATUS_NOT_AUTHORIZED = 0x0403
 STATUS_NOT_POSSIBLE = 0x0404

@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import case, func, select
@@ -57,7 +57,7 @@ def window_start(period: Period, now: datetime, tz: ZoneInfo) -> datetime:
     Boundaries follow the local calendar in `tz`; the result is UTC because job_log
     timestamps are stored as UTC (SQLite keeps no tz info, so both sides must match).
     """
-    return _local_window_start(period, now, tz).astimezone(timezone.utc)
+    return _local_window_start(period, now, tz).astimezone(UTC)
 
 
 def window_end(period: Period, now: datetime, tz: ZoneInfo) -> datetime:
@@ -67,7 +67,7 @@ def window_end(period: Period, now: datetime, tz: ZoneInfo) -> datetime:
         nxt = start + timedelta(days=7)  # wall-clock arithmetic: still Monday 00:00 across a DST change
     else:
         nxt = start.replace(year=start.year + (start.month == 12), month=start.month % 12 + 1)
-    return nxt.astimezone(timezone.utc)
+    return nxt.astimezone(UTC)
 
 
 def effective_rules(session: Session, user: User, resource: Resource) -> list[PolicyRule]:

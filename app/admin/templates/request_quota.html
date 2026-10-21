@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Ask for more quota") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block body %}
 <form class="card narrow" method="post" action="/me/request/quota">
-  <h1 style="text-align:center">{{ _("Ask for more quota") }}</h1>
+  <h1 class="rq-title">{{ _("Ask for more quota") }}</h1>
   {% if not options %}
     <p>{{ _("No limit applies to you: there is nothing to ask for.") }}</p>
   {% else %}
@@ -10,15 +11,15 @@
   <p class="muted">{{ _("You can have at most %(n)s open requests. An administrator will review it and may also change the amount and the duration.", n=max_open) }}</p>
   <h2>{{ _("What") }}</h2>
   {% for o in options %}
-  <label style="display:block;margin:6px 0"><input type="radio" name="metric" value="{{ o.metric }}" {{ 'checked' if loop.first }}>
+  <label class="rq-opt"><input type="radio" name="metric" value="{{ o.metric }}" {{ 'checked' if loop.first }}>
     {{ _("%(what)s — used %(used)s of %(total)s, <b>%(period)s</b> limit (resets on %(date)s)", what=_t('Jobs') if o.metric == 'jobs' else _t('Pages'), used=o.used, total=o.limit + o.extra, period=_t('weekly') if o.period == 'weekly' else _t('monthly'), date=o.window_end|localtime('%Y-%m-%d')) }}</label>
   {% endfor %}
   <h2>{{ _("How many more") }}</h2>
   <input type="number" name="amount" min="1" max="100000" required>
   <h2>{{ _("For how long") }}</h2>
-  <label style="display:block;margin:6px 0"><input type="radio" name="scope" value="temporary" checked>
+  <label class="rq-opt"><input type="radio" name="scope" value="temporary" checked>
     {{ _("<b>Temporary</b>: valid until the end of your period (week or month, set by the administrator), then the normal limit returns.") }}</label>
-  <label style="display:block;margin:6px 0"><input type="radio" name="scope" value="permanent">
+  <label class="rq-opt"><input type="radio" name="scope" value="permanent">
     {{ _("<b>Permanent</b>: your limit stays higher in every period, until the administrator revokes it.") }}</label>
   <h2>{{ _("Reason") }}{% if not reason_required %} <span class="muted">({{ _("optional") }})</span>{% endif %}</h2>
   <textarea name="reason" maxlength="500" {{ 'required' if reason_required }} placeholder="{{ _('Why do you need it? (e.g. printing the catalogue for the trade fair)') }}"></textarea>

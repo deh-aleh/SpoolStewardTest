@@ -20,7 +20,7 @@ import os
 import asyncio
 from collections.abc import Iterator
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -28,6 +28,7 @@ from sqlalchemy import String, cast, delete, func, select
 from starlette.concurrency import run_in_threadpool
 
 from app import crypto_fields, titles
+from app.timeutil import aware, local_tz
 from app.audit.adminlog import record
 from app.config import settings
 from app.db.models import AdminAudit, AuditArchive, JobLog, User
@@ -49,10 +50,6 @@ class ArchiveResult:
     sha256: str
 
 
-def _aware(dt: datetime) -> datetime:
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
-
-
 def estimate_bytes(db, table: str) -> int:
     """Rough size of the active table's data: enough to decide when it is 'heavy'."""
     L = lambda col: func.length(func.coalesce(col, ""))  # noqa: E731
@@ -69,18 +66,18 @@ def protected_from(now: datetime, tz: ZoneInfo) -> datetime:
     weekly/monthly quota window that can still matter."""
     local = now.astimezone(tz).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     prev = local.replace(year=local.year - (local.month == 1), month=(local.month - 2) % 12 + 1)
-    return prev.astimezone(timezone.utc)
+    return prev.astimezone(UTC)
 
 
 def _jsonable(v):
-    return _aware(v).isoformat() if isinstance(v, datetime) else getattr(v, "value", v)
+    return aware(v).isoformat() if isinstance(v, datetime) else getattr(v, "value", v)
 
 
 def _row_dict(table: str, obj, usernames: dict[int, str]) -> dict:
     if table == "job_log":
         title, options = obj.title, obj.options_json
         cut = titles.cutoff_for_archive()
-        if cut is not None and _aware(obj.ts) < cut:  # past the retention: the name does not go into the file
+        if cut is not None and aware(obj.ts) < cut:  # past the retention: the name does not go into the file
             title, options = None, {k: v for k, v in (options or {}).items() if k != "document_name"} or None
         else:  # the file keeps the names encrypted, like the database (the portal decrypts them when it shows them)
             title = crypto_fields.seal(title)
@@ -170,7 +167,7 @@ def archive_table(sm, table: str, now: datetime, tz: ZoneInfo, directory: Path, 
             pending.unlink()
             raise ArchiveError("verification failed: line count differs, nothing was removed")
         ids = [r.id for r in rows]
-        db.add(AuditArchive(source_table=table, path=str(final), first_ts=_aware(first.ts), last_ts=_aware(last.ts),
+        db.add(AuditArchive(source_table=table, path=str(final), first_ts=aware(first.ts), last_ts=aware(last.ts),
                             first_id=first.id, last_id=last.id, rows=len(rows), bytes=size, sha256=digest,
                             created_at=now))
         for i in range(0, len(ids), 500):
@@ -185,8 +182,8 @@ def archive_table(sm, table: str, now: datetime, tz: ZoneInfo, directory: Path, 
 
 
 def archive_all(sm, now: datetime | None = None, force: bool = False) -> list[ArchiveResult]:
-    now = now or datetime.now(timezone.utc)
-    tz = ZoneInfo(settings.timezone)
+    now = now or datetime.now(UTC)
+    tz = local_tz()
     out = []
     for table in TABLES:
         try:

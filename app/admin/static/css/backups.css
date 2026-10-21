@@ -1,0 +1,9 @@
+.row.bk-head { justify-content:space-between; align-items:center }
+h2.bk-h2.bk-h2 { margin:0 }
+dl.kv.bk-kv { margin-top:8px }
+details.bk-det { margin-top:6px }
+.row.bk-actions { margin-top:10px }
+form.card.bk-new { max-width:760px }
+dl.kv.bk-center { align-items:center }
+input.bk-w5.bk-w5 { width:5em }
+input.bk-full.bk-full { width:100% }

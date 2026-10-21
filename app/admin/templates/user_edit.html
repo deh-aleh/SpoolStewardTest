@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "macros.html" import seg, stepper %}
 {% block title %}{{ _("Edit %(user)s", user=u.username) }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block body %}
 <div class="formpage">
 <form class="card" method="post" action="/admin/users/{{ u.id }}">
@@ -40,7 +41,7 @@
   </div>
   {% include "_perm_fields.html" %}
   {% if perm_grants %}
-  <p class="muted" style="margin-top:10px">{{ _("Permissions granted after a request or directly:") }}
+  <p class="muted ue-grants">{{ _("Permissions granted after a request or directly:") }}
     {% for g in perm_grants %}<b>+ {{ g.what }}</b> ({{ _("until %(date)s", date=g.until) if g.until else _("permanent") }}){% if not loop.last %}, {% endif %}{% endfor %}
     · <a href="/admin/requests#grants">{{ _("manage") }}</a></p>
   {% endif %}

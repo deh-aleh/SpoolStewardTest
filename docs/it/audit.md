@@ -2,7 +2,7 @@
 
 [Indice della documentazione](../README.md) · [English](../en/audit.md) · Italiano
 
-PrintMinder tiene **due registri in cui si aggiunge soltanto**:
+SpoolSteward tiene **due registri in cui si aggiunge soltanto**:
 
 | Registro | Tabella | Contenuto | Pagina |
 |---|---|---|---|
@@ -28,10 +28,7 @@ dopo un numero di giorni a scelta. La riga resta sempre, con tutto il resto. Det
 | `failed` | Accettato ma la stampante o lo scanner non ha potuto eseguirlo. Non conta |
 | `canceled` | Fermato prima di stampare, dall'utente, da un amministratore o dal programma di scansione. La quota si libera |
 
-La pagina si legge bene anche da telefono: 30 azioni per pagina, un interruttore **Aggiornamento automatico** nella pagina stessa (l'intervallo si
-imposta nelle *Impostazioni*, predefinito 30 s; con 0 l'interruttore parte spento e usa 30 s quando lo accendi; la scelta la ricorda il browser), righe alternate, testi lunghi accorciati con «…» e popup per il testo completo, colonne *Dispositivo* / *Azione*
-(caricatore, colore, fronte-retro), layout adattivo e menu sempre visibile. Sono disponibili filtri ed **esportazione CSV** (l'iniezione
-di formule è neutralizzata). Il pulsante *Annulla* ferma un job in coda (si usa l'identità del proprietario).
+La pagina mostra 30 righe alla volta e si legge bene da telefono. Ha un interruttore **Aggiornamento automatico** (l'intervallo si imposta nelle *Impostazioni*, predefinito 30 s; con 0 l'interruttore parte spento e usa 30 s quando lo accendi; la scelta la ricorda il browser). I testi lunghi sono accorciati con «…» e si leggono per intero in un popup. Sono disponibili filtri ed **esportazione CSV** (l'iniezione di formule è neutralizzata). Il pulsante *Annulla* ferma un job in coda (si usa l'identità del proprietario).
 
 Le scansioni senza credenziali (eSCL anonimo) mostrano IP e nome host di chi chiama nella colonna delle informazioni. Una scansione fatta con una finestra di scansione mostra la stessa icona con l'indirizzo da cui è arrivata. Una richiesta rifiutata perché arrivava da un indirizzo diverso da quello per cui è stata aperta la finestra è una riga *negata* a nome del proprietario della finestra; l'icona mostra i due indirizzi.
 
@@ -63,7 +60,7 @@ pagina ha filtri con suggerimenti.
 
 ## 4. Archivio
 
-Quando le tabelle attive superano `CUPSPL_AUDIT_MAX_MB` (predefinito 50), l'archiviatore (controlla ogni `CUPSPL_AUDIT_CHECK_INTERVAL`,
+Quando le tabelle attive superano `SPOOLSTEWARD_AUDIT_MAX_MB` (predefinito 50), l'archiviatore (controlla ogni `SPOOLSTEWARD_AUDIT_CHECK_INTERVAL`,
 predefinito 1 h) sposta le **righe più vecchie** in `data/audit-archive/audit-<tabella>-<da>-<a>.jsonl.gz`. Garanzie:
 
 1. Le righe delle finestre di quota ancora in corso (mese precedente e corrente, più un margine) **non** vengono mai archiviate, quindi i limiti non cambiano.
@@ -76,7 +73,7 @@ predefinito 1 h) sposta le **righe più vecchie** in `data/audit-archive/audit-<
 La pagina **Archivio audit** (`/admin/archive`) elenca gli archivi con il percorso nel contenitore e sul server
 (`AUDIT_ARCHIVE_HOST_PATH`, solo informativo), dimensione e sha256; li apre con ricerca e paginazione (in streaming), li **scarica** e ne
 **verifica l'integrità**. Non può eliminarli. La pagina Audit mostra un avviso quando esistono archivi.
-`cups-policy-admin audit-archive [--force]` lancia l'archiviatore a mano; `cups-policy-admin jobs` mostra le ultime righe.
+`spoolsteward-admin audit-archive [--force]` lancia l'archiviatore a mano; `spoolsteward-admin jobs` mostra le ultime righe.
 
 I nomi dei file nell'archivio restano **cifrati** (il portale li decifra quando li mostra e quando cerchi); con la retention accesa, le righe oltre il limite vengono scritte senza il nome. I file già scritti non si modificano.
 

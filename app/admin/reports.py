@@ -5,9 +5,8 @@ Only the active audit is read: rows already moved to a compressed archive are no
 
 import csv
 import io
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import UTC, date, datetime, time, timedelta
 from xml.sax.saxutils import escape
-from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse, Response
@@ -15,6 +14,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
+from app.timeutil import local_tz
 from app.admin.common import current_admin, flash, render
 from app.admin.routes import _csv_safe
 from app.config import settings
@@ -27,10 +27,6 @@ MAX_TOP = 1000
 DEFAULT_DAYS = 30
 
 
-def _tz() -> ZoneInfo:
-    return ZoneInfo(settings.timezone)
-
-
 def parse_day(text: str) -> date | None:
     try:
         return date.fromisoformat(text.strip())
@@ -40,9 +36,9 @@ def parse_day(text: str) -> date | None:
 
 def window(start: date, end: date) -> tuple[datetime, datetime]:
     """[start 00:00, day after end 00:00) in the installation's time zone, as UTC."""
-    tz = _tz()
-    return (datetime.combine(start, time.min, tz).astimezone(timezone.utc),
-            datetime.combine(end + timedelta(days=1), time.min, tz).astimezone(timezone.utc))
+    tz = local_tz()
+    return (datetime.combine(start, time.min, tz).astimezone(UTC),
+            datetime.combine(end + timedelta(days=1), time.min, tz).astimezone(UTC))
 
 
 def build(db: Session, start: date, end: date, exclude: list[int], top: int | None, detail: bool) -> dict:
@@ -77,7 +73,7 @@ def archive_note(db: Session, start: date) -> bool:
     if not db.scalar(select(func.count(AuditArchive.id)).where(AuditArchive.source_table == "job_log")):
         return False
     oldest = db.scalar(select(func.min(JobLog.ts)))
-    return oldest is None or window(start, start)[0] < (oldest if oldest.tzinfo else oldest.replace(tzinfo=timezone.utc))
+    return oldest is None or window(start, start)[0] < (oldest if oldest.tzinfo else oldest.replace(tzinfo=UTC))
 
 
 def to_csv(data: dict, detail: bool) -> str:
@@ -108,7 +104,7 @@ def to_pdf(data: dict, start: date, end: date, excluded: list[str], top: int | N
     styles = getSampleStyleSheet()
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4, leftMargin=18 * mm, rightMargin=18 * mm, topMargin=16 * mm, bottomMargin=16 * mm,
-                            title="Print report", author="PrintMinder")
+                            title="Print report", author="SpoolSteward")
     t = data["total"]
     story = [Paragraph("Print report", styles["Title"]),
              Paragraph(f"Period: {start.isoformat()} to {end.isoformat()} ({_latin(settings.timezone)})", styles["Normal"]),
@@ -139,7 +135,7 @@ def to_pdf(data: dict, start: date, end: date, excluded: list[str], top: int | N
 
 
 def _params(start: str, end: str, top: str, request: Request) -> tuple[date, date, int | None] | None:
-    today = datetime.now(_tz()).date()
+    today = datetime.now(local_tz()).date()
     s = parse_day(start) if start.strip() else today - timedelta(days=DEFAULT_DAYS - 1)
     e = parse_day(end) if end.strip() else today
     if s is None or e is None:
@@ -169,7 +165,7 @@ async def report_page(request: Request, start: str = "", end: str = "", top: str
 
     p = _params(start, end, top, request)
     groups, data, archived = await run_in_threadpool(load, *(p or (None, None, None)))
-    today = datetime.now(_tz()).date()
+    today = datetime.now(local_tz()).date()
     return render(request, "report.html", admin, groups=groups, data=data, archived=archived, exclude=exclude, detail=bool(detail),
                   f={"start": start or (p[0] if p else today - timedelta(days=DEFAULT_DAYS - 1)).isoformat(),
                      "end": end or (p[1] if p else today).isoformat(), "top": top}, max_top=MAX_TOP)

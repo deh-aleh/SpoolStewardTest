@@ -5,11 +5,12 @@ one of the 3-4 requests of a print job expensive and open a CPU-exhaustion hole.
 import hashlib
 import secrets
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
+from app.timeutil import aware
 from app.config import settings
 from app.db.models import PrintKey, User
 from app.i18n import _
@@ -34,11 +35,11 @@ def hash_key(plain: str) -> str:
 def create_key(session: Session, user: User, label: str, ttl_days: int | None, now: datetime | None = None,
                once: bool = False) -> tuple[PrintKey, str]:
     """Returns (row, plaintext). The plaintext exists only in this return value: show it once.
-    `once`: valid for one print, and void after CUPSPL_KEY_ONCE_HOURS if nobody uses it."""
+    `once`: valid for one print, and void after SPOOLSTEWARD_KEY_ONCE_HOURS if nobody uses it."""
     label = label.strip()
     if not label or len(label) > MAX_LABEL:
         raise ValueError(_("the label must be 1-%(n)s characters", n=MAX_LABEL))
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     active = [k for k in session.scalars(select(PrintKey).where(PrintKey.user_id == user.id)) if key_state(k, now) in ("active", "disabled")]
     if len(active) >= MAX_KEYS_PER_USER:
         raise ValueError(_("at most %(n)s active keys per user: revoke some first", n=MAX_KEYS_PER_USER))
@@ -53,17 +54,13 @@ def create_key(session: Session, user: User, label: str, ttl_days: int | None, n
     return row, plain
 
 
-def _aware(dt: datetime | None) -> datetime | None:
-    return dt if dt is None or dt.tzinfo else dt.replace(tzinfo=timezone.utc)  # SQLite drops tzinfo; we store UTC
-
-
 def key_state(row: PrintKey, now: datetime) -> str:
     """The one place that says what a key is: revoked | used | expired | disabled | active."""
     if row.revoked_at is not None:
         return "revoked"
     if row.used_at is not None:
         return "used"
-    expires = _aware(row.expires_at)
+    expires = aware(row.expires_at)
     if expires is not None and now >= expires:
         return "expired"
     return "disabled" if row.disabled_at is not None else "active"
@@ -73,7 +70,7 @@ def vanishes_at(row: PrintKey) -> datetime | None:
     """When a revoked or expired key leaves the list (None: it stays, or it is not over)."""
     if settings.key_history_days <= 0:
         return None
-    end = _aware(row.revoked_at) or _aware(row.expires_at)
+    end = aware(row.revoked_at) or aware(row.expires_at)
     return end + timedelta(days=settings.key_history_days) if end is not None else None
 
 
@@ -95,7 +92,7 @@ def key_is_usable(row: PrintKey, now: datetime) -> bool:
 
 def in_grace(row: PrintKey, now: datetime) -> bool:
     """A single-use key whose print was accepted a moment ago: it still answers status queries (never a new job)."""
-    used = _aware(row.used_at)
+    used = aware(row.used_at)
     return (row.single_use and used is not None and row.revoked_at is None and row.disabled_at is None
             and now < used + timedelta(seconds=settings.key_once_grace_seconds))
 
@@ -106,7 +103,7 @@ def verify_key(session: Session, user: User, plain: str, ip: str | None = None, 
     `read_only`: the caller only asks about jobs, so a single-use key that has just printed is still good."""
     if not plain.startswith(KEY_TAG) or len(plain) > 128:
         return None
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     row = session.scalars(select(PrintKey).where(PrintKey.key_hash == hash_key(plain))).first()
     if row is None or row.user_id != user.id or not (key_is_usable(row, now) or (read_only and in_grace(row, now))):
         return None
@@ -123,7 +120,7 @@ def consume(session: Session, row: PrintKey, now: datetime | None = None) -> boo
     if not row.single_use:
         return False
     done = session.execute(update(PrintKey).where(PrintKey.id == row.id, PrintKey.used_at.is_(None))
-                           .values(used_at=now or datetime.now(timezone.utc)))
+                           .values(used_at=now or datetime.now(UTC)))
     session.commit()
     return done.rowcount == 1
 
@@ -131,13 +128,13 @@ def consume(session: Session, row: PrintKey, now: datetime | None = None) -> boo
 def revoke_key(session: Session, row: PrintKey, now: datetime | None = None) -> bool:
     if row.revoked_at is not None:
         return False
-    row.revoked_at = now or datetime.now(timezone.utc)
+    row.revoked_at = now or datetime.now(UTC)
     session.commit()
     return True
 
 
 def revoke_all(session: Session, user: User, now: datetime | None = None) -> int:
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     rows = [k for k in session.scalars(select(PrintKey).where(PrintKey.user_id == user.id, PrintKey.revoked_at.is_(None)))
             if key_state(k, now) in ("active", "disabled")]  # an expired key is already over
     for r in rows:
@@ -186,7 +183,7 @@ def disable_key(session: Session, row: PrintKey, now: datetime | None = None) ->
     """An administrator switches a key off. expires_at is not touched: the clock keeps running."""
     if row.revoked_at is not None or row.disabled_at is not None:
         return False
-    row.disabled_at = now or datetime.now(timezone.utc)
+    row.disabled_at = now or datetime.now(UTC)
     session.commit()
     return True
 
@@ -203,7 +200,7 @@ def extend_key(session: Session, row: PrintKey, days: int, now: datetime | None 
     """New expiry = now + days (single-use keys can not be extended; a revoked one stays revoked)."""
     if row.revoked_at is not None or row.single_use:
         return False
-    row.expires_at = (now or datetime.now(timezone.utc)) + timedelta(days=days)
+    row.expires_at = (now or datetime.now(UTC)) + timedelta(days=days)
     row.expiry_notified_at = None
     session.commit()
     return True
@@ -211,12 +208,12 @@ def extend_key(session: Session, row: PrintKey, days: int, now: datetime | None 
 
 def purge(session: Session, now: datetime | None = None) -> int:
     """Delete what nobody needs to see any more: single-use keys past their grace, and revoked / expired keys
-    CUPSPL_KEY_HISTORY_DAYS after the day they ended (0 = keep them)."""
-    now = now or datetime.now(timezone.utc)
+    SPOOLSTEWARD_KEY_HISTORY_DAYS after the day they ended (0 = keep them)."""
+    now = now or datetime.now(UTC)
     gone = 0
     for k in session.scalars(select(PrintKey).where((PrintKey.used_at.is_not(None)) | (PrintKey.revoked_at.is_not(None))
                                                     | (PrintKey.expires_at.is_not(None)))).all():
-        used, revoked, expires = _aware(k.used_at), _aware(k.revoked_at), _aware(k.expires_at)
+        used, revoked, expires = aware(k.used_at), aware(k.revoked_at), aware(k.expires_at)
         history = timedelta(days=settings.key_history_days)
         drop = (used is not None and now >= used + timedelta(seconds=settings.key_once_grace_seconds)
                 or settings.key_history_days > 0 and (revoked is not None and now >= revoked + history

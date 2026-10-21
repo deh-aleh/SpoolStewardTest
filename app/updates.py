@@ -1,6 +1,6 @@
 """Tell administrators when a newer release exists. It never installs anything.
 
-Once a day (CUPSPL_UPDATE_CHECK) it asks the releases API one question: "what is the newest release?". Nothing about this
+Once a day (SPOOLSTEWARD_UPDATE_CHECK) it asks the releases API one question: "what is the newest release?". Nothing about this
 server is sent. The answer is kept in memory (app.state.update_info) and shown as a note in the portal to administrators.
 """
 
@@ -10,7 +10,7 @@ import logging
 import os
 import re
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -21,14 +21,14 @@ from app.config import settings
 log = logging.getLogger("app.updates")
 
 CHECK_EVERY = 24 * 3600
-_VERSION = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)$")
+_VERSION = re.compile(r"v?(\d+)\.(\d+)\.(\d+)", re.ASCII)
 # the version of a beta as the package metadata writes it (1.2.3b1) or as the tag does (1.2.3-beta.1)
-_BETA = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)(?:b|-beta\.)(\d+)$")
+_BETA = re.compile(r"v?(\d+)\.(\d+)\.(\d+)(?:b|-beta\.)(\d+)", re.ASCII)
 
 
 def parse(text: str) -> tuple[int, int, int] | None:
     """'v1.2.3' -> (1, 2, 3); anything else (pre-releases, junk) -> None, so it is never offered."""
-    m = _VERSION.match(text.strip())
+    m = _VERSION.fullmatch(text)
     return (int(m[1]), int(m[2]), int(m[3])) if m else None
 
 
@@ -37,7 +37,7 @@ def _order(text: str) -> tuple | None:
     final = parse(text)
     if final:
         return (*final, 1, 0)
-    m = _BETA.match(text.strip())
+    m = _BETA.fullmatch(text)
     return (int(m[1]), int(m[2]), int(m[3]), 0, int(m[4])) if m else None
 
 
@@ -141,5 +141,5 @@ def write_request(version: str, who: str, backup: str) -> None:
     d.mkdir(parents=True, exist_ok=True)
     tmp = d / ".request.tmp"
     tmp.write_text(json.dumps({"version": version, "by": who, "backup": backup,
-                               "ts": datetime.now(timezone.utc).isoformat(timespec="seconds")}))
+                               "ts": datetime.now(UTC).isoformat(timespec="seconds")}))
     os.replace(tmp, d / "request.json")

@@ -10,7 +10,7 @@ There are two ways to print: through the **gateway's IPP address** (computers an
 *Print* in the menu (`/me/print`), signed in, no key needed.
 
 - Accepted files: PDF, JPEG, PNG, GIF, plain text — recognised by their **content**, not by name or browser claim.
-- Maximum size `CUPSPL_WEB_UPLOAD_MB` (default 25); copies up to `CUPSPL_WEB_MAX_COPIES` (default 20).
+- Maximum size `SPOOLSTEWARD_WEB_UPLOAD_MB` (default 25); copies up to `SPOOLSTEWARD_WEB_MAX_COPIES` (default 20).
 - Options depend on the selected printer: paper size (only those the queue lists), orientation, colour / black and white
   (if the queue is colour-capable), **page range** (`1,5`, `2-4`, `3-`), copies and a **comment** (max 50 characters) shown
   under the file name in the audit.
@@ -47,7 +47,7 @@ Address: `ipps://<server>:8631/printers/<queue>`. The client authenticates with 
 The device must trust the server's certificate. Printers announced by mDNS also appear on Linux desktops (Avahi) without
 a key: using them does nothing until the queue is added with the key in its address.
 
-Scripts: `scripts/print-test.sh [queue] [user]` sends one small text page (uses a sheet).
+Scripts: `scripts/print-test.sh SERVER[:PORT] QUEUE [USER]` sends one small text page (uses a sheet), for example `scripts/print-test.sh print.example.lan:8631 office-printer mario`. Server and queue are required; the user defaults to your login name. You can set the server once in the `GATEWAY` environment variable and then pass only `QUEUE [USER]`.
 
 ### Windows 11
 
@@ -58,19 +58,11 @@ Full step-by-step guide: [windows.md](windows.md). In short: *Settings → Print
 Allowed: print (`Print-Job`, `Create-Job` + `Send-Document`), cancel, list jobs and printers, capability queries.
 Forbidden for everybody: CUPS administrative operations, `Print-URI`, `Send-URI` (SSRF risk). Capability queries
 (`Get-Printer-Attributes` and `Validate-Job`, small bodies) are answered **without credentials** because clients ask before they have any
-(`CUPSPL_ANONYMOUS_DISCOVERY=true`): they create no users, no audit rows and forward nothing. The full path is in
+(`SPOOLSTEWARD_ANONYMOUS_DISCOVERY=true`): they create no users, no audit rows and forward nothing. The full path is in
 [architecture.md](architecture.md#4-path-of-an-ipp-request).
 
 The gateway tells clients `uri-security-supported=tls` and `uri-authentication-supported=basic` (CUPS would say `none`):
 without it Mopria does not send credentials.
-
-## 4. Announcement on the network (DNS-SD)
-
-The `mdns` service announces every queue as `_ipps._tcp` with the `_universal` (AirPrint) subtype and TXT records
-`rp`, `pdl`, `URF`, `Color`, `Duplex`, `TLS`, `air`, refreshed every `CUPSPL_MDNS_INTERVAL` seconds. The announced host
-name is `<name>.local` (Android resolves only those via multicast), and its address must be in the TLS certificate.
-Blocked-hidden printers, unreachable devices and maintenance mode withdraw the announcement. Scanners are announced as
-`_uscans._tcp` ([scanning.md](scanning.md)).
 
 ### Permissions and IPP
 
@@ -80,6 +72,14 @@ CUPS, and removes the PPD-style options `ColorModel`, `ColorMode` and `Duplex`. 
 mode. `CUPS-Get-Printers` and `CUPS-Get-Classes` leave out the printers a limited user may not use. A phone or computer that found the
 printer through the network announcement still sees it, because the announcement is the same for everybody; the job is refused. Details and cautions:
 [quotas.md](quotas.md#5-advanced-permissions).
+
+## 4. Announcement on the network (DNS-SD)
+
+The `mdns` service announces every queue as `_ipps._tcp` with the `_universal` (AirPrint) subtype and TXT records
+`rp`, `pdl`, `URF`, `Color`, `Duplex`, `TLS`, `air`, refreshed every `SPOOLSTEWARD_MDNS_INTERVAL` seconds. The announced host
+name is `<name>.local` (Android resolves only those via multicast), and its address must be in the TLS certificate.
+Blocked-hidden printers, unreachable devices and maintenance mode withdraw the announcement. Scanners are announced as
+`_uscans._tcp` ([scanning.md](scanning.md)).
 
 ## 5. Refused jobs, cancel and states
 

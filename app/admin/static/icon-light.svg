@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <title>PrintMinder</title>
-  <!-- for dark backgrounds: paper tile, ink P -->
+  <title>SpoolSteward</title>
+  <!-- for dark backgrounds: paper tile, ink S -->
   <path fill="#F4EFE6" d="M226 0H798A226 226 0 0 1 1024 226V798A226 226 0 0 1 798 1024H300L0 724V226A226 226 0 0 1 226 0Z"/>
   <!-- the tile is a sheet with a folded corner; the flap is the cut corner mirrored across the fold -->
   <path fill="#E0306E" d="M0 724L300 1024V724Z"/>
-  <!-- the P has paper thickness: the same shape, shifted and darker -->
-  <path fill="#6B6F7A" fill-rule="evenodd" transform="translate(24 24)" d="M282 190H542A200 200 0 0 1 542 590H432V790H282ZM432 340V440H542A50 50 0 0 0 542 340Z"/>
-  <path fill="#17181D" fill-rule="evenodd" d="M282 190H542A200 200 0 0 1 542 590H432V790H282ZM432 340V440H542A50 50 0 0 0 542 340Z"/>
+  <!-- the S has paper thickness: the same stroke, shifted and lighter -->
+  <path fill="none" stroke="#6B6F7A" stroke-width="112" transform="translate(24 24)" d="M626.3 315.5A145 108 0 1 0 512 490A145 108 0 1 1 369.2 616.8"/>
+  <path fill="none" stroke="#17181D" stroke-width="112" d="M626.3 315.5A145 108 0 1 0 512 490A145 108 0 1 1 369.2 616.8"/>
 </svg>

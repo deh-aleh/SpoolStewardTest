@@ -1,23 +1,6 @@
 {# A switch that makes the page reload by itself. Set before including: ar_key (which page), ar_seconds, ar_on (on at first).
    The choice is remembered by the browser, per page; the page does not reload while a popup is open or something is being typed. #}
-<span class="ar" style="display:inline-flex;align-items:center;gap:8px">
+<span class="ar" data-ar-key="{{ ar_key }}" data-ar-secs="{{ ar_seconds|int }}" data-ar-on="{{ '1' if ar_on else '0' }}">
   <button type="button" class="switch" role="switch" id="ar-{{ ar_key }}" aria-checked="false" aria-label="{{ _('Automatic refresh') }}" title="{{ _('Reload this page by itself') }}"><i></i></button>
   <span class="muted">{{ _("Automatic refresh every %(n)s seconds", n=ar_seconds) }}</span>
 </span>
-<script>
-(function () {
-  var btn = document.getElementById('ar-{{ ar_key }}'), K = 'autorefresh:{{ ar_key }}', secs = {{ ar_seconds|int }}, def = {{ 'true' if ar_on else 'false' }}, timer = null;
-  function get() { try { var v = localStorage.getItem(K); return v === null ? def : v === '1'; } catch (e) { return def; } }
-  function put(v) { try { localStorage.setItem(K, v ? '1' : '0'); } catch (e) {} }
-  var on = get();
-  function paint() { btn.classList.toggle('on', on); btn.setAttribute('aria-checked', on ? 'true' : 'false'); }
-  function tick() {
-    var a = document.activeElement && document.activeElement.tagName;
-    if (document.querySelector('dialog[open]') || /^(INPUT|SELECT|TEXTAREA)$/.test(a || '')) { timer = setTimeout(tick, 5000); return; }
-    location.reload();
-  }
-  function arm() { clearTimeout(timer); if (on) timer = setTimeout(tick, secs * 1000); }
-  btn.addEventListener('click', function () { on = !on; put(on); paint(); arm(); });
-  paint(); arm();
-})();
-</script>

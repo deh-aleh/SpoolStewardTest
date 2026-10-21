@@ -3,7 +3,7 @@ function), the rules that give it its input, the IPP gateway and the web print f
 it, and the names of past queues offered when a queue is renamed."""
 
 import base64
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -22,15 +22,15 @@ from app.policy.permissions import Perms, Window, decide, in_window
 from tests.conftest import csrf_of_page, make_user, portal_login
 
 GOOD = "correct horse battery"
-UTC = ZoneInfo("UTC")
+ZUTC = ZoneInfo("UTC")
 ROME = ZoneInfo("Europe/Rome")
-WED_10 = datetime(2026, 10, 14, 10, 0, tzinfo=timezone.utc)   # a Wednesday
+WED_10 = datetime(2026, 10, 14, 10, 0, tzinfo=UTC)   # a Wednesday
 NO_COLOR = Perms(color=False)
 NO_ONE_SIDED = Perms(one_sided=False)
 BOTH = {"color": True, "duplex": True}
 
 
-def dec(perms, attrs=None, caps=BOTH, mode="adjust", printer="hp", now=WED_10, tz=UTC):
+def dec(perms, attrs=None, caps=BOTH, mode="adjust", printer="hp", now=WED_10, tz=ZUTC):
     return decide(perms, printer, caps, attrs or {}, mode, now, tz)
 
 
@@ -121,7 +121,7 @@ def test_printers_and_hours_refuse_in_adjust_mode_too_and_the_emergency_account_
 # ------------------------------------------------------------------------------------------------ hours
 
 def local(y, mo, d, h, mi=0, tz=ROME):
-    return datetime(y, mo, d, h, mi, tzinfo=tz).astimezone(timezone.utc)
+    return datetime(y, mo, d, h, mi, tzinfo=tz).astimezone(UTC)
 
 
 def test_a_normal_window_on_some_weekdays_end_excluded():
@@ -145,16 +145,16 @@ def test_a_window_across_midnight_belongs_to_the_day_it_starts():
 def test_the_window_follows_the_clock_of_the_time_zone_across_daylight_saving():
     w = Window(frozenset(range(7)), 2 * 60 + 30, 3 * 60 + 30)
     # 2026-03-29: clocks go 02:00 -> 03:00 in Rome. 01:30 UTC is 03:30 local (outside), 01:00 UTC is 03:00 local (inside)
-    assert in_window(w, datetime(2026, 3, 29, 1, 0, tzinfo=timezone.utc), ROME)
-    assert not in_window(w, datetime(2026, 3, 29, 1, 30, tzinfo=timezone.utc), ROME)
+    assert in_window(w, datetime(2026, 3, 29, 1, 0, tzinfo=UTC), ROME)
+    assert not in_window(w, datetime(2026, 3, 29, 1, 30, tzinfo=UTC), ROME)
     # 2026-10-25: clocks go 03:00 -> 02:00; 02:30 happens twice (00:30 UTC and 01:30 UTC), both inside
-    assert in_window(w, datetime(2026, 10, 25, 0, 30, tzinfo=timezone.utc), ROME)
-    assert in_window(w, datetime(2026, 10, 25, 1, 30, tzinfo=timezone.utc), ROME)
-    assert not in_window(w, datetime(2026, 10, 25, 2, 30, tzinfo=timezone.utc), ROME)
+    assert in_window(w, datetime(2026, 10, 25, 0, 30, tzinfo=UTC), ROME)
+    assert in_window(w, datetime(2026, 10, 25, 1, 30, tzinfo=UTC), ROME)
+    assert not in_window(w, datetime(2026, 10, 25, 2, 30, tzinfo=UTC), ROME)
 
 
 def test_start_equal_to_end_lets_nobody_in_and_the_text_is_readable(english):
-    assert not in_window(Window(frozenset(range(7)), 600, 600), WED_10, UTC)
+    assert not in_window(Window(frozenset(range(7)), 600, 600), WED_10, ZUTC)
     assert permissions.describe_window(Window(frozenset({0, 1, 2, 3, 4}), 480, 1020)) == "Mon–Fri 08:00–17:00"
     assert permissions.describe_days({0, 2, 5, 6}) == "Mon, Wed, Sat, Sun"
     assert permissions.describe_days({1, 2}) == "Tue, Wed"
@@ -378,14 +378,14 @@ async def test_a_forbidden_printer_is_refused_audited_without_quota_and_told_onc
 @pytest.mark.usefixtures("english")
 async def test_outside_the_hours_the_job_is_refused_and_inside_it_goes_through(gw, monkeypatch):
     limit(gw, hours_mode="window", hours_days="01234", hours_start=480, hours_end=1020)
-    monkeypatch.setattr(audit, "now_utc", lambda: datetime(2026, 10, 17, 10, 0, tzinfo=timezone.utc))   # a Saturday
+    monkeypatch.setattr(audit, "now_utc", lambda: datetime(2026, 10, 17, 10, 0, tzinfo=UTC))   # a Saturday
     out = await send(gw, job())
     assert out.code == c.STATUS_NOT_POSSIBLE and "Mon–Fri 08:00–17:00" in out.get(c.TAG_OPERATION, "status-message")
     [row] = log_rows(gw)
     assert row[0] == "denied" and "Mon–Fri" in row[2]
     [n] = open_notices(gw, "job_refused")
     assert n.detail_json["why"] == "hours" and (n.detail_json["days"], n.detail_json["start"], n.detail_json["end"]) == ("01234", 480, 1020)
-    monkeypatch.setattr(audit, "now_utc", lambda: datetime(2026, 10, 14, 10, 0, tzinfo=timezone.utc))   # a Wednesday
+    monkeypatch.setattr(audit, "now_utc", lambda: datetime(2026, 10, 14, 10, 0, tzinfo=UTC))   # a Wednesday
     assert (await send(gw, job())).code == 0 and len(gw.cups.jobs()) == 1
 
 
@@ -574,7 +574,7 @@ async def test_web_form_shows_the_double_sided_choice_only_to_those_who_may_and_
 @pytest.mark.usefixtures("english")
 async def test_web_form_outside_the_hours_shows_the_window_and_refuses(web, monkeypatch):
     limit(web, hours_mode="window", hours_days="01234", hours_start=480, hours_end=1020)
-    monkeypatch.setattr(audit, "now_utc", lambda: datetime(2026, 10, 17, 10, 0, tzinfo=timezone.utc))
+    monkeypatch.setattr(audit, "now_utc", lambda: datetime(2026, 10, 17, 10, 0, tzinfo=UTC))
     monkeypatch.setattr(permissions, "in_window", lambda *a: False)
     assert "You can print Mon–Fri 08:00–17:00" in (await web.get("/me/print")).text
     await post_print(web)

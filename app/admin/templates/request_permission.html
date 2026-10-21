@@ -1,15 +1,17 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Ask for a permission") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/request_permission.css?v={{ app_version }}">{% endblock %}
+{% block scripts %}<script src="/admin/static/js/request_permission.js?v={{ app_version }}"></script>{% endblock %}
 {% block body %}
 <form class="card narrow" method="post" action="/me/request/permission" id="permform">
-  <h1 style="text-align:center">{{ _("Ask for a permission") }}</h1>
+  <h1 class="rp-title">{{ _("Ask for a permission") }}</h1>
   {% if not options %}
     <p>{{ _("There is nothing to ask for: you already have every permission, or you are waiting for the answer to what you asked.") }}</p>
   {% else %}
   <input type="hidden" name="csrf_token" value="{{ csrf }}">
   <p class="muted">{{ _("You can have at most %(n)s open requests. An administrator will review it and choose whether it lasts for good or until a date.", n=max_open) }}</p>
   <h2>{{ _("What") }}</h2>
-  <select name="perm" onchange="permKind()" required>
+  <select name="perm" required>
     {% for value, label in options %}<option value="{{ value }}" {{ 'selected' if value == chosen }}>{{ label }}</option>{% endfor %}
   </select>
   {% if blocked %}
@@ -22,14 +24,6 @@
   <h2>{{ _("Reason") }}{% if not reason_required %} <span class="muted">({{ _("optional") }})</span>{% endif %}</h2>
   <textarea name="reason" maxlength="500" {{ 'required' if reason_required }} placeholder="{{ _('Why do you need it? (e.g. printing the posters for the fair in colour)') }}"></textarea>
   <div class="actions"><button>{{ _("Send the request") }}</button><a class="btn sec" href="/me">{{ _("Cancel") }}</a></div>
-  <script>
-    // Without JavaScript the printer list is always shown; the server reads it only when "a printer" is chosen.
-    function permKind() {
-      var box = document.getElementById('printerbox');
-      if (box) { box.hidden = document.forms.permform.perm.value !== 'printer'; }
-    }
-    permKind();
-  </script>
   {% endif %}
 </form>
 {% endblock %}

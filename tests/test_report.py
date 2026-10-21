@@ -1,7 +1,7 @@
 """Usage report: counts, order, excluded groups, detail by printer, CSV safety, PDF, dates."""
 
 import io
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from pypdf import PdfReader
@@ -16,7 +16,7 @@ GOOD = "correct horse battery"
 def add(cl, name, printer, pages, state=JobState.completed, days_ago=1, kind=JobKind.print):
     with cl.sm() as s:
         uid = s.scalars(select(User).where(User.username == name)).first()
-        s.add(JobLog(ts=datetime.now(timezone.utc) - timedelta(days=days_ago), user_id=uid.id if uid else None,
+        s.add(JobLog(ts=datetime.now(UTC) - timedelta(days=days_ago), user_id=uid.id if uid else None,
                      user_name=None if uid else name, kind=kind, printer=printer, state=state, pages=pages))
         s.commit()
 

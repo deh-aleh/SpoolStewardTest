@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Group change") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block body %}
 <form class="card narrow" method="post" action="/me/request/group">
-  <h1 style="text-align:center">{{ _("Ask to change group") }}</h1>
+  <h1 class="rg-title">{{ _("Ask to change group") }}</h1>
   <p class="muted">{{ _("You are now in: <b>%(group)s</b>. The group sets your limits.", group=current.name if current else _('no group')) }}</p>
   {% if not options %}
     <p>{{ _("No group is available for this request.") }}</p>

@@ -2,7 +2,7 @@
 general backup of .env is shown beside them (read-only: it is changed in the file)."""
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -82,7 +82,7 @@ def _row(db: Session, t: BackupTarget, admin: User, instance: str, now: datetime
 @router.get("", response_class=HTMLResponse)
 def listing(request: Request, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
     service.sync_global(db)
-    instance, now = service.instance_id(db), datetime.now(timezone.utc)
+    instance, now = service.instance_id(db), datetime.now(UTC)
     targets = db.scalars(select(BackupTarget).order_by(BackupTarget.is_global.desc(), BackupTarget.id)).all()
     dead: list[str] = []
     rows = [_row(db, t, admin, instance, now, dead) for t in targets]

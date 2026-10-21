@@ -9,10 +9,10 @@ Una **regola** dice: *questo utente o questo gruppo può stampare al massimo N *
 - Le regole appartengono a un gruppo, con **override per utente** facoltativi. Una regola utente sostituisce quella del gruppo per la
   stessa metrica.
 - Metriche: **job** e **pagine**. Periodi: **settimanale** (lunedì–domenica) o **mensile** (mese di calendario), nel fuso
-  `CUPSPL_TIMEZONE`, anche attraverso il cambio dell'ora legale.
+  `SPOOLSTEWARD_TIMEZONE`, anche attraverso il cambio dell'ora legale.
 - Nessuna regola = nessun limite.
 - Dove si impostano: *Gruppi* → modifica (limiti del gruppo), *Utenti* → modifica (limiti personali), oppure la CLI:
-  `cups-policy-admin group-limit staff 20 --period monthly`, `cups-policy-admin user-limit mario 5 --metric pages`
+  `spoolsteward-admin group-limit staff 20 --period monthly`, `spoolsteward-admin user-limit mario 5 --metric pages`
   (`none` toglie un limite).
 
 ### Cosa conta
@@ -42,7 +42,7 @@ Il limite pagine è **rigido** solo per i documenti che il gateway sa contare. �
 
 ### Riserva atomica
 
-Il controllo del limite e la registrazione del job avvengono sotto lock (thread + `BEGIN IMMEDIATE` su SQLite), quindi molti job simultanei non possono superare il limite. Le concessioni attive si sommano al limite **dentro** lo stesso controllo.
+Il controllo del limite e la registrazione del job avvengono in un unico passaggio protetto da lock, quindi molti job simultanei non possono superare il limite. Le concessioni attive si sommano al limite **dentro** lo stesso controllo.
 
 ## 2. Richieste degli utenti
 
@@ -54,8 +54,8 @@ In *Profilo* un utente può chiedere:
 2. **Cambio di gruppo** — solo verso gruppi marcati *richiedibili*.
 3. **Un permesso** — colore, stampa solo fronte, una stampante in più o stampare fuori orario (vedi [Chiedere un permesso](#chiedere-un-permesso)).
 
-Freni: al massimo `CUPSPL_MAX_OPEN_REQUESTS` (3) richieste aperte per utente, il motivo è facoltativo, a meno che `CUPSPL_REQUEST_REASON_REQUIRED=true` (sempre trattato come testo),
-le richieste scadono dopo `CUPSPL_REQUEST_TTL_DAYS` (14). L'utente può annullare una richiesta in attesa.
+Limiti sulle richieste: al massimo `SPOOLSTEWARD_MAX_OPEN_REQUESTS` (3) richieste aperte per utente, il motivo è facoltativo, a meno che `SPOOLSTEWARD_REQUEST_REASON_REQUIRED=true` (sempre trattato come testo),
+le richieste scadono dopo `SPOOLSTEWARD_REQUEST_TTL_DAYS` (14). L'utente può annullare una richiesta in attesa.
 
 ## 3. Approvazione e concessioni
 
@@ -70,7 +70,7 @@ L'approvazione produce una **concessione** che si **somma** al limite:
   richiesta: una richiesta fatta domenica sera e approvata lunedì non deve nascere già scaduta).
 - Una concessione **permanente** si applica a ogni periodo successivo ("+20 pagine ogni mese") finché non viene revocata.
 - Il cambio di gruppo sposta subito l'utente; da quel momento valgono i limiti del nuovo gruppo.
-- L'approvazione è **idempotente**: un solo `UPDATE` condizionale, quindi due amministratori o un doppio clic concedono una volta sola.
+- Un'approvazione ripetuta (due amministratori, un doppio clic) concede una volta sola.
 - Le concessioni non toccano mai lo storico (`job_log` non viene modificato).
 
 Gli amministratori possono anche concedere o revocare quota direttamente in **Richieste**. Tutto finisce nell'audit degli
@@ -105,7 +105,7 @@ mostra il valore del gruppo. Sul telefono i pulsanti stanno uno sotto l'altro.
 valore proprio, campo per campo: un utente può avere un permesso colore suo e continuare a seguire il gruppo per stampanti e orari. La
 pagina mostra, accanto a ogni campo, cosa dice il gruppo. Se cambi i permessi del gruppo cambiano per tutti gli utenti che lo seguono, e
 a loro non arriva nessun avviso; se cambi i permessi propri di un utente, a lui arriva un avviso (vedi "Cosa vede l'utente"). Un
-amministratore è limitato come tutti gli altri. L'unica eccezione è l'**amministratore di emergenza** (`CUPSPL_BOOTSTRAP_ADMIN_USERNAME`,
+amministratore è limitato come tutti gli altri. L'unica eccezione è l'**amministratore di emergenza** (`SPOOLSTEWARD_BOOTSTRAP_ADMIN_USERNAME`,
 un account locale): ha tutti i permessi, nella sua pagina il blocco è spento ("tutti i permessi, non limitabile") e il server ignora
 quello che viene inviato per lui. Non ha nemmeno gruppo né quote: non sta nel gruppo "administrator", non ha limiti di job o pagine e non può chiedere di cambiare gruppo. Quote, limiti e permessi del gruppo "administrator" valgono per tutti gli altri amministratori. **La scansione non è limitata** da niente di tutto questo:
 un utente può scansionare con una stampante su cui non può stampare.
@@ -122,7 +122,7 @@ L'elenco contiene nomi di coda, scritti in minuscolo (CUPS non distingue le maiu
 
 ### Orari
 
-Una sola fascia: i giorni della settimana e due ore (`HH:MM`), nel fuso del gateway (`CUPSPL_TIMEZONE`, ora legale compresa). L'ora di
+Una sola fascia: i giorni della settimana e due ore (`HH:MM`), nel fuso del gateway (`SPOOLSTEWARD_TIMEZONE`, ora legale compresa). L'ora di
 fine non è inclusa: da `08:00` a `17:00` passa un lavoro inviato alle 16:59, non alle 17:00. Se la fine è prima dell'inizio (da `22:00` a
 `06:00`) la fascia passa la mezzanotte e appartiene al giorno in cui comincia: da venerdì 22:00 a sabato 06:00 è la fascia di venerdì.
 Inizio e fine non possono essere uguali. Gli orari si controllano **quando il lavoro viene inviato**: un lavoro già accettato non viene
@@ -137,7 +137,7 @@ Il gateway controlla in quest'ordine: stampante bloccata o manutenzione (come se
 | Una stampante fuori dall'elenco | | **Rifiutato**, sempre |
 | Un'ora fuori dalla fascia | | **Rifiutato**, sempre |
 | Colore non indicato (niente, o `auto`) | niente colore | Stampato in bianco e nero. Nessun avviso |
-| Colore indicato (`color`) | niente colore | `CUPSPL_PERMISSION_MODE=adjust` (predefinito): stampato in bianco e nero, all'utente arriva un avviso. `refuse`: rifiutato |
+| Colore indicato (`color`) | niente colore | `SPOOLSTEWARD_PERMISSION_MODE=adjust` (predefinito): stampato in bianco e nero, all'utente arriva un avviso. `refuse`: rifiutato |
 | Lati non indicati | niente solo fronte | Stampato in fronte-retro (lato lungo). Nessun avviso |
 | `one-sided` indicato | niente solo fronte | `adjust`: stampato in fronte-retro, avviso. `refuse`: rifiutato |
 
@@ -183,13 +183,13 @@ Il registro degli amministratori (*Azioni*) annota ogni modifica ai permessi di 
 
 Chi non ha un permesso lo chiede nel riquadro "I tuoi permessi" del suo profilo: il link **Chiedi** accanto a colore, solo fronte e
 orari, e **Chiedi un'altra stampante** per le stampanti. Il modulo offre solo ciò che la persona non ha, e solo le stampanti che esistono
-adesso. Il motivo è obbligatorio solo con `CUPSPL_REQUEST_REASON_REQUIRED=true` (al massimo 500 caratteri). La richiesta viene rifiutata se la persona ha già quel permesso, oppure
+adesso. Il motivo è obbligatorio solo con `SPOOLSTEWARD_REQUEST_REASON_REQUIRED=true` (al massimo 500 caratteri). La richiesta viene rifiutata se la persona ha già quel permesso, oppure
 se ha già chiesto la stessa cosa e nessuno ha ancora risposto. Valgono gli stessi freni delle richieste di quota: al massimo
-`CUPSPL_MAX_OPEN_REQUESTS` richieste aperte (di qualsiasi tipo, insieme), e una richiesta senza risposta scade dopo
-`CUPSPL_REQUEST_TTL_DAYS`. La persona può annullarla dal profilo.
+`SPOOLSTEWARD_MAX_OPEN_REQUESTS` richieste aperte (di qualsiasi tipo, insieme), e una richiesta senza risposta scade dopo
+`SPOOLSTEWARD_REQUEST_TTL_DAYS`. La persona può annullarla dal profilo.
 
 L'amministratore la vede in **Richieste**, con una scelta: **permanente**, oppure **fino alla fine del** giorno scelto. La data vale per
-tutto quel giorno nel fuso orario del portale (`CUPSPL_TIMEZONE`) e deve essere oggi o dopo. Approvare crea una *concessione di permesso*
+tutto quel giorno nel fuso orario del portale (`SPOOLSTEWARD_TIMEZONE`) e deve essere oggi o dopo. Approvare crea una *concessione di permesso*
 che **allarga** ciò che danno il gruppo e la regola propria della persona; non toglie mai nulla:
 
 | Richiesto | La concessione dà |
@@ -199,7 +199,7 @@ che **allarga** ciò che danno il gruppo e la regola propria della persona; non 
 | Una stampante | quella stampante entra nell'elenco della persona (se la persona non ha un elenco, tutte le stampanti sono già permesse e non c'è nulla da chiedere) |
 | Fuori orario | la fascia oraria non si applica |
 
-L'approvazione è idempotente, come quella delle quote, e un'approvazione rifiutata (per esempio una data nel passato) lascia la richiesta
+Un'approvazione ripetuta concede una volta sola, come per le quote, e un'approvazione rifiutata (per esempio una data nel passato) lascia la richiesta
 in attesa. Le concessioni di permesso attive stanno nello stesso elenco *Concessioni attive* di quelle di quota, con *Revoca*; quelle
 finite o revocate vanno nello storico, e *Elimina le concessioni scadute* toglie entrambi i tipi. Il registro degli amministratori
 annota ogni approvazione, concessione diretta, revoca ed eliminazione (l'eliminazione con quante ne sono state tolte per tipo). La

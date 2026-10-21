@@ -10,7 +10,7 @@ senza installare nulla). Entrambi passano dalle stesse quote, audit e identità 
 *Stampa* nel menu (`/me/print`), con la sessione aperta, senza bisogno di chiave.
 
 - File accettati: PDF, JPEG, PNG, GIF, testo semplice — riconosciuti dal loro **contenuto**, non dal nome o da ciò che dichiara il browser.
-- Dimensione massima `CUPSPL_WEB_UPLOAD_MB` (predefinito 25); copie fino a `CUPSPL_WEB_MAX_COPIES` (predefinito 20).
+- Dimensione massima `SPOOLSTEWARD_WEB_UPLOAD_MB` (predefinito 25); copie fino a `SPOOLSTEWARD_WEB_MAX_COPIES` (predefinito 20).
 - Le opzioni dipendono dalla stampante scelta: formato carta (solo quelli elencati dalla coda), orientamento, colore / bianco e nero
   (se la coda è a colori), **intervallo di pagine** (`1,5`, `2-4`, `3-`), copie e un **commento** (max 50 caratteri) mostrato sotto il
   nome del file nell'audit.
@@ -45,7 +45,7 @@ Indirizzo: `ipps://<server>:8631/printers/<coda>`. Il client si autentica con HT
 Il dispositivo deve fidarsi del certificato del server. Le stampanti annunciate da mDNS compaiono anche sui desktop Linux (Avahi) senza
 chiave: usarle non produce nulla finché la coda non viene aggiunta con la chiave nell'indirizzo.
 
-Script: `scripts/print-test.sh [coda] [utente]` invia una pagina di testo (consuma un foglio).
+Script: `scripts/print-test.sh SERVER[:PORTA] CODA [UTENTE]` invia una pagina di testo (consuma un foglio), per esempio `scripts/print-test.sh print.example.lan:8631 ufficio mario`. Server e coda sono obbligatori; l'utente, se manca, è il tuo nome di login. Puoi scrivere il server una volta sola nella variabile d'ambiente `GATEWAY` e passare solo `CODA [UTENTE]`.
 
 ### Windows 11
 
@@ -55,20 +55,12 @@ Guida completa passo passo: [windows.md](windows.md). In breve: *Impostazioni �
 
 Consentite: stampare (`Print-Job`, `Create-Job` + `Send-Document`), annullare, vedere job e stampanti, query di capacità. Vietate a
 tutti: le operazioni amministrative di CUPS, `Print-URI`, `Send-URI` (rischio SSRF). Le query di capacità (`Get-Printer-Attributes` e `Validate-Job`,
-corpi piccoli) ricevono risposta **senza credenziali** perché i client le fanno prima di averne (`CUPSPL_ANONYMOUS_DISCOVERY=true`):
+corpi piccoli) ricevono risposta **senza credenziali** perché i client le fanno prima di averne (`SPOOLSTEWARD_ANONYMOUS_DISCOVERY=true`):
 non creano utenti né righe di audit e non inoltrano nulla. Il percorso completo è in
 [architettura.md](architettura.md#4-percorso-di-una-richiesta-ipp).
 
 Il gateway dichiara ai client `uri-security-supported=tls` e `uri-authentication-supported=basic` (CUPS direbbe `none`): senza,
 Mopria non invia le credenziali.
-
-## 4. Annuncio sulla rete (DNS-SD)
-
-Il servizio `mdns` annuncia ogni coda come `_ipps._tcp` con il sottotipo `_universal` (AirPrint) e i record TXT `rp`, `pdl`, `URF`,
-`Color`, `Duplex`, `TLS`, `air`, aggiornati ogni `CUPSPL_MDNS_INTERVAL` secondi. Il nome del server annunciato è `<nome>.local`
-(Android risolve per multicast solo quei nomi) e il suo indirizzo deve stare nel certificato TLS. Le stampanti bloccate-nascoste, i
-dispositivi irraggiungibili e la modalità manutenzione ritirano l'annuncio. Gli scanner sono annunciati come `_uscans._tcp`
-([scansione.md](scansione.md)).
 
 ### Permessi e IPP
 
@@ -78,6 +70,14 @@ prima che vada a CUPS, e toglie le opzioni in stile PPD `ColorModel`, `ColorMode
 in modalità `adjust`. `CUPS-Get-Printers` e `CUPS-Get-Classes` lasciano fuori le stampanti che un utente limitato non può usare. Un telefono
 o un computer che ha trovato la stampante con l'annuncio in rete la vede comunque, perché l'annuncio è uguale per tutti; il lavoro viene
 rifiutato. Dettagli e avvertenze: [quote.md](quote.md#5-permessi-avanzati).
+
+## 4. Annuncio sulla rete (DNS-SD)
+
+Il servizio `mdns` annuncia ogni coda come `_ipps._tcp` con il sottotipo `_universal` (AirPrint) e i record TXT `rp`, `pdl`, `URF`,
+`Color`, `Duplex`, `TLS`, `air`, aggiornati ogni `SPOOLSTEWARD_MDNS_INTERVAL` secondi. Il nome del server annunciato è `<nome>.local`
+(Android risolve per multicast solo quei nomi) e il suo indirizzo deve stare nel certificato TLS. Le stampanti bloccate-nascoste, i
+dispositivi irraggiungibili e la modalità manutenzione ritirano l'annuncio. Gli scanner sono annunciati come `_uscans._tcp`
+([scansione.md](scansione.md)).
 
 ## 5. Job rifiutati, annullamento e stati
 

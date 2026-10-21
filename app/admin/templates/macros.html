@@ -1,6 +1,7 @@
-{# A block of text with a copy button in its corner (the kind code blocks have in chat UIs). The script is in base.html. #}
-{% macro copybox(text, cls='', style='') %}<div class="copybox"><div data-copy class="{{ cls or 'copytext' }}"{% if style %} style="{{ style }}"{% endif %}>{{ text }}</div>
-<button type="button" class="copy" aria-label="{{ _('Copy to clipboard') }}" title="{{ _('Copy') }}">
+{# A block of text with a copy button in its corner (the kind code blocks have in chat UIs). The script is in static/js/app.js. #}
+{# `style` is kept for the old calls: no inline style is written (CSP), the two sizes in use became the classes cb-fs13 / cb-fs15. #}
+{% macro copybox(text, cls='', style='') %}{% set sz = {'font-size:13px': ' cb-fs13', 'font-size:15px': ' cb-fs15'}.get(style, '') %}<div class="copybox"><div data-copy class="{{ cls or 'copytext' }}{{ sz }}">{{ text }}</div>
+<button type="button" class="copy" aria-label="{{ _('Copy to clipboard') }}" title="{{ _('Copy') }}" data-t-copy="{{ _t('Copy') }}" data-t-copied="{{ _t('Copied') }}">
 <svg class="cp" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
 <svg class="ok" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></button></div>{% endmacro %}
 
@@ -11,7 +12,7 @@
 </span>
 {% endmacro %}
 
-{# A number with − and + buttons (the script is in base.html). An empty box stays allowed when `required` is false. #}
+{# A number with − and + buttons (the script is in static/js/app.js). An empty box stays allowed when `required` is false. #}
 {% macro stepper(name, value, min=0, max=none, placeholder='', label='', id='', required=false) %}
 <span class="stepper"><button type="button" class="sec" tabindex="-1" data-step="-1" aria-label="{{ _('fewer') }}">−</button><input type="number" name="{{ name }}"{% if id %} id="{{ id }}"{% endif %} value="{{ '' if value is none else value }}" min="{{ min }}"{% if max is not none %} max="{{ max }}"{% endif %}{% if placeholder %} placeholder="{{ placeholder }}"{% endif %}{% if label %} aria-label="{{ label }}"{% endif %}{% if required %} required{% endif %} inputmode="numeric"><button type="button" class="sec" tabindex="-1" data-step="1" aria-label="{{ _('more') }}">+</button></span>
 {% endmacro %}

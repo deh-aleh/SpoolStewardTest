@@ -5,11 +5,13 @@ import pytest
 from sqlalchemy import select
 
 from app import notices
-from app.config import ESCL_WINDOW_MAX, ESCL_WINDOW_MIN, Settings, escl_window_problem, settings
+from pydantic import ValidationError
+
+from app.config import Settings, settings
 from app.db.models import JobLog, JobState, Notice
 from app.escl_window import Windows, normalize_ip
 from tests.conftest import csrf_of_page, portal_login
-from tests.test_milestone3 import GOOD, scan_rows, scanner  # noqa: F401  (the fixture)
+from tests.test_escl import GOOD, scan_rows, scanner  # noqa: F401  (the fixture)
 
 
 class Clock:
@@ -54,23 +56,26 @@ def notices_of(cl, kind):
 # ---------------------------------------------------------------- settings
 
 def test_seconds_setting_bounds():
-    assert Settings(escl_window_seconds="").escl_window_seconds == ESCL_WINDOW_MIN == 60   # the line is there but empty
     assert Settings().escl_window_seconds == 180 and Settings().escl_window is True
-    assert escl_window_problem(ESCL_WINDOW_MIN) is None and escl_window_problem(ESCL_WINDOW_MAX) is None
-    for bad in (59, 901, 0, -5):
-        assert escl_window_problem(bad)
-    assert escl_window_problem(Settings(escl_window_seconds="abc").escl_window_seconds)    # not a number
+    assert Settings(escl_window_seconds="60").escl_window_seconds == 60 and Settings(escl_window_seconds="900").escl_window_seconds == 900
+    for bad in ("59", "901", "0", "-5", "abc", "", "none", "1e2"):        # nothing is corrected silently, not even an empty line
+        with pytest.raises(ValidationError):
+            Settings(escl_window_seconds=bad)
 
 
-def test_the_start_is_refused_with_a_bad_value(monkeypatch, capsys):
-    from app import __main__ as entry
+def test_the_start_is_refused_with_a_bad_value():
+    """The real start (python -m app), not a function: wrong value in the environment -> exit 2 and the list on stderr."""
+    import os
+    import subprocess
+    import sys
+    from pathlib import Path
 
-    monkeypatch.setattr(settings, "escl_window_seconds", 30)
-    monkeypatch.setattr(settings, "allow_insecure_auth", True)
-    monkeypatch.setattr(settings, "radius_host", "")
-    monkeypatch.setattr(settings, "radius_secret", "")
-    assert entry.main() == 2
-    assert "CUPSPL_ESCL_WINDOW_SECONDS" in capsys.readouterr().err
+    env = {**os.environ, "SPOOLSTEWARD_ESCL_WINDOW_SECONDS": "30", "SPOOLSTEWARD_ALLOW_INSECURE_AUTH": "true"}
+    r = subprocess.run([sys.executable, "-m", "app"], cwd=Path(__file__).resolve().parent.parent, env=env,
+                       capture_output=True, text=True, timeout=60)
+    assert r.returncode == 2
+    assert "refusing to start: wrong settings" in r.stderr and "SPOOLSTEWARD_ESCL_WINDOW_SECONDS" in r.stderr
+    assert "Traceback" not in r.stderr
 
 
 def test_addresses_are_compared_in_one_spelling():
@@ -222,7 +227,7 @@ async def test_with_anonymous_on_the_window_gives_the_scan_to_the_person(scanner
     monkeypatch.setattr(settings, "escl_anonymous", True)
     async with elsewhere(scanner, "10.0.0.50") as stranger:
         assert (await stranger.post("/eSCL/ScanJobs", content=b"<x/>")).status_code == 201   # no window: the guest
-    assert scan_rows(scanner)[-1][3] == "ospite-scansione"
+    assert scan_rows(scanner)[-1][3] == "unknown-guest"
     await press(scanner)
     assert (await scanner.post("/eSCL/ScanJobs", content=b"<x/>")).status_code == 201
     assert scan_rows(scanner)[-1][3] == "rita"

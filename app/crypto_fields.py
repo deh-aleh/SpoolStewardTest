@@ -1,6 +1,6 @@
 """Encryption of the file names kept in the audit (JobLog.title and options["document_name"]).
 
-The key comes from CUPSPL_SECRET_KEY (HKDF-SHA256, a fixed purpose label), the cipher is AES-256-GCM with a random
+The key comes from SPOOLSTEWARD_SECRET_KEY (HKDF-SHA256, a fixed purpose label), the cipher is AES-256-GCM with a random
 nonce, and a stored value looks like  enc1:<base64>.  The encryption is transparent: the column types below encrypt on
 the way into the database and decrypt on the way out, so the rest of the program only sees the plain text.
 
@@ -24,7 +24,7 @@ from app.config import settings
 log = logging.getLogger("app.crypto")
 PREFIX = "enc1:"
 LOCKED = "[encrypted]"
-_PURPOSE = b"cupspl-filename-v1"
+_PURPOSE = b"spoolsteward-filename-v1"
 _cache: dict[str, AESGCM] = {}
 
 

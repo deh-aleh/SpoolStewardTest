@@ -25,7 +25,7 @@ LANGS = ("it", "es", "ru", "zh")
 KEYWORDS = {"_": None, "_t": None, "_js": None, "gettext": None, "ngettext": (1, 2), "_p": ((1, "c"), 2), "pgettext": ((1, "c"), 2), "N_": None, "lazy": None}
 METHODS = [("**/templates/**.html", "jinja2"), ("**.py", "python")]
 OPTIONS = {"**/templates/**.html": {"extensions": "jinja2.ext.i18n", "silent": "false"}}
-PROJECT = "cups-policy-gateway"
+PROJECT = "spoolsteward"
 
 
 def extract_pot() -> Catalog:

@@ -3,7 +3,7 @@ that never printed (canceled, aborted, Create-Job without a document)."""
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 from sqlalchemy import select
@@ -58,7 +58,7 @@ def is_same_job(row: JobLog, created: int | None) -> bool:
     The creation time tells them apart. Unknown (an old CUPS, a test) = the same."""
     if created is None:
         return True
-    ts = row.ts if row.ts.tzinfo else row.ts.replace(tzinfo=timezone.utc)
+    ts = row.ts if row.ts.tzinfo else row.ts.replace(tzinfo=UTC)
     return -SAME_JOB_EARLY <= created - ts.timestamp() <= SAME_JOB_LATE
 
 
@@ -72,7 +72,7 @@ def apply_updates(session, rows: list[JobLog], cups: dict[str, dict[int, tuple] 
         if info is not None and not is_same_job(row, info[2] if len(info) > 2 else None):
             info = None  # that number belongs to another job now: ours is gone from CUPS
         if info is None:
-            ts = row.ts if row.ts.tzinfo else row.ts.replace(tzinfo=timezone.utc)
+            ts = row.ts if row.ts.tzinfo else row.ts.replace(tzinfo=UTC)
             if now - ts > PURGE_AFTER:
                 row.state = JobState.completed
                 changed += 1
@@ -121,7 +121,7 @@ def _apply(sm, ids: list[int], cups, now) -> int:
 
 
 async def reconcile_once(sm, upstream: httpx.AsyncClient, now: datetime | None = None) -> int:
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     released = await run_in_threadpool(release_orphans, sm, now)
     pending = await run_in_threadpool(_pending, sm, now)
     if not pending:

@@ -8,7 +8,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.auth.throttle import Throttle
 from app.config import settings
-from app.db.models import Base, Group, JobLog, JobState, PolicyRule, SubjectType, User
+from app.db.models import Base
 from app.ipp import codec as c
 from app.main import app
 from tests.conftest import CUPS_TEST_URL, requires_cups

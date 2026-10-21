@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Requests") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/requests.css?v={{ app_version }}">{% endblock %}
+{% block scripts %}<script src="/admin/static/js/requests.js?v={{ app_version }}"></script>{% endblock %}
 {% block body %}
 <div class="card">
   <h1>{{ _("Pending requests") }} <span class="muted">({{ pending|length }})</span></h1>
@@ -44,36 +46,12 @@
   <dialog id="reason-dlg">
     <div class="dlghead">
       <h3>{{ _("Reason") }}</h3>
-      <form method="dialog" class="x"><button class="sec" aria-label="{{ _('Close') }}" title="{{ _('Close') }}"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" style="stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></form>
+      <form method="dialog" class="x"><button class="sec" aria-label="{{ _('Close') }}" title="{{ _('Close') }}"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" class="rq-x-svg"><path d="M5 5l14 14M19 5L5 19"/></svg></button></form>
     </div>
     <div class="qname" id="reason-who"></div>
     <div class="secret reasontext" id="reason-text"></div>
     <form method="dialog" class="actions"><button class="sec">{{ _("Close") }}</button></form>
   </dialog>
-  <style>
-    .decide { display:flex; flex-direction:column; gap:10px; min-width:270px }
-    .decide .dline { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center }
-    .decide .amt { display:inline-flex; align-items:center; gap:8px }
-    .decide input[type=text] { width:100% }
-    .decide .untilbox { display:none }
-    .decide:has(input[name=duration][value=until]:checked) .untilbox { display:block }
-    .reasontext { font:inherit; white-space:pre-wrap; overflow-wrap:anywhere; user-select:text; max-height:50vh; overflow:auto }
-    @media (max-width:700px) { .decide { min-width:0 } .decide .dbuttons > * { flex:1 1 100% } .decide .seg { width:100% } .decide .seg label { flex:1 } .decide .seg span { text-align:center; white-space:normal } }
-  </style>
-  <script>
-    // "…" in the Reason column: the whole reason in a window (empty column = the user wrote none)
-    document.addEventListener('click', function (e) {
-      var b = e.target.closest && e.target.closest('button.showreason'); if (!b) return;
-      document.getElementById('reason-who').textContent = b.dataset.user + ' · ' + b.dataset.what;
-      document.getElementById('reason-text').textContent = b.dataset.reason;
-      document.getElementById('reason-dlg').showModal();
-    });
-    // the date field appears (in CSS) only for "until the end of…"; it is required only then
-    document.addEventListener('change', function (e) {
-      var f = e.target.closest && e.target.closest('form.decide'); if (!f || !f.elements.until) return;
-      f.elements.until.required = f.elements.duration.value === 'until';
-    });
-  </script>
 </div>
 
 <div class="card" id="grants">
@@ -91,7 +69,7 @@
       <td><form method="post" action="/admin/{{ 'permission-grants' if x.kind == 'permission' else 'grants' }}/{{ g.id }}/revoke" data-confirm="{{ _t('Revoke this grant?') }}"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="danger">{{ _("Revoke") }}</button></form></td></tr>
     {% else %}<tr><td colspan="7" class="muted">{{ _("No grants.") }}</td></tr>{% endfor %}
   </table>
-  <form method="post" action="/admin/grants" style="margin-top:14px" id="grantform">
+  <form method="post" action="/admin/grants" class="rq-grant" id="grantform">
     <h2>{{ _("Grant without a request") }}</h2>
     <input type="hidden" name="csrf_token" value="{{ csrf }}">
     <div class="row">
@@ -120,58 +98,11 @@
         <input type="date" name="until" min="{{ today }}" title="{{ _('last day the permission is valid') }}">
       </div>
     </div>
-    <div class="row" style="margin-top:10px">
+    <div class="row rq-mt10">
       <input type="text" name="note" placeholder="{{ _('note') }}" maxlength="500">
       <button id="grant-go">{{ _("Grant") }}</button>
     </div>
   </form>
-  <style>
-    #grantform [hidden] { display:none !important }
-    #grantform .grantpart { margin-top:10px } #grantform .grantlabel { font-weight:600; margin-bottom:6px }
-  </style>
-  <script>
-    // Without JavaScript every field is shown and the server reads only those of the chosen kind (and refuses a permission
-    // the user already has). With it, only what the chosen user lacks is offered, asked to the server for that user alone;
-    // if the answer does not come, everything is offered (the server still refuses what the user already has).
-    (function () {
-      var f = document.forms.grantform, known = {}, everything = {
-        perms: Array.prototype.map.call(f.perm.options, function (o) { return o.value; }),
-        metrics: Array.prototype.map.call(f.metric.options, function (o) { return o.value; }),
-        printers: Array.prototype.map.call(f.printer.options, function (o) { return o.value; })};
-      function fill(select, values) {
-        Array.prototype.forEach.call(select.options, function (o) { o.hidden = o.disabled = values.indexOf(o.value) < 0; });
-        if (select.selectedOptions[0] && select.selectedOptions[0].disabled) {
-          var first = Array.prototype.find.call(select.options, function (o) { return !o.disabled; });
-          if (first) select.value = first.value;
-        }
-      }
-      function update() {
-        var kind = f.kind.value, l = known[f.username.value] || everything, none = !l.perms.length, noquota = !l.metrics.length;
-        document.querySelectorAll('#grantform [data-kind]').forEach(function (el) { el.hidden = el.dataset.kind !== kind; });
-        fill(f.perm, l.perms); fill(f.printer, l.printers); fill(f.metric, l.metrics);
-        document.getElementById('grant-has-all').hidden = !none;
-        document.getElementById('grant-perm').hidden = none;
-        f.printer.hidden = f.perm.value !== 'printer';
-        f.until.hidden = f.duration.value !== 'until';
-        document.getElementById('grant-no-quota').hidden = !noquota;
-        document.getElementById('grant-quota').hidden = noquota;
-        f.amount.required = kind === 'quota' && !noquota;
-        document.getElementById('grant-go').disabled = (kind === 'permission' && none) || (kind === 'quota' && noquota);
-      }
-      function ask() {
-        var name = f.username.value;
-        update();
-        if (known[name]) return;
-        fetch('/admin/requests/lacks?username=' + encodeURIComponent(name), {credentials: 'same-origin'})
-          .then(function (r) { return r.ok ? r.json() : null; })
-          .then(function (l) { if (l) { known[name] = l; if (f.username.value === name) update(); } })
-          .catch(function () {});
-      }
-      f.username.addEventListener('change', ask);
-      ['kind', 'perm', 'duration'].forEach(function (n) { f[n].addEventListener('change', update); });
-      ask();
-    })();
-  </script>
 </div>
 
 <details class="card">
@@ -185,7 +116,7 @@
       <td><span class="pill s-{{ r.status.value }}">{{ _(r.status.value) }}</span></td><td>{{ p.by or '' }}</td><td class="muted">{{ r.decision_note or '' }}</td></tr>
     {% else %}<tr><td colspan="6" class="muted">{{ _("None yet.") }}</td></tr>{% endfor %}
   </table>
-  <div class="cardhead" style="margin-top:14px">
+  <div class="cardhead rq-mt14">
     <h2>{{ _("Ended and revoked grants") }} <span class="muted">({{ ended|length }})</span></h2>
     {% if ended %}<form method="post" action="/admin/grants/purge" data-confirm="{{ _t("Delete every ended or revoked grant? Active grants are not touched; the administrators' log keeps the history.") }}">
       <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="danger">{{ _("Delete ended grants") }}</button></form>{% endif %}

@@ -2,7 +2,7 @@
 # Bring back a print queue that was deleted (by you, or by the gateway because its USB printer stayed away).
 #
 # Why this exists: each queue listed in CUPS_QUEUES (.env), and the "virtual" test queue, is created ONCE. The container
-# remembers the names it already created in /etc/cups/printminder-queues, so a queue you deleted does not come back by itself
+# remembers the names it already created in /etc/cups/spoolsteward-queues, so a queue you deleted does not come back by itself
 # at the next start. This script takes a name out of that list, so the NEXT start of the cups container creates it again.
 #
 #   scripts/queue-restore.sh NAME             forget NAME (it is created again at the next start of the cups container)
@@ -13,7 +13,7 @@
 # nothing to create it from. USB printers that are plugged in again are found by themselves and need none of this.
 set -eu
 cd "$(dirname "$0")/.."
-FILE=/etc/cups/printminder-queues
+FILE=/etc/cups/spoolsteward-queues
 
 usage() { sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 2; }
 cups() { docker compose exec -T "$@"; }

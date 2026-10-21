@@ -1,18 +1,17 @@
 """Administration: users, groups, limits, keys and the log of administrative actions."""
 
 import logging
-import re
 import secrets
-from datetime import datetime, timezone
-from zoneinfo import ZoneInfo
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.timeutil import local_tz
 from app.admin.common import (
-    PAGE, back, current_admin, flash, get_db, localtime, parse_limit, render, verify_csrf,
+    back, current_admin, flash, get_db, localtime, parse_limit, render, verify_csrf,
 )
 from app import notices
 from app.admin.printers import NAME_RE
@@ -21,7 +20,7 @@ from app.auth import keys as keylib
 from app.auth.groups import ADMIN_GROUP, set_admin, system_group_names
 from app.auth.users import default_group_id, delete_user, is_emergency
 from app.auth.passwords import hash_password, validate_new_password
-from app.config import settings
+from app.config import USERNAME_RE, settings
 from app.cups_client import list_queues
 from app.i18n import _, ngettext
 from app.i18n import html_pgettext as pgettext
@@ -34,11 +33,10 @@ from app.policy.rules import get_limits, set_limit
 log = logging.getLogger("app.admin")
 ACTIONS_PAGE = 30  # rows per page in the administrative log
 router = APIRouter(prefix="/admin")
-USERNAME_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,62}$")
 
 
 def _usage_lines(db: Session, user: User) -> list[str]:
-    now, tz = datetime.now(timezone.utc), ZoneInfo(settings.timezone)
+    now, tz = datetime.now(UTC), local_tz()
     return [_("%(used)s/%(limit)s %(metric)s (%(period)s)", used=usage(db, user, r, now, tz), limit=effective_limit(db, user, r, now),
               metric=_(r.metric.value), period=_(r.period.value))
             for r in effective_rules(db, user, Resource.print)]
@@ -61,17 +59,45 @@ def _protected_admin(db: Session, user: User, acting: User) -> str | None:
 
 # ------------------------------------------------------------------ advanced permissions (form <-> rule)
 
+def _permission_flag(raw: str, inherit: bool) -> bool | None:
+    raw = raw.strip()
+    if raw not in ("", "0", "1"):
+        raise ValueError(_("Invalid permission value"))
+    return None if raw == "" and inherit else raw == "1"
+
+
+def _permission_printers(printers: list[str]) -> list[str]:
+    names = []
+    for raw in printers:
+        name = raw.strip()
+        if not NAME_RE.match(name):
+            raise ValueError(_("Invalid printer name %(name)s", name=repr(name[:40])))
+        names.append(queue_key(name))
+    names = sorted(set(names))
+    if not names:
+        raise ValueError(_("Choose at least one printer, or choose “all printers”"))
+    if len(names) > permissions.MAX_PRINTERS:
+        raise ValueError(_("Too many printers in the list (at most %(max)s)", max=permissions.MAX_PRINTERS))
+    return names
+
+
+def _permission_window(days: list[str], start: str, end: str) -> tuple[str, int, int]:
+    if not days or any(d not in tuple("0123456") for d in days):
+        raise ValueError(_("Choose at least one day of the week for the hours"))
+    try:
+        lo, hi = permissions.parse_time(start), permissions.parse_time(end)
+    except ValueError:
+        raise ValueError(_("Enter the hours as HH:MM, for example 08:00 and 17:30")) from None
+    if lo == hi:
+        raise ValueError(_("The start and the end of the hours must be different"))
+    return "".join(sorted(set(days))), lo, hi
+
+
 def _parse_permissions(inherit: bool, color: str, one_sided: str, printers_mode: str, printers: list[str], hours_mode: str,
                        days: list[str], start: str, end: str) -> dict:
     """The permission fields of a user form (`inherit`: an empty choice means "as the group") or of a group form (an empty
     choice is an unchecked box, and the defaults are stored as nothing). Raises ValueError with the message to show."""
-    def flag(raw: str) -> bool | None:
-        raw = raw.strip()
-        if raw not in ("", "0", "1"):
-            raise ValueError(_("Invalid permission value"))
-        return None if raw == "" and inherit else raw == "1"
-
-    color, one_sided = flag(color), flag(one_sided)
+    color, one_sided = _permission_flag(color, inherit), _permission_flag(one_sided, inherit)
     if not inherit:  # a group that allows it has nothing stored: no row means everything allowed
         color, one_sided = (None if color else False), (None if one_sided else False)
     out = {"color": color, "one_sided": one_sided, "printers_mode": None, "printers": None,
@@ -82,33 +108,14 @@ def _parse_permissions(inherit: bool, color: str, one_sided: str, printers_mode:
         printers_mode = ""  # a group that allows every printer has nothing stored
     out["printers_mode"] = printers_mode or None
     if printers_mode == "list":
-        names = []
-        for raw in printers:
-            name = raw.strip()
-            if not NAME_RE.match(name):
-                raise ValueError(_("Invalid printer name %(name)s", name=repr(name[:40])))
-            names.append(queue_key(name))
-        names = sorted(set(names))
-        if not names:
-            raise ValueError(_("Choose at least one printer, or choose “all printers”"))
-        if len(names) > permissions.MAX_PRINTERS:
-            raise ValueError(_("Too many printers in the list (at most %(max)s)", max=permissions.MAX_PRINTERS))
-        out["printers"] = names
+        out["printers"] = _permission_printers(printers)
     if hours_mode not in ("", "any", "window") or (hours_mode == "" and not inherit):
         raise ValueError(_("Invalid permission value"))
     if hours_mode == "any" and not inherit:
         hours_mode = ""
     out["hours_mode"] = hours_mode or None
     if hours_mode == "window":
-        if not days or any(d not in tuple("0123456") for d in days):
-            raise ValueError(_("Choose at least one day of the week for the hours"))
-        try:
-            lo, hi = permissions.parse_time(start), permissions.parse_time(end)
-        except ValueError:
-            raise ValueError(_("Enter the hours as HH:MM, for example 08:00 and 17:30")) from None
-        if lo == hi:
-            raise ValueError(_("The start and the end of the hours must be different"))
-        out["hours_days"], out["hours_start"], out["hours_end"] = "".join(sorted(set(days))), lo, hi
+        out["hours_days"], out["hours_start"], out["hours_end"] = _permission_window(days, start, end)
     return out
 
 
@@ -176,7 +183,7 @@ def _limit_view(db: Session, u: User, now) -> dict:
 
 @router.get("/users", response_class=HTMLResponse)
 def users(request: Request, admin: User = Depends(current_admin), db: Session = Depends(get_db)):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     group_names = {g.id: g.name for g in db.scalars(select(Group))}
     key_counts = dict(db.execute(select(PrintKey.user_id, func.count(PrintKey.id)).where(
         PrintKey.revoked_at.is_(None), PrintKey.disabled_at.is_(None), PrintKey.used_at.is_(None),
@@ -204,12 +211,12 @@ async def user_edit(request: Request, user_id: int, admin: User = Depends(curren
     u = db.get(User, user_id)
     if u is None:
         raise HTTPException(404)
-    v = _limit_view(db, u, datetime.now(timezone.utc))
+    v = _limit_view(db, u, datetime.now(UTC))
     own = get_limits(db, SubjectType.user, u.id)
     perm = await _permission_form(request, db, permissions.get_rule(db, SubjectType.user, u.id), inherit=True,
                                   group_id=u.group_id, disabled=is_emergency(u))
-    now = datetime.now(timezone.utc)
-    perm_grants = [{"what": permissions.describe_grant(g.perm, g.printer), "until": grants.last_day(g.valid_until, ZoneInfo(settings.timezone))}
+    now = datetime.now(UTC)
+    perm_grants = [{"what": permissions.describe_grant(g.perm, g.printer), "until": grants.last_day(g.valid_until, local_tz())}
                    for g in permissions.active_grants(db, u, now)]
     return render(request, "user_edit.html", admin, u=u, view=v, perm=perm, perm_grants=perm_grants, groups=db.scalars(select(Group).order_by(Group.name)).all(),
                   jobs=own[Metric.jobs].limit if Metric.jobs in own else "",
@@ -241,7 +248,7 @@ def user_create_local(request: Request, username: str = Form(...), group_id: int
         return back("/admin/users")
     user = User(provider="local", username=name, group_id=group_id or default_group_id(db, settings.default_group),
                 password_hash=hash_password(pw), must_change_password=True,
-                password_changed_at=datetime.now(timezone.utc))
+                password_changed_at=datetime.now(UTC))
     db.add(user)
     db.flush()
     if is_admin:
@@ -281,6 +288,81 @@ def user_create(request: Request, username: str = Form(...), group_id: int = For
     return back("/admin/users")
 
 
+class _Refuse(Exception):
+    """A form problem the administrator is told about with a message on the edit page."""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+
+def _check_update(db: Session, request: Request, admin: User, u: User, group_id: int, enabled: str, is_admin: str,
+                  provider: str) -> None:
+    """What may not be saved, before anything is changed (raises _Refuse with the message to show)."""
+    if group_id and db.get(Group, group_id) is None:
+        raise _Refuse(_("Unknown group"))
+    if provider not in _providers(request) and provider != u.provider:
+        raise _Refuse(_("Unknown or unavailable login method"))
+    if not enabled or not is_admin:  # disabling or demoting: never yourself, the emergency admin, or the last admin
+        reason = _protected_admin(db, u, admin)
+        if reason:
+            raise _Refuse(reason)
+    if provider == "local" and provider != u.provider and u.username == settings.bootstrap_admin_username:
+        raise _Refuse(_("The name %(name)s is reserved for the emergency administrator", name=u.username))
+    if provider != u.provider and is_emergency(u):
+        raise _Refuse(_("%(user)s is the emergency administrator: it must stay a local account", user=u.username))
+
+
+def _admin_and_group_changes(db: Session, u: User, group_id: int, enabled: str, is_admin: str) -> dict:
+    """The administrator right and the group of an account, set as the form says; returns what changed."""
+    admin_group = db.scalars(select(Group).where(Group.name == ADMIN_GROUP)).first()
+    changes = {}
+    if u.enabled != bool(enabled):
+        changes["enabled"] = bool(enabled)
+    if u.is_admin != bool(is_admin):
+        changes["is_admin"] = bool(is_admin)
+        old_group = u.group_id
+        set_admin(db, u, bool(is_admin))  # administrators live in "administrator"; demoted ones go back to "default"
+        if not is_admin and group_id and not _is_admin_group(db, group_id):
+            u.group_id = group_id  # demoted and a group chosen in the same save: the chosen one wins over "default"
+        if u.group_id != old_group:
+            changes["group_id"] = [old_group, u.group_id]
+    elif (u.group_id or 0) != group_id:
+        if admin_group is not None and group_id == admin_group.id and not u.is_admin:
+            raise _Refuse(_('Group "%(group)s" is only for administrators', group=ADMIN_GROUP))
+        if u.is_admin and (admin_group is None or group_id != admin_group.id):
+            raise _Refuse(_('Administrators stay in "%(group)s": remove the admin right first', group=ADMIN_GROUP))
+        changes["group_id"] = [u.group_id, group_id or None]
+        u.group_id = group_id or None
+    return changes
+
+
+def _switch_provider(u: User, provider: str, changes: dict) -> str | None:
+    """Moves the account to another login method; returns the temporary password when it becomes a local account."""
+    if provider == u.provider:
+        return None
+    temp = None
+    changes["provider"] = [u.provider, provider]
+    if provider == "local":  # becomes a local account: a temporary password, shown once
+        temp = _temp_password()
+        u.password_hash, u.must_change_password = hash_password(temp), True
+    else:  # handed over to RADIUS: the stored password must not remain a second way in
+        u.password_hash, u.must_change_password = None, False
+    u.provider = provider
+    u.password_changed_at = datetime.now(UTC)  # ends the user's current portal sessions
+    return temp
+
+
+def _save_permissions(db: Session, u: User, perm: dict | None) -> dict:
+    """Stores the permissions the form asked for (none: left alone); returns what changed."""
+    if perm is None:
+        return {}
+    perm_changes = _permission_changes(permissions.rule_fields(permissions.get_rule(db, SubjectType.user, u.id)), perm)
+    if perm_changes:
+        permissions.set_rule(db, SubjectType.user, u.id, **perm)
+    return perm_changes
+
+
 @router.post("/users/{user_id}", dependencies=[Depends(verify_csrf)])
 def user_update(request: Request, user_id: int, group_id: int = Form(0), enabled: str = Form(""),
                 is_admin: str = Form(""), jobs_limit: str = Form(""), pages_limit: str = Form(""),
@@ -305,64 +387,19 @@ def user_update(request: Request, user_id: int, group_id: int = Form(0), enabled
     except ValueError as exc:
         flash(request, str(exc), "err")
         return back(edit)
-    if group_id and db.get(Group, group_id) is None:
-        flash(request, _("Unknown group"), "err")
-        return back(edit)
     provider = provider or u.provider
-    if provider not in _providers(request) and provider != u.provider:
-        flash(request, _("Unknown or unavailable login method"), "err")
+    try:
+        _check_update(db, request, admin, u, group_id, enabled, is_admin, provider)
+        changes = _admin_and_group_changes(db, u, group_id, enabled, is_admin)
+    except _Refuse as stop:
+        flash(request, stop.message, "err")
         return back(edit)
-    if not enabled or not is_admin:  # disabling or demoting: never yourself, the emergency admin, or the last admin
-        reason = _protected_admin(db, u, admin)
-        if reason:
-            flash(request, reason, "err")
-            return back(edit)
-    if provider == "local" and provider != u.provider and u.username == settings.bootstrap_admin_username:
-        flash(request, _("The name %(name)s is reserved for the emergency administrator", name=u.username), "err")
-        return back(edit)
-    if provider != u.provider and is_emergency(u):
-        flash(request, _("%(user)s is the emergency administrator: it must stay a local account", user=u.username), "err")
-        return back(edit)
-    admin_group = db.scalars(select(Group).where(Group.name == ADMIN_GROUP)).first()
-    changes = {}
-    if u.enabled != bool(enabled):
-        changes["enabled"] = bool(enabled)
-    if u.is_admin != bool(is_admin):
-        changes["is_admin"] = bool(is_admin)
-        old_group = u.group_id
-        set_admin(db, u, bool(is_admin))  # administrators live in "administrator"; demoted ones go back to "default"
-        if not is_admin and group_id and not _is_admin_group(db, group_id):
-            u.group_id = group_id  # demoted and a group chosen in the same save: the chosen one wins over "default"
-        if u.group_id != old_group:
-            changes["group_id"] = [old_group, u.group_id]
-    elif (u.group_id or 0) != group_id:
-        if admin_group is not None and group_id == admin_group.id and not u.is_admin:
-            flash(request, _('Group "%(group)s" is only for administrators', group=ADMIN_GROUP), "err")
-            return back(edit)
-        if u.is_admin and (admin_group is None or group_id != admin_group.id):
-            flash(request, _('Administrators stay in "%(group)s": remove the admin right first', group=ADMIN_GROUP), "err")
-            return back(edit)
-        changes["group_id"] = [u.group_id, group_id or None]
-        u.group_id = group_id or None
     u.enabled = bool(enabled)
-    temp = None
-    if provider != u.provider:
-        changes["provider"] = [u.provider, provider]
-        if provider == "local":  # becomes a local account: a temporary password, shown once
-            temp = _temp_password()
-            u.password_hash, u.must_change_password = hash_password(temp), True
-        else:  # handed over to RADIUS: the stored password must not remain a second way in
-            u.password_hash, u.must_change_password = None, False
-        u.provider = provider
-        u.password_changed_at = datetime.now(timezone.utc)  # ends the user's current portal sessions
+    temp = _switch_provider(u, provider, changes)
     if not emergency:
         set_limit(db, SubjectType.user, u.id, Metric.jobs, jl, per)
         set_limit(db, SubjectType.user, u.id, Metric.pages, pl, per)
-    perm_changes = {}
-    if perm is not None:
-        perm_changes = _permission_changes(permissions.rule_fields(permissions.get_rule(db, SubjectType.user, u.id)), perm)
-        if perm_changes:
-            permissions.set_rule(db, SubjectType.user, u.id, **perm)
+    perm_changes = _save_permissions(db, u, perm)
     record(db, admin, "user.update", "user", u.id, username=u.username,
            **({} if emergency else {"limits": {"jobs": jl, "pages": pl, "period": per.value}}),
            **({"permissions": perm_changes} if perm_changes else {}), **changes)
@@ -454,7 +491,7 @@ def user_reset_password(request: Request, user_id: int, admin: User = Depends(cu
         return back("/admin/users")
     pw = _temp_password()
     u.password_hash, u.must_change_password = hash_password(pw), True
-    u.password_changed_at = datetime.now(timezone.utc)  # ends the user's current portal sessions
+    u.password_changed_at = datetime.now(UTC)  # ends the user's current portal sessions
     record(db, admin, "user.reset_password", "user", u.id, username=u.username)
     db.commit()
     return render(request, "secret_shown.html", admin, title=_("New password for %(user)s", user=u.username),
@@ -483,7 +520,7 @@ def user_keys(request: Request, user_id: int, admin: User = Depends(current_admi
     u = db.get(User, user_id)
     if u is None:
         raise HTTPException(404)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     rows = db.scalars(select(PrintKey).where(PrintKey.user_id == u.id).order_by(PrintKey.id.desc())).all()
     return render(request, "keys.html", admin, owner=u, keys=keylib.listing(rows, now), choices=keylib.duration_choices(u), default_choice=str(keylib.default_duration(u)),
                   base=f"/admin/users/{u.id}/keys", own=False)

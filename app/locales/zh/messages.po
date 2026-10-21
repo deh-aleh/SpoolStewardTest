@@ -1,13 +1,13 @@
-# Chinese translations for cups-policy-gateway.
+# Chinese translations for spoolsteward.
 # Copyright (C) 2026 ORGANIZATION
-# This file is distributed under the same license as the cups-policy-gateway project.
+# This file is distributed under the same license as the spoolsteward project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: cups-policy-gateway VERSION\n"
+"Project-Id-Version: spoolsteward VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-17 18:28+0200\n"
+"POT-Creation-Date: 2026-10-19 19:33+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh\n"
@@ -18,97 +18,97 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: app/escl.py:513
+#: app/escl.py:525
 msgid "Scanning is not enabled on this server"
 msgstr "此服务器未启用扫描功能"
 
-#: app/escl.py:518
+#: app/escl.py:530
 msgid "This scanner has no automatic feeder"
 msgstr "此扫描仪没有自动进纸器"
 
-#: app/escl.py:518
+#: app/escl.py:530
 msgid "Source not available"
 msgstr "该来源不可用"
 
-#: app/escl.py:520
+#: app/escl.py:532
 #, python-format
 msgid "With the feeder the maximum quality is %(n)s dpi"
 msgstr "使用进纸器时最高质量为 %(n)s dpi"
 
-#: app/escl.py:521
+#: app/escl.py:533
 #, python-format
 msgid "With the glass the maximum quality is %(n)s dpi"
 msgstr "使用玻璃板时最高质量为 %(n)s dpi"
 
-#: app/escl.py:527
+#: app/escl.py:539
 #, python-format
 msgid "%(reason)s. You can ask for more quota from your profile."
 msgstr "%(reason)s。您可以在个人资料中申请更多配额。"
 
-#: app/escl.py:538
+#: app/escl.py:550
 msgid "The feeder is empty or the scanner was paused: remove and reload the sheets, then try again."
 msgstr "进纸器是空的，或扫描仪处于暂停状态：请取出并重新放入纸张，然后重试。"
 
-#: app/escl.py:539
+#: app/escl.py:551
 msgid "The scanner is busy: try again in a few seconds."
 msgstr "扫描仪正忙：请几秒钟后重试。"
 
-#: app/escl.py:540
+#: app/escl.py:552
 #, python-format
 msgid "The scanner refused the job (status %(code)s). %(hint)s"
 msgstr "扫描仪拒绝了该作业（状态 %(code)s）。%(hint)s"
 
-#: app/escl.py:543
+#: app/escl.py:555
 msgid "Unexpected answer from the scanner"
 msgstr "扫描仪返回了意外的响应"
 
-#: app/escl.py:550
+#: app/escl.py:562
 msgid "The scanner delivered no page"
 msgstr "扫描仪没有输出任何页面"
 
-#: app/escl.py:554
+#: app/escl.py:566
 msgid "The scanner does not answer"
 msgstr "扫描仪没有响应"
 
-#: app/escl.py:585
+#: app/escl.py:597
 msgid "in progress"
 msgstr "进行中"
 
-#: app/escl.py:585
+#: app/escl.py:597
 msgid "ready"
 msgstr "已就绪"
 
-#: app/escl.py:585
+#: app/escl.py:597
 msgid "unsuccessful"
 msgstr "未成功"
 
-#: app/escl.py:589
+#: app/escl.py:601
 #, python-format
 msgid "scan-%(stamp)s"
 msgstr "扫描-%(stamp)s"
 
-#: app/escl.py:610
+#: app/escl.py:622
 msgid "Unexpected error during the scan"
 msgstr "扫描过程中出现意外错误"
 
-#: app/escl.py:652
+#: app/escl.py:664
 msgid "The server can not tell which address you are connecting from."
 msgstr "服务器无法确定您是从哪个地址连接的。"
 
-#: app/escl.py:655
+#: app/escl.py:667
 msgid "Too many scan windows are open: try again in a few minutes."
 msgstr "同时打开的扫描窗口过多：请几分钟后再试。"
 
-#: app/escl.py:678
+#: app/escl.py:690
 #, python-format
 msgid "The scanner “%(name)s” does not answer: refresh the page."
 msgstr "扫描仪“%(name)s”没有响应：请刷新页面。"
 
-#: app/escl.py:678
+#: app/escl.py:690
 msgid "No scanner available."
 msgstr "没有可用的扫描仪。"
 
-#: app/escl.py:685
+#: app/escl.py:697
 #, python-format
 msgid "%(name)s is already scanning: wait for it to finish."
 msgstr "%(name)s 正在扫描：请等待其完成。"
@@ -1327,8 +1327,8 @@ msgid "Too many wrong codes, retry later"
 msgstr "错误验证码次数过多，请稍后再试"
 
 #: app/admin/routes.py:117
-msgid "Wrong code. It is in the gateway log (docker compose logs gateway)"
-msgstr "验证码错误。它在网关日志中（docker compose logs gateway）"
+msgid "Wrong code. It is in the portal log (docker compose logs gateway)"
+msgstr "验证码错误。它在门户日志中（docker compose logs gateway）"
 
 #: app/admin/routes.py:120
 msgid "the two passwords differ"
@@ -1611,22 +1611,22 @@ msgid "The maintenance is over: printing and scanning work again."
 msgstr "维护已结束：打印和扫描已恢复。"
 
 #: app/admin/templates/_own_notices.html:72 app/admin/templates/notices.html:44
-msgid "<b>Save the secret key in a safe place.</b> <span class=\"mono\">CUPSPL_SECRET_KEY</span> in the <span class=\"mono\">.env</span> file encrypts the file names kept in the audit and signs the portal sessions. A backup without encryption does not contain it: if the server breaks and you restore the backup with a new key, the names stay unreadable (<span class=\"mono\">[encrypted]</span>) for good. Copy the line from <span class=\"mono\">.env</span> into a password manager, or make encrypted backups (they include <span class=\"mono\">.env</span>)."
-msgstr "<b>请把密钥保存在安全的地方。</b><span class=\"mono\">.env</span> 文件中的 <span class=\"mono\">CUPSPL_SECRET_KEY</span> 用于加密审计中保存的文件名并签名门户会话。未加密的备份不包含它：如果服务器损坏而你用新密钥恢复备份，文件名将永远无法读取（<span class=\"mono\">[encrypted]</span>）。请把 <span class=\"mono\">.env</span> 中的这一行复制到密码管理器，或使用加密备份（其中包含 <span class=\"mono\">.env</span>）。"
+msgid "<b>Save the secret key in a safe place.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in the <span class=\"mono\">.env</span> file encrypts the file names kept in the audit and signs the portal sessions. A backup without encryption does not contain it: if the server breaks and you restore the backup with a new key, the names stay unreadable (<span class=\"mono\">[encrypted]</span>) for good. Copy the line from <span class=\"mono\">.env</span> into a password manager, or make encrypted backups (they include <span class=\"mono\">.env</span>)."
+msgstr "<b>请把密钥保存在安全的地方。</b><span class=\"mono\">.env</span> 文件中的 <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> 用于加密审计中保存的文件名并签名门户会话。未加密的备份不包含它：如果服务器损坏而你用新密钥恢复备份，文件名将永远无法读取（<span class=\"mono\">[encrypted]</span>）。请把 <span class=\"mono\">.env</span> 中的这一行复制到密码管理器，或使用加密备份（其中包含 <span class=\"mono\">.env</span>）。"
 
 #: app/admin/templates/_own_notices.html:76
 msgid "dismissed"
 msgstr "已忽略"
 
-#: app/admin/templates/_own_notices.html:77 app/admin/templates/notices.html:53
+#: app/admin/templates/_own_notices.html:77 app/admin/templates/notices.html:55
 msgid "Dismiss"
 msgstr "忽略"
 
-#: app/admin/templates/_own_notices.html:81 app/admin/templates/notices.html:57
+#: app/admin/templates/_own_notices.html:81 app/admin/templates/notices.html:59
 msgid "No notices."
 msgstr "没有通知。"
 
-#: app/admin/templates/_own_notices.html:84 app/admin/templates/notices.html:60
+#: app/admin/templates/_own_notices.html:84 app/admin/templates/notices.html:62
 msgid "Dismiss all"
 msgstr "全部忽略"
 
@@ -2300,8 +2300,8 @@ msgid "Key"
 msgstr "密钥"
 
 #: app/admin/templates/backups.html:105
-msgid "created on the server with <span class=\"mono\">docker compose exec -it gateway cups-policy-admin backup-key</span>: the passphrase never goes through the portal"
-msgstr "在服务器上用 <span class=\"mono\">docker compose exec -it gateway cups-policy-admin backup-key</span> 创建：口令短语不会经过门户"
+msgid "created on the server with <span class=\"mono\">docker compose exec -it gateway spoolsteward-admin backup-key</span>: the passphrase never goes through the portal"
+msgstr "在服务器上用 <span class=\"mono\">docker compose exec -it gateway spoolsteward-admin backup-key</span> 创建：口令短语不会经过门户"
 
 #: app/admin/templates/backups.html:107
 msgid "Without encryption the file contains the database (users, names of printed files). That is why the secrets are <b>not</b> saved: the TLS key, <span class=\"mono\">SECRET_KEY</span> and the RADIUS secret must be kept separately."
@@ -2458,8 +2458,8 @@ msgid "The documentation is not installed on this server."
 msgstr "此服务器上未安装文档。"
 
 #: app/admin/templates/docs.html:33
-msgid "It is the docs folder of PrintMinder: the standard image and the host install both include it. You can also read it on GitHub:"
-msgstr "这是 PrintMinder 的 docs 文件夹：标准镜像和主机安装都包含它。你也可以在 GitHub 上阅读："
+msgid "It is the docs folder of SpoolSteward: the standard image and the host install both include it. You can also read it on GitHub:"
+msgstr "这是 SpoolSteward 的 docs 文件夹：标准镜像和主机安装都包含它。你也可以在 GitHub 上阅读："
 
 #: app/admin/templates/docs.html:37
 msgid "Documentation index"
@@ -3191,11 +3191,11 @@ msgstr "没有申请。"
 msgid "What concerns you: what the administrators did with your account (keys, group, quota, requests) and problems of the printer your print is waiting for."
 msgstr "与您有关的事项：管理员对您账户的操作（密钥、组、配额、申请），以及您的打印所在打印机的问题。"
 
-#: app/admin/templates/me_notices.html:9 app/admin/templates/notices.html:62
+#: app/admin/templates/me_notices.html:9 app/admin/templates/notices.html:64
 msgid "Hide dismissed"
 msgstr "隐藏已忽略"
 
-#: app/admin/templates/me_notices.html:9 app/admin/templates/notices.html:62
+#: app/admin/templates/me_notices.html:9 app/admin/templates/notices.html:64
 msgid "Show dismissed too"
 msgstr "同时显示已忽略"
 
@@ -3216,7 +3216,7 @@ msgstr "网关注意到、管理员应当知道的事项。来自同一来源的
 msgid "Last time"
 msgstr "最近一次"
 
-#: app/admin/templates/notices.html:16 app/admin/templates/notices.html:51
+#: app/admin/templates/notices.html:16 app/admin/templates/notices.html:53
 msgid "Times"
 msgstr "次数"
 
@@ -3227,8 +3227,8 @@ msgstr "首次:%(t)s"
 
 #: app/admin/templates/notices.html:22
 #, python-format
-msgid "A scan request without a user name and password from <span class=\"mono\">%(ip)s</span> was refused, because scans without login are off. If your scan app can not send credentials, set <span class=\"mono\">CUPSPL_ESCL_ANONYMOUS=true</span> in <span class=\"mono\">.env</span> and run <span class=\"mono\">docker compose up -d</span>."
-msgstr "来自 <span class=\"mono\">%(ip)s</span> 的无用户名和密码的扫描请求已被拒绝,因为免登录扫描处于关闭状态。如果您的扫描应用无法发送凭据,请在 <span class=\"mono\">.env</span> 中设置 <span class=\"mono\">CUPSPL_ESCL_ANONYMOUS=true</span> 并运行 <span class=\"mono\">docker compose up -d</span>。"
+msgid "A scan request without a user name and password from <span class=\"mono\">%(ip)s</span> was refused, because scans without login are off. If your scan app can not send credentials, set <span class=\"mono\">SPOOLSTEWARD_ESCL_ANONYMOUS=true</span> in <span class=\"mono\">.env</span> and run <span class=\"mono\">docker compose up -d</span>."
+msgstr "来自 <span class=\"mono\">%(ip)s</span> 的无用户名和密码的扫描请求已被拒绝,因为免登录扫描处于关闭状态。如果您的扫描应用无法发送凭据,请在 <span class=\"mono\">.env</span> 中设置 <span class=\"mono\">SPOOLSTEWARD_ESCL_ANONYMOUS=true</span> 并运行 <span class=\"mono\">docker compose up -d</span>。"
 
 #: app/admin/templates/notices.html:24
 #, python-format
@@ -3297,14 +3297,19 @@ msgstr "打印机“%(printer)s”<b>出现问题</b>：%(what)s。"
 
 #: app/admin/templates/notices.html:46
 #, python-format
-msgid "<b>The secret key has changed</b> since the previous start (<span class=\"mono\">CUPSPL_SECRET_KEY</span> in <span class=\"mono\">.env</span>). %(count)s file names in the audit were encrypted with the old key and now show as <span class=\"mono\">[encrypted]</span>. If the change was not wanted (for example a restore with a new <span class=\"mono\">.env</span>), put the old key back and restart: the names become readable again."
-msgstr "<b>密钥自上次启动以来已更改</b>（<span class=\"mono\">.env</span> 中的 <span class=\"mono\">CUPSPL_SECRET_KEY</span>）。审计中有 %(count)s 个文件名是用旧密钥加密的，现在显示为 <span class=\"mono\">[encrypted]</span>。如果这不是有意的更改（例如用新的 <span class=\"mono\">.env</span> 进行了恢复），请恢复旧密钥并重启：文件名将重新可读。"
+msgid "<b>The secret key has changed</b> since the previous start (<span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in <span class=\"mono\">.env</span>). %(count)s file names in the audit were encrypted with the old key and now show as <span class=\"mono\">[encrypted]</span>. If the change was not wanted (for example a restore with a new <span class=\"mono\">.env</span>), put the old key back and restart: the names become readable again."
+msgstr "<b>密钥自上次启动以来已更改</b>（<span class=\"mono\">.env</span> 中的 <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span>）。审计中有 %(count)s 个文件名是用旧密钥加密的，现在显示为 <span class=\"mono\">[encrypted]</span>。如果这不是有意的更改（例如用新的 <span class=\"mono\">.env</span> 进行了恢复），请恢复旧密钥并重启：文件名将重新可读。"
 
 #: app/admin/templates/notices.html:48
-msgid "<b>No secret key is set.</b> <span class=\"mono\">CUPSPL_SECRET_KEY</span> is empty in <span class=\"mono\">.env</span>: the file names in the audit are stored without encryption and everybody has to sign in again after every restart. Set a long random value (for example the output of <span class=\"mono\">openssl rand -base64 48</span>), run <span class=\"mono\">docker compose up -d</span> and save the key in a safe place."
-msgstr "<b>未设置密钥。</b><span class=\"mono\">.env</span> 中的 <span class=\"mono\">CUPSPL_SECRET_KEY</span> 为空：审计中的文件名未加密保存，且每次重启后所有人都必须重新登录。请设置一个较长的随机值（例如 <span class=\"mono\">openssl rand -base64 48</span> 的输出），运行 <span class=\"mono\">docker compose up -d</span>，并把密钥保存在安全的地方。"
+msgid "<b>No secret key is set.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> is empty in <span class=\"mono\">.env</span>: the file names in the audit are stored without encryption and everybody has to sign in again after every restart. Set a long random value (for example the output of <span class=\"mono\">openssl rand -base64 48</span>), run <span class=\"mono\">docker compose up -d</span> and save the key in a safe place."
+msgstr "<b>未设置密钥。</b><span class=\"mono\">.env</span> 中的 <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> 为空：审计中的文件名未加密保存，且每次重启后所有人都必须重新登录。请设置一个较长的随机值（例如 <span class=\"mono\">openssl rand -base64 48</span> 的输出），运行 <span class=\"mono\">docker compose up -d</span>，并把密钥保存在安全的地方。"
 
-#: app/admin/templates/notices.html:52
+#: app/admin/templates/notices.html:50
+#, python-format
+msgid "<b>Scans without login are refused: the guest name is already taken.</b> A scan app sent no user name and password, and the account “%(name)s” that would receive its scans already exists as a real account (with a password, from RADIUS, or an administrator), so it is not used. Set a name nobody uses in <span class=\"mono\">SPOOLSTEWARD_ESCL_GUEST_USERNAME</span> in <span class=\"mono\">.env</span> and restart the portal."
+msgstr "<b>无需登录的扫描被拒绝：访客名称已被占用。</b>某个扫描应用没有发送用户名和密码，而本应接收其扫描的账户“%(name)s”已作为真实账户存在（有密码、来自 RADIUS 或为管理员），因此不会使用它。请在 <span class=\"mono\">.env</span> 文件的 <span class=\"mono\">SPOOLSTEWARD_ESCL_GUEST_USERNAME</span> 中设置一个无人使用的名称，然后重启门户。"
+
+#: app/admin/templates/notices.html:54
 #, python-format
 msgid "dismissed by %(who)s"
 msgstr "由 %(who)s 忽略"
@@ -4524,8 +4529,8 @@ msgid "Set the password of the administrator <b>%(user)s</b>."
 msgstr "设置管理员 <b>%(user)s</b> 的密码。"
 
 #: app/admin/templates/setup.html:10
-msgid "The one-time code is printed in the gateway log: <code>docker compose logs gateway</code>. Whoever has no access to the server cannot complete this page."
-msgstr "一次性验证码会打印在网关日志中：<code>docker compose logs gateway</code>。无法访问服务器的人无法完成此页面。"
+msgid "The one-time code is printed in the portal log: <code>docker compose logs gateway</code>. Whoever has no access to the server cannot complete this page."
+msgstr "一次性验证码会打印在门户日志中：<code>docker compose logs gateway</code>。无法访问服务器的人无法完成此页面。"
 
 #: app/admin/templates/setup.html:11
 msgid "One-time code"

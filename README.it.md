@@ -1,24 +1,23 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="app/admin/static/icon-light.svg">
-  <img src="app/admin/static/icon-dark.svg" alt="Icona di PrintMinder" width="96" align="right">
+  <img src="app/admin/static/icon-dark.svg" alt="Icona di SpoolSteward" width="96" align="right">
 </picture>
 
-# PrintMinder
+# SpoolSteward
 
 [English](README.md) · **Italiano**
 
-Autenticazione, quote e registro delle attività davanti a CUPS (IPP), con un portale web. CUPS e ipp-usb restano dipendenze non
-modificate. Il gateway è l'unico punto d'ingresso: autentica gli utenti (account locali e/o RADIUS), **impone** la loro identità,
-applica i limiti di stampa, registra chi ha stampato e scansionato cosa e inoltra il job a CUPS.
+Su una rete condivisa, una stampante lascia stampare chiunque quanto vuole e poi nessuno sa chi ha stampato cosa. SpoolSteward si mette tra le persone e la stampante: ognuno accede con il proprio account, ogni persona o gruppo ha un limite (pagine, colore, solo fronte) e ogni stampa e scansione viene registrata. Serve a case, uffici e scuole che condividono una stampante e vogliono decidere chi stampa quanto e vedere cosa è stato stampato.
+
+In termini tecnici è un gateway davanti a CUPS (IPP) con un portale web. Fa accedere le persone (account locali e/o RADIUS), decide il
+nome utente che CUPS vede, applica i limiti, registra chi ha stampato e scansionato cosa e inoltra il job a CUPS. CUPS e ipp-usb restano
+non modificati e il gateway è l'unica via d'ingresso.
 
 ```
 client IPP ──ipps (TLS + Basic)──▶ gateway ──socket unix──▶ CUPS ──rete interna──▶ ipp-usb ──USB──▶ stampante
 browser ───────https───────────▶     │  └─▶ DB (SQLite): utenti, gruppi, regole, audit
                                      └────▶ RADIUS (facoltativo)        portale: /login, /admin (admin), /me (utenti)
 ```
-
-> I nomi interni come `CUPSPL_*`, `cups-policy-admin` e il progetto compose `printgw` precedono il nome PrintMinder e restano
-> invariati perché le installazioni esistenti continuino a funzionare.
 
 ## Cosa fa
 
@@ -63,14 +62,14 @@ browser ───────https───────────▶     │  
 | | Portale in inglese, italiano, spagnolo, russo, cinese | ✅ spagnolo/russo/cinese da far rivedere a madrelingua |
 | | Notifiche (email/webhook) per le richieste in attesa | ⬜ |
 | | Richieste di permessi (colore, solo fronte, stampanti, orari) | ✅ |
-| **Operatività** | Stack docker (ipp-usb + CUPS + gateway + mDNS), nulla installato sull'host | ✅ |
+| **Operatività** | Stack docker (ipp-usb + CUPS + portal + mDNS, da un'unica immagine), nulla installato sull'host | ✅ |
 | | Backup programmati per amministratore (cartella, ora, rotazione, cifratura con passphrase/chiave di recupero), ripristino da CLI | ✅ |
 | | Migrazioni del database (Alembic), health check, log, CLI di amministrazione | ✅ |
 | | Immagini per amd64 e arm64 su ghcr.io; script di aggiornamento che scarica un pacchetto di release controllato, fa prima un backup e torna indietro da solo (proponendo il ripristino del backup) se la nuova versione non parte; avviso di nuove versioni; un solo file `.env` che un aggiornamento non tocca mai | ✅ amd64; arm64 in funzione su un Raspberry Pi 4B (64 bit) |
 | | Pulsante Aggiorna nel portale (contenitore facoltativo `updater`, usa il socket di Docker) | ✅  |
 | | Backup su disco di rete o USB: file segnaposto contro un disco non montato (attivo di default), avviso nella campanella quando un backup fallisce, limite di tempo per un disco che non risponde | ✅ provato con una condivisione SMB |
 | | Certificato TLS: avvisi (scaduto, indirizzo annunciato mancante, avviso di scadenza facoltativo) e `scripts/cert-sync.sh` per copiare un certificato rinnovato da Nginx Proxy Manager o certbot | 🟡 script provato con simulazioni, non ancora con un vero Nginx Proxy Manager |
-| | Campanella con gli avvisi per gli amministratori (una sola, prima i propri); problemi di stampante (inceppamento, carta, inchiostro) per gli amministratori e per chi aspetta; l'utente è avvisato se cambiano gruppo, diritti, quota o richiesta; promemoria, una volta sola, di salvare `CUPSPL_SECRET_KEY` e avviso se cambia; `/healthz` mostra solo lo stato se non chiedi di più | ✅ |
+| | Campanella con gli avvisi per gli amministratori (una sola, prima i propri); problemi di stampante (inceppamento, carta, inchiostro) per gli amministratori e per chi aspetta; l'utente è avvisato se cambiano gruppo, diritti, quota o richiesta; promemoria, una volta sola, di salvare `SPOOLSTEWARD_SECRET_KEY` e avviso se cambia; `/healthz` mostra solo lo stato se non chiedi di più | ✅ |
 
 ## Limiti
 
@@ -85,13 +84,13 @@ L'elenco completo, con le soluzioni, è in [docs/it/limiti.md](docs/it/limiti.md
   dopo una migrazione può richiedere un backup.
 - **TLS obbligatorio**: installa il certificato autofirmato sui client o usa quello della tua CA.
 - Una stampante scollegata si rileva entro ~30 s (code di rete: prova TCP, non la carta).
-- I **nomi dei file stampati sono cifrati** nel database (chiave da `CUPSPL_SECRET_KEY`: non cambiarla); il resto del database no. Per tutto il resto cifra il disco: [protezione-dati.md](docs/it/protezione-dati.md).
+- I **nomi dei file stampati sono cifrati** nel database (chiave da `SPOOLSTEWARD_SECRET_KEY`: non cambiarla); il resto del database no. Per tutto il resto cifra il disco: [protezione-dati.md](docs/it/protezione-dati.md).
 - Le traduzioni in spagnolo, russo e cinese non sono riviste da madrelingua; le pagine stampate dal gateway restano in inglese.
 
 
 ## Come è stato sviluppato
 
-PrintMinder nasce per risolvere un mio problema e l'ho pubblicato perché può servire ad altri. Ho usato strumenti di intelligenza artificiale (IA) in modo rilevante, e preferisco dirlo apertamente:
+SpoolSteward nasce per risolvere un mio problema e l'ho pubblicato perché può servire ad altri. Ho usato strumenti di intelligenza artificiale (IA) in modo rilevante, e preferisco dirlo apertamente:
 
 - **Documentazione, test automatici e commenti nel codice**: scritti per lo più con l'aiuto dell'IA.
 - **Codice dell'applicazione**: scritto in parte da me e in parte con l'aiuto dell'IA.
@@ -108,15 +107,15 @@ Requisiti: un server **Linux**, Docker Engine con Compose, `openssl`, `curl`, `t
 raggiungibile dai client (predefinita 8631). Sull'host non si installa nulla.
 
 ```sh
-# 0. scarica il pacchetto della release (ultima versione: https://github.com/deh-aleh/PrintMinder/releases)
+# 0. scarica il pacchetto della release (ultima versione: https://github.com/deh-aleh/SpoolSteward/releases)
 VERSION=x.y.z
-curl -LO https://github.com/deh-aleh/PrintMinder/releases/download/v$VERSION/printminder-$VERSION.tar.gz
-tar xzf printminder-$VERSION.tar.gz && cd printminder-$VERSION      # (nella guida c'è anche come controllare il download)
+curl -LO https://github.com/deh-aleh/SpoolSteward/releases/download/v$VERSION/spoolsteward-$VERSION.tar.gz
+tar xzf spoolsteward-$VERSION.tar.gz && cd spoolsteward-$VERSION      # (nella guida c'è anche come controllare il download)
 
 # 1. nomi / IP con cui i client raggiungeranno il server (finiscono nel certificato TLS)
 scripts/docker-init.sh print.lan 192.168.1.50      # crea .env (tutte le impostazioni), config/tls/, data/
 
-# 2. impostazioni: RADIUS è facoltativo (host e secret vuoti = solo account locali)
+# 2. impostazioni: RADIUS è facoltativo (scrivi none in host e secret per usare solo account locali)
 $EDITOR .env
 
 # 3. stampanti, in .env — USB (prima ferma ipp-usb sull'host: sudo systemctl disable --now ipp-usb && sudo systemctl mask ipp-usb)
@@ -127,7 +126,7 @@ $EDITOR .env
 # 4. avvio
 docker compose up -d
 
-# 5. leggi il codice monouso e scegli la password dell'amministratore "cups_orchestrator"
+# 5. leggi il codice monouso e scegli la password dell'amministratore "administrator"
 docker compose logs gateway | grep "FIRST RUN"
 #    poi apri https://<server>:8631/setup
 ```
@@ -166,5 +165,5 @@ Tutto è disponibile anche in inglese (lingua principale): [docs/en](docs/en) ·
 
 ## Licenza
 
-PrintMinder è rilasciato con la [licenza Apache 2.0](LICENSE). Puoi usarlo, modificarlo e distribuirlo, anche a scopo commerciale, purché mantieni
+SpoolSteward è rilasciato con la [licenza Apache 2.0](LICENSE). Puoi usarlo, modificarlo e distribuirlo, anche a scopo commerciale, purché mantieni
 l'avviso di copyright e il file [NOTICE](NOTICE) (crediti ad Alessio Paccino) e indichi le modifiche che fai. Copyright 2026 Alessio Paccino.

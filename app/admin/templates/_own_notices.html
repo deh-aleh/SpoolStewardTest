@@ -69,7 +69,7 @@
         {% elif n.kind == 'maintenance_off' %}
         {{ _("The maintenance is over: printing and scanning work again.") }}
         {% elif n.kind == 'secret_key_save' %}
-        {{ _("<b>Save the secret key in a safe place.</b> <span class=\"mono\">CUPSPL_SECRET_KEY</span> in the <span class=\"mono\">.env</span> file encrypts the file names kept in the audit and signs the portal sessions. A backup without encryption does not contain it: if the server breaks and you restore the backup with a new key, the names stay unreadable (<span class=\"mono\">[encrypted]</span>) for good. Copy the line from <span class=\"mono\">.env</span> into a password manager, or make encrypted backups (they include <span class=\"mono\">.env</span>).") }}
+        {{ _("<b>Save the secret key in a safe place.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in the <span class=\"mono\">.env</span> file encrypts the file names kept in the audit and signs the portal sessions. A backup without encryption does not contain it: if the server breaks and you restore the backup with a new key, the names stay unreadable (<span class=\"mono\">[encrypted]</span>) for good. Copy the line from <span class=\"mono\">.env</span> into a password manager, or make encrypted backups (they include <span class=\"mono\">.env</span>).") }}
         {% else %}{{ n.kind }}{% endif %}
         {% if n.count > 1 and n.kind in ('job_refused', 'job_adjusted', 'quota_reached', 'scan_window_mismatch') %}<span class="muted">(×{{ n.count }})</span>{% endif %}
       </td>
@@ -79,7 +79,7 @@
     {% endfor %}
   </table>
   {% else %}<p>{{ _("No notices.") }}</p>{% endif %}
-  <div class="row" style="margin-top:12px">
+  <div class="row on-actions">
     {% if own_rows|selectattr('dismissed_at', 'none')|list %}
     <form method="post" action="/me/notices/dismiss-all"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="sec">{{ _("Dismiss all") }}</button></form>
     {% endif %}

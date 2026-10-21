@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Notices") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block body %}
 <div class="card">
   <h1>{{ _("Notices") }}</h1>
   <p class="muted">{{ _("What concerns you: what the administrators did with your account (keys, group, quota, requests) and problems of the printer your print is waiting for.") }}</p>
   {% include "_own_notices.html" %}
-  <div class="row" style="margin-top:12px">
+  <div class="row mn-gap">
     <a class="btn sec" href="/me/notices{{ '' if show_all else '?all=1' }}">{{ _("Hide dismissed") if show_all else _("Show dismissed too") }}</a>
   </div>
 </div>

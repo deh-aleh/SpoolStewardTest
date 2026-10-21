@@ -1,5 +1,5 @@
 #!/bin/sh
-# DEV ONLY self-signed certificate. Production: supply a real cert via CUPSPL_TLS_CERTFILE/KEYFILE.
+# DEV ONLY self-signed certificate. Production: supply a real cert via SPOOLSTEWARD_TLS_CERTFILE/KEYFILE.
 set -e
 dir="${1:-certs}"
 mkdir -p "$dir"

@@ -6,9 +6,8 @@ import asyncio
 import logging
 import re
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from urllib.parse import urlsplit
-from zoneinfo import ZoneInfo
 
 import httpx
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -17,6 +16,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
 
+from app.timeutil import local_tz
 from app.admin.common import back, current_admin, flash, get_db, render, verify_csrf
 from app.audit.adminlog import record
 from app.config import settings
@@ -29,13 +29,12 @@ from app.policy import control, discovery, keepalive, ordering, permissions, tes
 
 log = logging.getLogger("app.printers")
 router = APIRouter(prefix="/admin")
-_FAR = datetime.max.replace(tzinfo=timezone.utc)
+_FAR = datetime.max.replace(tzinfo=UTC)
 _CUPS_ATTRS = ["printer-name", "printer-info", "printer-state", "printer-state-reasons", "printer-is-accepting-jobs",
                "device-uri", "printer-make-and-model", "marker-names", "marker-levels", "marker-colors", "marker-types",
                "marker-low-levels", "queued-job-count", "printer-state-message", "printer-location", "color-supported"]
 CUPS_ADMIN = "root"  # CUPS' SystemGroup: it trusts this name on its private socket, and only the gateway reaches the socket
 DEBUG_PPD = "lsb/usr/cups-pdf/CUPS-PDF_noopt.ppd"
-DEBUG_RE = re.compile(r"^debugprinter(\d+)$")
 NAME_RE = permissions.NAME_RE
 STATES = {3: N_("idle"), 4: N_("printing"), 5: N_("stopped")}  # shown through _(): the cached data stays language-neutral
 LEDM_USAGE = {"TotalImpressions": N_("Pages printed (total)"), "MonochromeImpressions": N_("of which black and white"),
@@ -319,6 +318,58 @@ async def printer_move(request: Request, name: str, direction: str = Form(...), 
     return back("/admin/printers")
 
 
+class _Refuse(Exception):
+    """A form problem the administrator is told about with a message on the list of printers."""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+
+async def _rename_target(request: Request, name: str, new_name: str) -> tuple[dict, str]:
+    """The queue to rename and the driver it keeps; raises _Refuse when it may not be renamed (nothing is changed yet)."""
+    try:
+        queues = await _cups_queues(request.app.state.upstream)
+    except (httpx.HTTPError, codec.IppError, StopIteration):
+        raise _Refuse(_("CUPS does not answer")) from None
+    queue = next((q for q in queues if q["name"] == name), None)
+    if queue is None:
+        raise _Refuse(_("%(name)s: printer not found", name=name))
+    if new_name.lower() == name.lower():
+        raise _Refuse(_("That is already its name"))
+    if any(q["name"].lower() == new_name.lower() for q in queues):
+        raise _Refuse(_("A queue called %(name)s already exists", name=new_name))
+    if queue["queued"]:
+        raise _Refuse(_("%(name)s has jobs waiting: rename it when the queue is empty", name=name))
+    ppd = await discovery.driver_for(request.app.state.upstream, queue["device_uri"], DEBUG_PPD)
+    if ppd is None:
+        raise _Refuse(_("%(name)s can not be renamed: its driver is not known to the gateway", name=name))
+    return queue, ppd
+
+
+async def _rename_in_cups(request: Request, name: str, new_name: str, queue: dict, ppd: str) -> None:
+    """The new queue first, the old one removed only after that; raises _Refuse when CUPS does not accept."""
+    info = queue["info"].replace(name, new_name) if queue["info"] else new_name
+    if not await discovery.add_queue(request.app, new_name, queue["device_uri"], info, ppd, queue["location"]):
+        raise _Refuse(_("CUPS did not accept the request"))
+    if not await discovery.delete_queue(request.app, name):
+        if not await discovery.delete_queue(request.app, new_name):  # back to how it was
+            log.warning("rename %s -> %s refused and the copy %s could not be removed: remove it by hand", name, new_name, new_name)
+        raise _Refuse(_("CUPS did not accept the request"))
+
+
+def _rename_records(request: Request, admin: User, name: str, new_name: str, notify: bool) -> None:
+    """What the gateway keeps under the name follows the queue."""
+    with request.app.state.sessionmaker() as db:
+        ordering.rename(db, name, new_name)
+        lists = permissions.rename_printer(db, name, new_name)  # the printer lists of groups and users follow the queue
+        discovery.note_former(db, name, "renamed")
+        discovery.took_name(db, new_name)
+        record(db, db.get(User, admin.id), "printer.rename", "printer", None, printer=name, new_name=new_name, permission_lists=lists,
+               notified_users=notify)
+        db.commit()
+
+
 @router.post("/printers/{name}/rename", dependencies=[Depends(verify_csrf)])
 async def printer_rename(request: Request, name: str, new_name: str = Form(...), notify: str = Form(""), admin: User = Depends(current_admin)):
     """Give a queue another name. CUPS can not rename a queue, so the gateway makes the new one on the same device (same
@@ -333,46 +384,12 @@ async def printer_rename(request: Request, name: str, new_name: str = Form(...),
         flash(request, _("Queue names use letters, digits and . _ @ + - only (max 127)"), "err")
         return back("/admin/printers")
     try:
-        queues = await _cups_queues(request.app.state.upstream)
-    except (httpx.HTTPError, codec.IppError, StopIteration):
-        flash(request, _("CUPS does not answer"), "err")
+        queue, ppd = await _rename_target(request, name, new_name)
+        await _rename_in_cups(request, name, new_name, queue, ppd)
+    except _Refuse as stop:
+        flash(request, stop.message, "err")
         return back("/admin/printers")
-    queue = next((q for q in queues if q["name"] == name), None)
-    if queue is None:
-        flash(request, _("%(name)s: printer not found", name=name), "err")
-        return back("/admin/printers")
-    if new_name.lower() == name.lower():
-        flash(request, _("That is already its name"), "err")
-        return back("/admin/printers")
-    if any(q["name"].lower() == new_name.lower() for q in queues):
-        flash(request, _("A queue called %(name)s already exists", name=new_name), "err")
-        return back("/admin/printers")
-    if queue["queued"]:
-        flash(request, _("%(name)s has jobs waiting: rename it when the queue is empty", name=name), "err")
-        return back("/admin/printers")
-    ppd = await discovery.driver_for(request.app.state.upstream, queue["device_uri"], DEBUG_PPD)
-    if ppd is None:
-        flash(request, _("%(name)s can not be renamed: its driver is not known to the gateway", name=name), "err")
-        return back("/admin/printers")
-    info = queue["info"].replace(name, new_name) if queue["info"] else new_name
-    if not await discovery.add_queue(request.app, new_name, queue["device_uri"], info, ppd, queue["location"]):
-        flash(request, _("CUPS did not accept the request"), "err")
-        return back("/admin/printers")
-    if not await discovery.delete_queue(request.app, name):
-        await discovery.delete_queue(request.app, new_name)  # back to how it was
-        flash(request, _("CUPS did not accept the request"), "err")
-        return back("/admin/printers")
-
-    def move():
-        with request.app.state.sessionmaker() as db:
-            ordering.rename(db, name, new_name)
-            lists = permissions.rename_printer(db, name, new_name)  # the printer lists of groups and users follow the queue
-            discovery.note_former(db, name, "renamed")
-            discovery.took_name(db, new_name)
-            record(db, db.get(User, admin.id), "printer.rename", "printer", None, printer=name, new_name=new_name, permission_lists=lists,
-                   notified_users=bool(notify))
-            db.commit()
-    await run_in_threadpool(move)
+    await run_in_threadpool(_rename_records, request, admin, name, new_name, bool(notify))
     if notify:
         await run_in_threadpool(notices.notify_all_users, request.app.state.sessionmaker, "printer_renamed",
                                 {"old": name, "new": new_name}, new_name, admin.id)
@@ -487,8 +504,8 @@ def _test_page(card: dict, queue_name: str, color: bool) -> bytes:
     """The same figures the page shows for this printer, on paper."""
     dev = card.get("device") or {}
     ipp, cfg, first = dev.get("ipp") or {}, dev.get("config") or {}, card["queues"][0]
-    when = lambda t: t.replace(tzinfo=t.tzinfo or timezone.utc).astimezone(ZoneInfo(settings.timezone)).strftime("%Y-%m-%d %H:%M") if t else "—"  # noqa: E731
-    now = datetime.now(ZoneInfo(settings.timezone))
+    when = lambda t: t.replace(tzinfo=t.tzinfo or UTC).astimezone(local_tz()).strftime("%Y-%m-%d %H:%M") if t else "—"  # noqa: E731
+    now = datetime.now(local_tz())
     state = [(q["name"], (_dyn(q["state"]) if q.get("online") else _("NOT REACHABLE")) + ", " + _("%(n)s in queue", n=q["queued"])
               + ("" if q["accepting"] else ", " + _("not accepting jobs"))) for q in card["queues"]]
     gw = [(name, _("%(jobs)s jobs, %(pages)s pages, last %(when)s", jobs=s["jobs"], pages=s["pages"], when=when(s["last"])))
@@ -553,7 +570,7 @@ async def printers(request: Request, admin: User = Depends(current_admin), db: S
     ipp_base = f"{settings.public_scheme or 'ipps'}://{request.headers.get('host', 'localhost')}"
     return render(request, "printers.html", admin, devices=devices, states=STATES, controls=controls, key=control.key, ipp_base=ipp_base,
                   keepalive=ka, next_due=keepalive.next_due, describe=keepalive.describe, split=keepalive.split,
-                  presets=keepalive.PRESETS, now=datetime.now(timezone.utc), is_usb=discovery.is_usb_queue, transport=discovery.transport,
+                  presets=keepalive.PRESETS, now=datetime.now(UTC), is_usb=discovery.is_usb_queue, transport=discovery.transport,
                   former=discovery.former_names(db, [q["name"] for d in devices for q in d["queues"]]),
                   offline_since=await run_in_threadpool(discovery.offline_since, request.app.state.sessionmaker),
                   remove_after=discovery.remove_after(), refresh_seconds=settings.printers_refresh_seconds, remove_hours="%g" % settings.offline_remove_hours, notes=[_discovery_note(n) for n in getattr(request.app.state, "discovery", {}).get("notes", [])])

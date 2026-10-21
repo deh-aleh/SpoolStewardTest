@@ -1,12 +1,12 @@
 """Job accounting: atomically reserve a quota slot, then finalize once CUPS has answered."""
 
 import threading
-from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.timeutil import now_utc
 from app.db.models import JobKind, JobLog, JobState, Resource, User
 from app.policy import control
 from app.policy.engine import Decision, check_job
@@ -20,10 +20,6 @@ _submit_lock = threading.Lock()
 def _lock_quota(session: Session, user_id: int) -> None:
     """Serialize quota decisions across processes, until the session commits (SQLite: one writer at a time)."""
     session.connection().exec_driver_sql("BEGIN IMMEDIATE")  # blocks other reservers
-
-
-def now_utc() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 def reserve(

@@ -1,7 +1,7 @@
 #!/bin/sh
 # Make CUPS a private backend of the gateway (run as root, after install.sh).
 #  - /etc/cups/cupsd.conf  -> docker/stack/cups/cupsd.conf (original saved once as cupsd.conf.pre-gateway)
-#  - cups.socket           -> unix socket only, mode 0660, group cupspl; no TCP listener
+#  - cups.socket           -> unix socket only, mode 0660, group spoolsteward; no TCP listener
 # Restarts CUPS. Printers (queues) are kept. Revert: sh deploy/setup-cups.sh --revert
 set -eu
 
@@ -11,7 +11,7 @@ BACKUP=/etc/cups/cupsd.conf.pre-gateway
 DROPIN=/etc/systemd/system/cups.socket.d
 
 [ "$(id -u)" -eq 0 ] || { echo "run as root" >&2; exit 1; }
-getent group cupspl >/dev/null || { echo "group cupspl missing: run deploy/install.sh first" >&2; exit 1; }
+getent group spoolsteward >/dev/null || { echo "group spoolsteward missing: run deploy/install.sh first" >&2; exit 1; }
 
 if [ "${1:-}" = "--revert" ]; then
     [ -e "$BACKUP" ] || { echo "no backup at $BACKUP" >&2; exit 1; }
@@ -42,4 +42,4 @@ if ss -ltn 2>/dev/null | grep -qE 'LISTEN.*[:.]631\b'; then
     echo "WARNING: something still listens on TCP 631 (cups-browsed? another cups.socket drop-in?)" >&2
 fi
 ls -l /run/cups/cups.sock
-echo "CUPS is now a private backend. Start the gateway: systemctl enable --now cups-policy-gateway"
+echo "CUPS is now a private backend. Start the gateway: systemctl enable --now spoolsteward"

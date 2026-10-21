@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -11,7 +11,7 @@ from app.db.models import (
 from app.policy.engine import check_job, window_start
 
 TZ = ZoneInfo("Europe/Rome")
-NOW = datetime(2026, 10, 7, 10, 0, tzinfo=timezone.utc)  # Wednesday
+NOW = datetime(2026, 10, 7, 10, 0, tzinfo=UTC)  # Wednesday
 
 
 @pytest.fixture
@@ -47,7 +47,7 @@ def test_window_start_monday():
 
 def test_monthly_window_starts_first_of_local_month():
     assert window_start(Period.monthly, NOW, TZ) == datetime(2026, 10, 1, tzinfo=TZ)
-    late = datetime(2026, 9, 30, 22, 30, tzinfo=timezone.utc)  # already Oct 1st 00:30 in Rome
+    late = datetime(2026, 9, 30, 22, 30, tzinfo=UTC)  # already Oct 1st 00:30 in Rome
     assert window_start(Period.monthly, late, TZ) == datetime(2026, 10, 1, tzinfo=TZ)
 
 
@@ -99,7 +99,7 @@ def test_at_limit_denied(session):
 def test_denied_and_old_jobs_not_counted(session):
     u = _setup(session)
     _log(session, u, state=JobState.denied)
-    _log(session, u, ts=datetime(2026, 9, 1, tzinfo=timezone.utc))
+    _log(session, u, ts=datetime(2026, 9, 1, tzinfo=UTC))
     _log(session, u)
     assert check_job(session, u, Resource.print, NOW, TZ).allowed
 

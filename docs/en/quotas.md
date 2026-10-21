@@ -8,10 +8,10 @@ A **rule** says: *this user or this group may print at most N **jobs** (or **pag
 
 - Rules belong to a group, with optional **per-user overrides**. A user rule replaces the group's rule for the same metric.
 - Metrics: **jobs** and **pages**. Periods: **weekly** (Monday–Sunday) or **monthly** (calendar month), in the time zone
-  `CUPSPL_TIMEZONE`, also across the daylight-saving change.
+  `SPOOLSTEWARD_TIMEZONE`, also across the daylight-saving change.
 - No rule = no limit.
 - Where to set them: *Groups* → edit (group limits), *Users* → edit (personal limits), or the CLI:
-  `cups-policy-admin group-limit staff 20 --period monthly`, `cups-policy-admin user-limit mario 5 --metric pages`
+  `spoolsteward-admin group-limit staff 20 --period monthly`, `spoolsteward-admin user-limit mario 5 --metric pages`
   (`none` removes a limit).
 
 ### What counts
@@ -42,7 +42,7 @@ The pages limit is **hard** only for documents the gateway can count. It is **so
 
 ### Atomic reservation
 
-Checking the limit and recording the job happen under a lock (thread + `BEGIN IMMEDIATE` on SQLite), so many simultaneous jobs can not exceed the limit. Active grants are added to the limit **inside** the same check.
+Checking the limit and recording the job happen in one locked step, so many simultaneous jobs can not exceed the limit. Active grants are added to the limit **inside** the same check.
 
 ## 2. Requests from users
 
@@ -54,8 +54,8 @@ In *Profile* a user can ask for:
 2. **Change of group** — only towards groups marked *requestable*.
 3. **A permission** — colour, one-sided printing, one more printer or printing outside the hours (see [Asking for a permission](#asking-for-a-permission)).
 
-Brakes: at most `CUPSPL_MAX_OPEN_REQUESTS` (3) open requests per user, the reason is optional unless `CUPSPL_REQUEST_REASON_REQUIRED=true` (always treated as plain text),
-requests expire after `CUPSPL_REQUEST_TTL_DAYS` (14). The user can cancel a pending request.
+Limits on requests: at most `SPOOLSTEWARD_MAX_OPEN_REQUESTS` (3) open requests per user, the reason is optional unless `SPOOLSTEWARD_REQUEST_REASON_REQUIRED=true` (always treated as plain text),
+requests expire after `SPOOLSTEWARD_REQUEST_TTL_DAYS` (14). The user can cancel a pending request.
 
 ## 3. Approval and grants
 
@@ -70,7 +70,7 @@ Approval produces a **grant** (concession) that is **added** to the limit:
   request: a request made on Sunday night and approved on Monday must not be born expired).
 - A **permanent** grant applies to every following period ("+20 pages every month") until revoked.
 - A group change moves the user at once; the new group's limits apply from then on.
-- Approval is **idempotent**: one conditional `UPDATE`, so two administrators or a double click grant once.
+- Approving twice (two administrators, a double click) grants once.
 - Grants never touch history (`job_log` is not edited).
 
 Administrators can also grant or revoke quota directly in **Requests**. Everything lands in the administrators' audit
@@ -105,7 +105,7 @@ under the other.
 own, field by field: a user can have their own colour permission and still follow the group for printers and hours. The page
 shows what the group says next to each field. Changing the group's permissions changes every user who follows it, and does not
 send them a notice; changing a user's own permissions does (see "What the user sees"). An administrator is limited like anybody
-else. The only exception is the **emergency administrator** (`CUPSPL_BOOTSTRAP_ADMIN_USERNAME`, a local account): it has every
+else. The only exception is the **emergency administrator** (`SPOOLSTEWARD_BOOTSTRAP_ADMIN_USERNAME`, a local account): it has every
 permission, its page shows the block switched off ("all permissions, can not be limited") and the server ignores anything posted
 for it. It also has no group and no quota: it is not in the "administrator" group, has no job or page limit, and can not ask to change group. Quotas, limits and permissions of the "administrator" group apply to every other administrator. **Scanning is not limited** by any of this: a user can scan with a printer they may not print on.
 
@@ -121,7 +121,7 @@ The list holds queue names, written in lower case (CUPS ignores the case). Three
 
 ### Hours
 
-One window: the days of the week and two times (`HH:MM`), in the gateway's time zone (`CUPSPL_TIMEZONE`, daylight saving
+One window: the days of the week and two times (`HH:MM`), in the gateway's time zone (`SPOOLSTEWARD_TIMEZONE`, daylight saving
 included). The end time is not included: `08:00` to `17:00` allows a job sent at 16:59, not at 17:00. If the end is earlier than the
 start (`22:00` to `06:00`) the window goes past midnight and belongs to the day it starts: Friday 22:00 to Saturday 06:00 is
 Friday's. Start and end can not be equal. The hours are checked **when the job is sent**: a job already accepted is not stopped when
@@ -136,7 +136,7 @@ The gateway checks, in this order: a blocked printer or maintenance mode (as alw
 | A printer not in the list | | **Refused**, always |
 | A time outside the hours | | **Refused**, always |
 | Colour not stated (nothing, or `auto`) | no colour | Printed in black and white. Nobody is told |
-| Colour stated (`color`) | no colour | `CUPSPL_PERMISSION_MODE=adjust` (default): printed in black and white, the user gets a notice. `refuse`: refused |
+| Colour stated (`color`) | no colour | `SPOOLSTEWARD_PERMISSION_MODE=adjust` (default): printed in black and white, the user gets a notice. `refuse`: refused |
 | Sides not stated | no one-sided | Printed double-sided (long edge). Nobody is told |
 | `one-sided` stated | no one-sided | `adjust`: printed double-sided, notice. `refuse`: refused |
 
@@ -182,13 +182,13 @@ The administrators' log (*Actions*) records every change to a group's or a user'
 
 A person who lacks a permission asks for it in the box "Your permissions" of their profile: the link **Ask** next to colour, one-sided
 printing and hours, and **Ask for another printer** for the printers. The form offers only what the person lacks, and only printers
-that exist now. A reason is required only if `CUPSPL_REQUEST_REASON_REQUIRED=true` (500 characters at most). The request is refused when the person already has that permission,
+that exist now. A reason is required only if `SPOOLSTEWARD_REQUEST_REASON_REQUIRED=true` (500 characters at most). The request is refused when the person already has that permission,
 or has already asked for the same thing and nobody has answered yet. The same brakes as the quota requests apply: at most
-`CUPSPL_MAX_OPEN_REQUESTS` open requests (of any kind together), and an unanswered request expires after `CUPSPL_REQUEST_TTL_DAYS`.
+`SPOOLSTEWARD_MAX_OPEN_REQUESTS` open requests (of any kind together), and an unanswered request expires after `SPOOLSTEWARD_REQUEST_TTL_DAYS`.
 The person can cancel it from their profile.
 
 The administrator sees it in **Requests**, with a choice: **permanent**, or **until the end of** a date. The date counts through the
-whole of that day in the portal's time zone (`CUPSPL_TIMEZONE`) and must be today or later. Approving creates a *permission grant*
+whole of that day in the portal's time zone (`SPOOLSTEWARD_TIMEZONE`) and must be today or later. Approving creates a *permission grant*
 that **widens** what the group and the person's own rule give; it never takes anything away:
 
 | Asked | The grant gives |
@@ -198,7 +198,7 @@ that **widens** what the group and the person's own rule give; it never takes an
 | A printer | that printer is added to the person's list (if the person has no list, every printer is allowed already, so there is nothing to ask) |
 | Outside the hours | the hours window does not apply |
 
-Approval is idempotent, like the quota one, and a refused approval (for example a date in the past) leaves the request waiting.
+Approving twice grants once, as for quota, and a refused approval (for example a date in the past) leaves the request waiting.
 Active permission grants appear in the same *Active grants* list as the quota ones, with *Revoke*; ended and revoked ones go to the
 history, and *Delete ended grants* removes both kinds. The administrators' log records each approval, direct grant, revocation and
 deletion (the deletion with how many of each kind). The person's edit page lists their active permission grants.

@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Archive %(name)s", name=fname) }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block body %}
 <div class="card">
   <h1>{{ fname }}</h1>
   <p class="muted">{{ _("%(n)s rows", n=a.rows) }} · {{ a.first_ts|localtime('%Y-%m-%d') }} → {{ a.last_ts|localtime('%Y-%m-%d') }} ·
     <a href="/admin/archive/{{ a.id }}/download">{{ _("download the file") }}</a> · <a href="/admin/archive">← {{ _("all archives") }}</a></p>
-  <form method="get" class="row" style="margin-bottom:12px"><input type="text" name="q" value="{{ q }}" placeholder="{{ _('Search (user, file, state…)') }}"><button>{{ _("Search") }}</button> <span class="muted">{{ _("%(n)s results", n=total) }}</span></form>
+  <form method="get" class="row av-form"><input type="text" name="q" value="{{ q }}" placeholder="{{ _('Search (user, file, state…)') }}"><button>{{ _("Search") }}</button> <span class="muted">{{ _("%(n)s results", n=total) }}</span></form>
   <table>
     {% if a.source_table == 'job_log' %}
     <tr><th>{{ _("When") }}</th><th>{{ _("User") }}</th><th>{{ _("State") }}</th><th>{{ _("Printer") }}</th><th>{{ _("File") }}</th><th>{{ _("Pages") }}</th><th>{{ _("Notes") }}</th></tr>
@@ -13,12 +14,12 @@
     {% else %}<tr><td colspan="7" class="muted">{{ _("No rows.") }}</td></tr>{% endfor %}
     {% else %}
     <tr><th>{{ _("When") }}</th><th>{{ _("Who") }}</th><th>{{ _("Action") }}</th><th>{{ _("Object") }}</th><th>{{ _("Details") }}</th></tr>
-    {% for r in rows %}<tr><td class="nowrap mono">{{ r.ts[:19].replace('T',' ') }}</td><td>{{ r.actor }}</td><td class="mono">{{ r.action }}</td><td>{{ r.target_type or '' }}{% if r.target_id %} #{{ r.target_id }}{% endif %}</td><td class="muted mono" style="font-size:12px">{{ r.detail | tojson if r.detail else '' }}</td></tr>
+    {% for r in rows %}<tr><td class="nowrap mono">{{ r.ts[:19].replace('T',' ') }}</td><td>{{ r.actor }}</td><td class="mono">{{ r.action }}</td><td>{{ r.target_type or '' }}{% if r.target_id %} #{{ r.target_id }}{% endif %}</td><td class="muted mono av-detail">{{ r.detail | tojson if r.detail else '' }}</td></tr>
     {% else %}<tr><td colspan="5" class="muted">{{ _("No rows.") }}</td></tr>{% endfor %}
     {% endif %}
   </table>
   {% if pages > 1 %}
-  <div class="row" style="margin-top:12px">
+  <div class="row av-gap">
     {% if page > 1 %}<a href="?q={{ q|urlencode }}&page={{ page-1 }}">← {{ _("Previous") }}</a>{% endif %}
     <span class="muted">{{ _("Page %(page)s / %(pages)s", page=page, pages=pages) }}</span>
     {% if page < pages %}<a href="?q={{ q|urlencode }}&page={{ page+1 }}">{{ _("Next") }} →</a>{% endif %}

@@ -2,9 +2,9 @@
 
 import asyncio
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import or_, text
+from sqlalchemy import or_, select, text
 from sqlalchemy.orm.attributes import flag_modified
 from starlette.concurrency import run_in_threadpool
 
@@ -29,7 +29,7 @@ def encrypt_existing(sm) -> int:
                 "AND json_extract(options_json, '$.document_name') NOT LIKE 'enc1:%') ORDER BY id LIMIT :n"), {"n": BATCH})]
             if not ids:
                 break
-            for row in db.query(JobLog).filter(JobLog.id.in_(ids)):
+            for row in db.scalars(select(JobLog).where(JobLog.id.in_(ids))):
                 # the column types encrypt on write; flagging the values is what makes SQLAlchemy write them again
                 flag_modified(row, "title")
                 if row.options_json:
@@ -45,14 +45,14 @@ def encrypt_existing(sm) -> int:
 
 def purge(sm, days: int, now: datetime | None = None) -> int:
     """Erase the file names of the rows older than `days` days. The rows themselves stay."""
-    cutoff = (now or datetime.now(timezone.utc)) - timedelta(days=days)
+    cutoff = (now or datetime.now(UTC)) - timedelta(days=days)
     done = 0
     while True:
         with sm() as db:
-            rows = db.query(JobLog).filter(
+            rows = db.scalars(select(JobLog).where(
                 JobLog.ts < cutoff,
                 or_(JobLog.title.isnot(None), text("json_extract(options_json, '$.document_name') IS NOT NULL")),
-            ).order_by(JobLog.id).limit(BATCH).all()
+            ).order_by(JobLog.id).limit(BATCH)).all()
             if not rows:
                 break
             for row in rows:
@@ -70,7 +70,7 @@ def cutoff_for_archive(now: datetime | None = None) -> datetime | None:
     """Rows older than this lose their names when they are written to an archive file (None: retention is off)."""
     if not settings.job_title_retention_enabled:
         return None
-    return (now or datetime.now(timezone.utc)) - timedelta(days=max(settings.job_title_retention_days, 0))
+    return (now or datetime.now(UTC)) - timedelta(days=max(settings.job_title_retention_days, 0))
 
 
 async def run_titles(app) -> None:

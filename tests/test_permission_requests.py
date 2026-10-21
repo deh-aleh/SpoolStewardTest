@@ -2,7 +2,7 @@
 handing one out directly, revoking it, the notices, the end of a temporary one, and cleaning up."""
 
 import time
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -22,11 +22,11 @@ pytestmark = pytest.mark.usefixtures("english")
 
 GOOD = "correct horse battery"
 TZ = ZoneInfo("Europe/Rome")
-NOW = datetime(2026, 10, 7, 12, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 7, 12, 0, tzinfo=UTC)
 
 
 def aware(dt):
-    return dt if dt is None or dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+    return dt if dt is None or dt.tzinfo else dt.replace(tzinfo=UTC)
 
 
 @pytest.fixture
@@ -89,9 +89,9 @@ def test_a_printer_grant_changes_nothing_when_no_list_applies(org):
 def test_until_a_date_covers_the_whole_last_day_in_the_portal_time_zone(org):
     rid = ask(org.sm, org.ann)
     g = approve(org.sm, rid, org.boss, until=date(2026, 11, 30))
-    assert aware(g.valid_until) == datetime(2026, 11, 30, 23, 0, tzinfo=timezone.utc)      # 1 Dec 00:00 in Rome (CET)
-    assert perms_of(org.sm, org.ann, datetime(2026, 11, 30, 22, 59, tzinfo=timezone.utc)).color
-    assert not perms_of(org.sm, org.ann, datetime(2026, 11, 30, 23, 0, tzinfo=timezone.utc)).color
+    assert aware(g.valid_until) == datetime(2026, 11, 30, 23, 0, tzinfo=UTC)      # 1 Dec 00:00 in Rome (CET)
+    assert perms_of(org.sm, org.ann, datetime(2026, 11, 30, 22, 59, tzinfo=UTC)).color
+    assert not perms_of(org.sm, org.ann, datetime(2026, 11, 30, 23, 0, tzinfo=UTC)).color
     assert not perms_of(org.sm, org.ann, NOW - timedelta(days=1)).color                    # not yet started
 
 
@@ -283,7 +283,7 @@ async def test_round_trip_request_approve_until_a_date_and_the_notices(web):
     assert "printer color" in admin_html and "posters" in admin_html and 'name="until"' in admin_html
     with web.sm() as s:
         rid = s.scalars(select(QuotaRequest)).one().id
-    day = (datetime.now(timezone.utc) + timedelta(days=20)).astimezone(TZ).date()
+    day = (datetime.now(UTC) + timedelta(days=20)).astimezone(TZ).date()
     await web.admin.post(f"/admin/requests/{rid}/approve", data={"duration": "until", "until": day.isoformat(), "note": "ok",
                                                                  "csrf_token": web.boss_token})
     with web.sm() as s:
@@ -378,7 +378,7 @@ async def test_direct_grant_form_permission_and_quota_revoke_and_notices(web):
     assert notices_of(web.sm, web.ann, "grant_revoked") == [{"what": "permission", "perm": "color", "printer": None}]
     assert "withdrew the permission you had been given: colour printing" in (await web.get("/me/notices")).text
     with web.sm() as s:
-        assert not permissions.effective(s, s.get(User, web.ann), datetime.now(timezone.utc)).color
+        assert not permissions.effective(s, s.get(User, web.ann), datetime.now(UTC)).color
     await web.admin.post(f"/admin/permission-grants/{g.id}/revoke", data={"csrf_token": web.boss_token})   # again: harmless
     assert len(notices_of(web.sm, web.ann, "grant_revoked")) == 1
 
@@ -400,7 +400,7 @@ async def test_direct_grant_form_refuses_bad_values_and_an_admin_is_not_notified
 
 
 async def test_ended_permission_grants_show_in_the_history_and_the_purge_button_covers_them(web):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     with web.sm() as s:
         s.add_all([PermissionGrant(user_id=web.ann, perm="color", valid_from=now - timedelta(days=9), valid_until=now - timedelta(days=1)),
                    PermissionGrant(user_id=web.ann, perm="one_sided", valid_from=now)])
@@ -425,7 +425,7 @@ def test_a_permission_request_can_be_stored_after_the_migrations(tmp_path):
         s.add(User(provider="local", username="u"))
         s.commit()
         uid = s.scalars(select(User)).one().id
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         req = QuotaRequest(user_id=uid, kind=RequestKind.permission, params_json={"perm": "color", "printer": None}, reason="r",
                            status=RequestStatus.pending, created_at=now, expires_at=now + timedelta(days=3))
         s.add(req)
@@ -446,7 +446,7 @@ async def test_a_permission_already_asked_for_is_not_offered_again(portal):
         perm_mod.set_rule(s, SubjectType.user, uid, color=False, one_sided=False)
         s.commit()
         from app.db.models import User
-        grants_mod.create_permission_request(s, s.get(User, uid), "color", None, "posters", datetime.now(timezone.utc))
+        grants_mod.create_permission_request(s, s.get(User, uid), "color", None, "posters", datetime.now(UTC))
     await portal_login(portal, "ann", "correct horse battery")
     me = (await portal.get("/me")).text
     assert "request waiting" in me and "/me/request/permission?perm=color" not in me
@@ -476,7 +476,7 @@ async def test_a_permission_the_user_already_has_can_not_be_granted_and_the_form
 def test_deleting_a_user_removes_their_permissions_and_grants(web):
     from app.auth.users import delete_user
     from app.db.models import PermissionRule
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     with web.sm() as s:
         permissions.set_rule(s, SubjectType.user, web.ann, color=False)
         s.add_all([PermissionGrant(user_id=web.ann, perm="color", valid_from=now),
@@ -490,7 +490,7 @@ def test_deleting_a_user_removes_their_permissions_and_grants(web):
 
 
 def test_renaming_a_printer_moves_the_grants_and_the_waiting_requests_for_it(web):
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     with web.sm() as s:
         s.add(PermissionGrant(user_id=web.ann, perm="printer", printer="color", valid_from=now))
         s.add(QuotaRequest(user_id=web.ann, kind=RequestKind.permission, params_json={"perm": "printer", "printer": "color"},

@@ -12,10 +12,10 @@ device conflict; TWAIN Direct is hardly supported.
 Scanners are not configured one by one; they are **found at run time**:
 
 - every network CUPS queue (ipp-usb gives each USB printer its own port) is asked for its eSCL capabilities;
-- plus the addresses listed in `CUPSPL_SCAN_URL` (`name=url`, comma separated; the image presets `http://ipp-usb:60000`;
-  empty = automatic discovery only).
+- plus the addresses listed in `SPOOLSTEWARD_SCAN_URL` (`name=url`, comma separated; the image presets `http://ipp-usb:60000`;
+  `none` = automatic discovery only).
 
-Scanners answer eSCL on the queue's IPP port or on port 80; other cases go in `CUPSPL_SCAN_URL`. A disconnected scanner
+Scanners answer eSCL on the queue's IPP port or on port 80; other cases go in `SPOOLSTEWARD_SCAN_URL`. A disconnected scanner
 disappears within ~30 s. The `mdns` service announces each scanner as `_uscans._tcp` (`rs` = `eSCL` for the default one,
 `eSCL-<id>` for the others).
 
@@ -45,24 +45,26 @@ everything else needs HTTP Basic with **user name + print key**, same authentica
   (1 page per `NextDocument`), `failed` (scanner busy or not answering), `canceled` (only if canceled before delivering the page).
 - A user can neither read nor cancel another user's scan (404). `Location` is rewritten to the gateway address.
 - The eSCL job stays tied to the user until the client deletes it with DELETE — that is what frees the scanner.
-- **Clients with no credentials** (NAPS2 can not send them): `CUPSPL_ESCL_ANONYMOUS=true` accepts scans without login, recorded
-  as the passwordless local account `ospite-scansione` (it can not log in to the portal), with the caller's IP in the audit
+- **Clients with no credentials** (NAPS2 can not send them): `SPOOLSTEWARD_ESCL_ANONYMOUS=true` accepts scans without login, recorded
+  as the passwordless local account `unknown-guest` (it can not log in to the portal; the name is `SPOOLSTEWARD_ESCL_GUEST_USERNAME`), with the caller's IP in the audit
   options. Wrong credentials are still 401. While the option is off, a request without credentials is refused (401) and shows up as a notice in the bell ([admin-guide.md](admin-guide.md)), at most once per interval and source. **Default off**; anyone on the network who reaches port 8631 could scan: use only on a trusted
   network. NAPS2 did not find the mDNS announcement: type IP and port by hand.
-- **Scan window** (`CUPSPL_ESCL_WINDOW`, on by default; a last resort, see its limits below): a button at the top right of *Scan* (a scanner with a clock) tells the
-  gateway "my scan app is about to scan". The gateway notes the address it sees for that connection and, for
-  `CUPSPL_ESCL_WINDOW_SECONDS` (60–900, default 180), accepts requests **without credentials from that address only**, as
-  the person who pressed the button: their quota and permissions apply and the audit shows their name and the address. Any
-  number of scans can be made while the window is open. The window only decides whether a **new** scan may start: a scan that
-  has begun is delivered, and can be closed with DELETE, even if the window ends or is closed meanwhile (the job stays tied to
-  the address that started it). Nothing runs in the background; an expired window is just a time that has passed. Windows live
-  in memory, so a restart closes them. A person has one window; if two people press from the same address, the last press wins.
-  With `CUPSPL_ESCL_ANONYMOUS=true` the window changes only who gets the scan: the person, instead of `ospite-scansione`. With
-  `CUPSPL_ESCL_WINDOW=false` the button, the script and the texts are not in the page at all.
-  When a request without credentials comes from another address while a window is open, it is refused (401). The audit gets a
-  *denied* row for the window's owner with both addresses (the information icon shows them) and their bell says "scan refused:
-  the window was for X, the request comes from Y". The same pair is recorded at most once a minute, so a program that keeps
-  retrying does not fill the audit.
+### Scan window
+
+**Scan window** (`SPOOLSTEWARD_ESCL_WINDOW`, on by default; a last resort, see its limits below): a button at the top right of *Scan* (a scanner with a clock) tells the
+gateway "my scan app is about to scan". The gateway notes the address it sees for that connection and, for
+`SPOOLSTEWARD_ESCL_WINDOW_SECONDS` (60–900, default 180), accepts requests **without credentials from that address only**, as
+the person who pressed the button: their quota and permissions apply and the audit shows their name and the address. Any
+number of scans can be made while the window is open. The window only decides whether a **new** scan may start: a scan that
+has begun is delivered, and can be closed with DELETE, even if the window ends or is closed meanwhile (the job stays tied to
+the address that started it). Windows live
+in memory, so a restart closes them. A person has one window; if two people press from the same address, the last press wins.
+With `SPOOLSTEWARD_ESCL_ANONYMOUS=true` the window changes only who gets the scan: the person, instead of `unknown-guest`. With
+`SPOOLSTEWARD_ESCL_WINDOW=false` the button, the script and the texts are not in the page at all.
+When a request without credentials comes from another address while a window is open, it is refused (401). The audit gets a
+*denied* row for the window's owner with both addresses (the information icon shows them) and their bell says "scan refused:
+the window was for X, the request comes from Y". The same pair is recorded at most once a minute, so a program that keeps
+retrying does not fill the audit.
 
 ### Limits of the scan window
 
@@ -81,7 +83,7 @@ in the audit. It rests on one weak thing: the address of the TCP connection. Eve
   address, not your computer's, and the window is opened for the proxy's address. The scan app normally connects straight to
   port 8631 with its own address, so the two never match and the scan is refused. The reverse case is worse: if the scan app also
   goes through the proxy, every device that reaches the server through the proxy has the same address, so during the window
-  *any of them* can scan. The server believes `X-Forwarded-For` only from `127.0.0.1`, so a proxy on another machine does not help.
+  *any of them* can scan. The server believes `X-Forwarded-For` only from `127.0.0.1` and from the addresses in `FORWARDED_ALLOW_IPS` ([installation.md](installation.md)), so a proxy on another machine does not help unless it is listed there.
   What works: press the button from a page opened **directly** on the gateway (`https://<server>:8631/me/scan`, not through the
   proxy). The box warns you when the request carried proxy headers.
 - **A different device**: the button must be pressed from the computer that runs the scan app. Pressing it on a phone opens the
@@ -89,7 +91,7 @@ in the audit. It rests on one weak thing: the address of the TCP connection. Eve
 - **Changing address**: DHCP or Wi-Fi roaming during the window ends the match.
 
 If the address in the box is not the one of the device that scans, the window can not work on that network: use
-`CUPSPL_ESCL_ANONYMOUS=true` on a trusted network, or a scan app that sends the user name and the print key. The user guide has
+`SPOOLSTEWARD_ESCL_ANONYMOUS=true` on a trusted network, or a scan app that sends the user name and the print key. The user guide has
 the same limits in short form for the people who press the button.
 
 ## 4. Notes

@@ -33,23 +33,23 @@ If you want names to disappear after a while, turn on retention in `.env` (then 
 
 | Setting | What | Default |
 |---|---|---|
-| `CUPSPL_JOB_TITLE_RETENTION_ENABLED` | `true` turns on the erasing of old names | `false`: **no retention**, names stay |
-| `CUPSPL_JOB_TITLE_RETENTION_DAYS` | After how many days the name is erased | `90` |
+| `SPOOLSTEWARD_JOB_TITLE_RETENTION_ENABLED` | `true` turns on the erasing of old names | `false`: **no retention**, names stay |
+| `SPOOLSTEWARD_JOB_TITLE_RETENTION_DAYS` | After how many days the name is erased | `90` |
 
 Once a day the gateway erases the name from the rows older than the chosen number of days. **The row stays** (who, when, pages, state): quotas and counters need it.
 
-**What is not touched.** The audit archive files already written are immutable (so it can be proved they were not changed) and we leave them as they were: the names they
+**What is not touched.** The audit archive files already written are immutable (so it can be proved they were not changed) and are left as they were: the names they
 contain stay, encrypted. From the moment you turn retention on, the new archive files no longer contain the names of rows past the limit.
 
-## 4. The key: do not change `CUPSPL_SECRET_KEY`
+## 4. The key: do not change `SPOOLSTEWARD_SECRET_KEY`
 
-Names are encrypted with a key derived from `CUPSPL_SECRET_KEY` (in `.env`, created by `scripts/docker-init.sh`).
+Names are encrypted with a key derived from `SPOOLSTEWARD_SECRET_KEY` (in `.env`, created by `scripts/docker-init.sh`).
 
-> **If you change or lose `CUPSPL_SECRET_KEY`, the names already saved can no longer be read**: the portal shows `[encrypted]` in their place. Everything else keeps working
+> **If you change or lose `SPOOLSTEWARD_SECRET_KEY`, the names already saved can no longer be read**: the portal shows `[encrypted]` in their place. Everything else keeps working
 > (sessions are reset and everybody logs in again). Putting the old key back makes the names readable again.
 
 - **Encrypted** backups include `.env`, so the key too; unencrypted ones do not (and without the key the names they contain cannot be read: that is intended).
-- If the key is empty the gateway encrypts nothing (and warns in the log and in the bell), because a different key at every start would make names unreadable after the next restart.
+- If the key is `none` the gateway encrypts nothing (and warns in the log and in the bell), because a different key at every start would make names unreadable after the next restart.
 - **Keep a copy of the key outside the server** (a password manager): after the first start the first-run administrator finds a reminder in the bell, once. If the gateway starts with a key that is not the one of the previous start, it says so in the bell with the number of names that can no longer be read ([backup.md](backup.md#save-the-secret-key)).
 - If you had names in clear before, at the first start with the key the gateway encrypts them by itself, in chunks, without stopping.
 
@@ -58,7 +58,7 @@ Names are encrypted with a key derived from `CUPSPL_SECRET_KEY` (in `.env`, crea
 ## 5. Encrypting the disk (the main measure)
 
 Encrypting the file names protects a database that is copied alone. To protect **everything** (users, groups, audit, keys, certificate) the right way is to encrypt the server's disk:
-if someone takes the computer away, without the unlock password they see only meaningless data. The operating system does it, not PrintMinder (inside a container it cannot).
+if someone takes the computer away, without the unlock password they see only meaningless data. The operating system does it, not SpoolSteward (inside a container it cannot).
 
 **The simplest way: encrypt the whole disk when you install Linux.** The Ubuntu and Debian installers have a box *"Encrypt the new installation"* (it uses LUKS, the Linux standard).
 You choose a password. Remember that at every power-on the server asks for it: a server with no keyboard or screen needs a way to enter it.
@@ -68,9 +68,9 @@ disk you name. There are three places to put on the encrypted disk:
 
 | What | Where it is | Why |
 |---|---|---|
-| The database | in the Docker volume `gateway-data`, inside Docker's data folder (usually `/var/lib/docker`) | it holds users, groups, quotas, audit |
-| `data/` | in the PrintMinder folder | audit archive and backups |
-| `config/` and `.env` | in the PrintMinder folder | TLS key and secrets |
+| The database | in the Docker volume `portal-data`, inside Docker's data folder (usually `/var/lib/docker`) | it holds users, groups, quotas, audit |
+| `data/` | in the SpoolSteward folder | audit archive and backups |
+| `config/` and `.env` | in the SpoolSteward folder | TLS key and secrets |
 
 Moving Docker's data folder to the encrypted disk (`data-root` in `/etc/docker/daemon.json`) and making Docker start only after unlocking takes some Linux practice:
 if you have never done it, prefer reinstalling with an encrypted disk.
@@ -79,14 +79,14 @@ if you have never done it, prefer reinstalling with an encrypted disk.
 
 ## 6. One last thing: the CUPS history
 
-Besides PrintMinder's audit, **CUPS** (the printing program behind it) keeps the history of the latest jobs (up to 2,000, setting `MaxJobs`),
-with the document name, in the Docker volume `printgw_cups-spool`. It does not keep the content of documents (`PreserveJobFiles No`), but it keeps the names.
+Besides SpoolSteward's audit, **CUPS** (the printing program behind it) keeps the history of the latest jobs (up to 2,000, setting `MaxJobs`),
+with the document name, in the Docker volume `spoolsteward_cups-spool`. It does not keep the content of documents (`PreserveJobFiles No`), but it keeps the names.
 The button and the retention of this page do **not** touch that history: the oldest names disappear by themselves when jobs go over the limit. If you need to
 erase them right away, stop the stack, delete that volume and start again:
 
 ```sh
 docker compose down
-docker volume rm printgw_cups-spool
+docker volume rm spoolsteward_cups-spool
 docker compose up -d
 ```
 

@@ -3,11 +3,7 @@
 [Documentation index](../README.md) · English · [Italiano](../it/funzionamento-applicazione.md)
 
 A guided tour of the repository: what every source file is for, how configuration works (`.env`,
-`CUPSPL_*`), and what the scripts and container files do. For the big picture read [architecture.md](architecture.md) first.
-
-> **Naming.** The product is called **PrintMinder**. Some technical names predate it and are kept on purpose so that
-> existing installations keep working: the Python package `app`, the variables `CUPSPL_*`, the command
-> `cups-policy-admin`, the compose project `printgw`, the service `cups-policy-gateway`. They are not typos.
+`SPOOLSTEWARD_*`), and what the scripts and container files do. For the big picture read [architecture.md](architecture.md) first.
 
 ## 1. Repository layout
 
@@ -37,48 +33,48 @@ With docker there is **one single** settings file, `.env`. (For the host install
 
 | File | Read by | Contains | Created by |
 |---|---|---|---|
-| **`.env`** (project folder) | **docker compose** (to build `docker-compose.yml`) **and** the **gateway** and **mdns** containers (`env_file: .env`) | part A: `PUID`, `PGID`, `GATEWAY_PORT`, `CUPS_QUEUES`, `CUPS_VIRTUAL_QUEUE`, `AUDIT_ARCHIVE_HOST_PATH`, `BACKUP_HOST_PATH`, `BACKUP_DIR`, `PRINTGW_REGISTRY`, `PRINTGW_VERSION`. Part B: every `CUPSPL_*` setting, including secrets. Plus the `CERT_SYNC_*` options of `scripts/cert-sync.sh` | `scripts/docker-init.sh` (from `docker/env.example`), mode 600 |
-| **`deploy/env.example`** → `/etc/cups-policy-gateway/env` | systemd unit of the **host install** | same `CUPSPL_*` settings, for installs without docker | `deploy/install.sh` |
+| **`.env`** (project folder) | **docker compose** (to build `docker-compose.yml`) **and** the **gateway** and **mdns** containers (`env_file: .env`) | part A: `PUID`, `PGID`, `PORTAL_PORT`, `CUPS_QUEUES`, `CUPS_VIRTUAL_QUEUE`, `AUDIT_ARCHIVE_HOST_PATH`, `BACKUP_HOST_PATH`, `BACKUP_DIR`, `SPOOLSTEWARD_REGISTRY`, `SPOOLSTEWARD_VERSION`. Part B: every `SPOOLSTEWARD_*` setting, including secrets. Plus the `CERT_SYNC_*` options of `scripts/cert-sync.sh` | `scripts/docker-init.sh` (from `docker/env.example`), mode 600 |
+| **`deploy/env.example`** → `/etc/spoolsteward/env` | systemd unit of the **host install** | same `SPOOLSTEWARD_*` settings, for installs without docker | `deploy/install.sh` |
 
 The application itself ([`app/config.py`](../../app/config.py)) reads **only real environment variables** with the prefix
-`CUPSPL_` (it does not read a `.env` file: that one belongs to compose). Every setting has a safe default; an empty value
-means "not set". After editing `.env` run `docker compose up -d` (recreates the containers that use it). **`docker-compose.yml` is never edited**: everything the user may change is in `.env`, so an update can replace the compose file without erasing anyone's choices. The extra variables passed to the containers (like `PUID`) are ignored by the application.
+`SPOOLSTEWARD_` (it does not read a `.env` file: that one belongs to compose). Every setting has a safe default; an empty value
+is an error (write `none` where a setting may be left unset). After editing `.env` run `docker compose up -d` (recreates the containers that use it). **`docker-compose.yml` is never edited**: everything the user may change is in `.env`, so an update can replace the compose file without erasing anyone's choices. The extra variables passed to the containers (like `PUID`) are ignored by the application.
 
 ### 2.1 Part A of `.env` (docker compose variables)
 
 | Variable | Default | Meaning |
 |---|---|---|
 | `PUID`, `PGID` | your user | Unix user that runs the gateway; owns the TLS key and `data/` folders |
-| `GATEWAY_PORT` | `8631` | Port published on the host (use `631` if nothing else uses it) |
-| `CUPS_QUEUES` | empty | Queues created in CUPS at start: `NAME=URI NAME2=URI2` |
+| `PORTAL_PORT` | `8631` | Port published on the host (use `631` if nothing else uses it) |
+| `CUPS_QUEUES` | `none` | Queues created in CUPS at start: `NAME=URI NAME2=URI2` |
 | `CUPS_VIRTUAL_QUEUE` | `0` | `1` creates a queue `virtual` that writes PDFs (try quotas without paper) |
 | `AUDIT_ARCHIVE_HOST_PATH`, `BACKUP_HOST_PATH` | set by init | Only displayed in the portal, to tell where files are on the host |
 | `BACKUP_DIR` | `./data/backups` | Host folder mounted at `/backups`: the only place backups may be written |
-| `PRINTGW_REGISTRY`, `PRINTGW_VERSION` | set by init | Download published images instead of building; the version that runs (changed by `scripts/update.sh`) |
+| `SPOOLSTEWARD_REGISTRY`, `SPOOLSTEWARD_VERSION` | set by init | Download published images instead of building; the version that runs (changed by `scripts/update.sh`) |
 | `PROJECT_DIR` | set by init | Full path of the project folder; only the optional `updater` container uses it |
 | `COMPOSE_PROFILES` | unset | `autoupdate` starts the optional `updater` container |
 
 The file is made from `docker/env.example` (by `scripts/docker-init.sh`, in plain shell: it fills in version, user, folder and generates the secret). An update **never touches `.env`**: new options work with their default value (the one in `app/config.py`) even when missing, and `docker/env.example` (replaced by every update) lists them with their explanation. A test checks that every active value of `docker/env.example` equals the default in `app/config.py`.
 
-### 2.2 Part B of `.env` (`CUPSPL_*` settings)
+### 2.2 Part B of `.env` (`SPOOLSTEWARD_*` settings)
 
 The full reference, one variable at a time with what it does and when to change it, is [configuration.md](configuration.md). The commented reference is part B of [`docker/env.example`](../../docker/env.example) (plain English comments) and the
 authoritative list is `app/config.py`. Summary:
 
 | Group | Variables |
 |---|---|
-| **Secret** | `CUPSPL_SECRET_KEY` — signs session cookies and authenticates gateway→mdns. Also the key that encrypts the file names in the audit. Unset = random at each start (sessions lost on restart, mdns channel unprotected) and file names stored without encryption. **Changing or losing it makes the file names already saved unreadable** (`[encrypted]`) and logs everybody out; an unencrypted backup does not contain it. The gateway warns in the bell (see `secretcheck.py`). |
-| **RADIUS** (optional) | `RADIUS_HOST`, `RADIUS_PORT` (1812), `RADIUS_SECRET`, `RADIUS_TIMEOUT` (5), `AUTH_CACHE_SECONDS` (60). Both host and secret empty = local accounts only; only one filled = refuses to start. |
+| **Secret** | `SPOOLSTEWARD_SECRET_KEY` — signs session cookies and authenticates gateway→mdns. Also the key that encrypts the file names in the audit. Unset = random at each start (sessions lost on restart, mdns channel unprotected) and file names stored without encryption. **Changing or losing it makes the file names already saved unreadable** (`[encrypted]`) and logs everybody out; an unencrypted backup does not contain it. The gateway warns in the bell (see `secretcheck.py`). |
+| **RADIUS** (optional) | `RADIUS_HOST`, `RADIUS_PORT` (1812), `RADIUS_SECRET`, `RADIUS_TIMEOUT` (5), `AUTH_CACHE_SECONDS` (60). Both host and secret `none` = local accounts only; only one filled = refuses to start. |
 | **Print authentication** | `IPP_AUTH` (`keys` \| `keys+radius`), `KEY_TTL_DAYS_RADIUS` (90, longest), `KEY_TTL_DAYS_LOCAL` (730, longest), `KEY_ONCE_HOURS` (24), `KEY_ONCE_GRACE_SECONDS` (120), `KEY_HISTORY_DAYS` (14), `KEY_EXPIRY_WARN_ENABLED` (false), `KEY_EXPIRY_WARN_DAYS` (7), `AUTO_CREATE_USERS` (true), `DEFAULT_GROUP` (default), `CUPS_USER_PREFIX` (`gw:`), `ANONYMOUS_DISCOVERY` (true) |
-| **First run** | `BOOTSTRAP_ADMIN` (true), `BOOTSTRAP_ADMIN_USERNAME` (`cups_orchestrator`) |
+| **First run** | `BOOTSTRAP_ADMIN` (true), `BOOTSTRAP_ADMIN_USERNAME` (`administrator`) |
 | **Requests** | `MAX_OPEN_REQUESTS` (3), `REQUEST_TTL_DAYS` (14), `REQUEST_REASON_REQUIRED` (false) |
 | **Audit** | `AUDIT_MAX_MB` (50), `AUDIT_ARCHIVE_DIR` (`/data/audit-archive`), `AUDIT_CHECK_INTERVAL` (3600) |
-| **Backup** (general) | `BACKUP_ENABLED` (false), `BACKUP_DIR` (`general`), `BACKUP_HOUR` (3), `BACKUP_KEEP_DAILY/WEEKLY/MONTHLY` (7/4/12), `BACKUP_RECIPIENT` (recovery key; empty = unencrypted, no secrets in the file), `BACKUP_ROOT` (`/backups`), `BACKUP_CONFIG_DIR` (`/config`) |
-| **Printers page** | `PRINTERS_REFRESH_SECONDS` (15; 0 or invalid = 15; 5–3600) |
+| **Backup** (general) | `BACKUP_ENABLED` (false), `BACKUP_DIR` (`general`), `BACKUP_HOUR` (3), `BACKUP_KEEP_DAILY/WEEKLY/MONTHLY` (7/4/12), `BACKUP_RECIPIENT` (recovery key; `none` = unencrypted, no secrets in the file), `BACKUP_ROOT` (`/backups`), `BACKUP_CONFIG_DIR` (`/config`) |
+| **Printers page** | `PRINTERS_REFRESH_SECONDS` (15; from 5 to 3600) |
 | **USB printers** | `AUTO_DISCOVER` (true), `DISCOVERY_INTERVAL` (30), `USB_BRIDGE_HOST` (`ipp-usb`), `USB_BRIDGE_PORTS` (`60000-60099`), `USB_DIRECT` (true), `OFFLINE_REMOVE_HOURS` (8; 0 = never) |
 | **Printing / scanning** | `WEB_UPLOAD_MB` (25), `WEB_MAX_COPIES` (20), `MAX_REQUEST_MB` (200), `RECONCILE_INTERVAL` (30), `SCAN_URL`, `SCAN_TIMEOUT` (180), `ESCL_ANONYMOUS` (false), `ESCL_WINDOW` (true), `ESCL_WINDOW_SECONDS` (180) |
 | **Network / mDNS** | `PORTAL_URL`, `MDNS_HOSTNAME`, `MDNS_ADDRESSES`, `MDNS_PORT`, `MDNS_INTERVAL` (30), `PUBLIC_SCHEME` |
-| **Misc** | `TIMEZONE` (UTC), `LANGUAGE` (en), `LOG_LEVEL` (INFO), `NOTICE_INTERVAL` (0 = by log level), `HEALTHZ_INFO` (empty = status only), `UPDATE_CHECK` (true) |
+| **Misc** | `TIMEZONE` (UTC), `LANGUAGE` (en), `LOG_LEVEL` (INFO), `NOTICE_INTERVAL` (0 = by log level), `HEALTHZ_INFO` (`none` = status only), `UPDATE_CHECK` (true) |
 | **Set by the image/compose, do not set** | `TLS_CERTFILE`, `TLS_KEYFILE`, `DATABASE_URL`, `CUPS_URL`, `ALLOW_INSECURE_AUTH` (never in production), `HOST`, `PORT` |
 
 ## 3. The Python package, file by file
@@ -87,10 +83,10 @@ authoritative list is `app/config.py`. Summary:
 
 | File | Role |
 |---|---|
-| `app/__main__.py` | The `cups-policy-gateway` command: refuses to start without TLS, with half-configured RADIUS or with an unusable `CUPSPL_ESCL_WINDOW_SECONDS`, then runs uvicorn. |
+| `app/__main__.py` | The `spoolsteward` command: refuses to start without TLS, with half-configured RADIUS or with an unusable `SPOOLSTEWARD_ESCL_WINDOW_SECONDS`, then runs uvicorn. |
 | `app/main.py` | Builds the FastAPI app: HTTP client towards CUPS (unix socket), database, auth providers, middleware (sessions, language), routers, `/healthz`, and starts the background tasks. |
-| `app/cli.py` | The `cups-policy-admin` command: `set-admin-password`, `group-limit`, `user-limit`, `set-group`, `make-admin`, `jobs`, `audit-archive`, `backup-key`, `backup-run`, `backup-verify`, `backup-restore`. |
-| `app/config.py` | `Settings` (pydantic-settings): every `CUPSPL_*` variable with its default and validation. |
+| `app/cli.py` | The `spoolsteward-admin` command: `set-admin-password`, `group-limit`, `user-limit`, `set-group`, `make-admin`, `jobs`, `audit-archive`, `backup-key`, `backup-run`, `backup-verify`, `backup-restore`. |
+| `app/config.py` | `Settings` (pydantic-settings): every `SPOOLSTEWARD_*` variable with its default and validation. |
 | `app/cups_client.py` | The gateway's own conversation with CUPS: lists queues (state, colour, media, online/offline, virtual flag) in the display order; `queue_caps()` asks one queue whether it has colour and a duplex unit (cached 60 s) for the permission checks. |
 | `app/mdns.py` | Separate process (`python -m app.mdns`): announces queues as `_ipps._tcp` (+ AirPrint subtype) and scanners as `_uscans._tcp`. |
 | `app/escl_window.py` | The scan window: which address may scan without credentials, for whom and for how long (in memory). |
@@ -112,7 +108,7 @@ authoritative list is `app/config.py`. Summary:
 | `service.py` | Decides who may log in where: `portal_login` (any enabled user; the row decides local vs. delegated) and `print_login` (a print key; RADIUS password only in `keys+radius`). |
 | `users.py` | Find/create users, default group, `is_emergency()`, deletion (history kept). |
 | `groups.py` | The two system groups `default` and `administrator`. |
-| `bootstrap.py` | Creates `cups_orchestrator` without a password and prints the one-time `FIRST RUN` code. |
+| `bootstrap.py` | Creates `administrator` without a password and prints the one-time `FIRST RUN` code. |
 | `passwords.py` | argon2id hashing and the password rules (min. 12 characters, not equal to the user name). |
 | `keys.py` | Print keys: creation with a chosen or single-use life, sha256 hash, states, verification, switching off, extending, tidying. |
 | `radius.py` | RADIUS provider (pyrad). `base.py`: the provider interface. `cache.py`: short cache of successful logins. |
@@ -140,12 +136,12 @@ authoritative list is `app/config.py`. Summary:
 
 | File | Role (URL prefix) |
 |---|---|
-| `static/` | The icon: `icon.svg` (browser tab: ink tile with a light ring, readable on any tab colour), `icon-dark.svg` / `icon-light.svg` (ink tile for light backgrounds, paper tile for dark ones; the portal header picks one by theme), `favicon.ico`, `apple-touch-icon.png`, `icon-512.png`. Served without login at `/admin/static/`; `/favicon.ico` redirects there. |
+| `static/` | The styles and scripts of the pages (`css/app.css` and `js/app.js` for every page, `css/<page>.css` and `js/<page>.js` for one page; the templates contain no inline CSS or JavaScript) and the icon: `icon.svg` (browser tab: ink tile with a light ring, readable on any tab colour), `icon-dark.svg` / `icon-light.svg` (ink tile for light backgrounds, paper tile for dark ones; the portal header picks one by theme), `favicon.ico`, `apple-touch-icon.png`, `icon-512.png`. Served without login at `/admin/static/`; `/favicon.ico` redirects there. |
 | `routes.py` | Login/logout, first-run setup, audit list and CSV export, job cancel (`/admin/…`). |
 | `accounts.py` | Users, groups, limits, advanced permissions (the form block and its checks), user keys, admin-action log (`/admin/users`, `/groups`, `/actions`). |
 | `requests.py` | One page for requests and grants: pending requests, approval/rejection, active grants, direct grants, history, deleting ended grants (`/admin/requests`). |
 | `reports.py` | Usage report: top users in a period, page / CSV / PDF (`/admin/report`). |
-| `docs.py` | The documentation in the portal: shows the Markdown files of `docs/` as pages (`/docs`), in English or Italian. Administrators see every page; other users only `USER_PAGES` (user guide and Windows guide), anything else is a 404 for them. Only names found in the folder are served; raw HTML in the files is shown as text; links between pages are rewritten, links to source files go to GitHub at the tag of the running version. The folder is `/opt/printminder/docs` in the image, `$PREFIX/docs` in the host install, `docs/` in a source tree. |
+| `docs.py` | The documentation in the portal: shows the Markdown files of `docs/` as pages (`/docs`), in English or Italian. Administrators see every page; other users only `USER_PAGES` (user guide and Windows guide), anything else is a 404 for them. Only names found in the folder are served; raw HTML in the files is shown as text; links between pages are rewritten, links to source files go to GitHub at the tag of the running version. The folder is `/opt/spoolsteward/docs` in the image, `$PREFIX/docs` in the host install, `docs/` in a source tree. |
 | `printers.py` | Printers overview, counters, test printers, keep-alive and test print (`/admin/printers`). |
 | `controls.py` | Maintenance mode, block / hide a printer, `/mdns/policy` feed for the announcer. |
 | `backups.py` | Backup targets (`/admin/backups`). |
@@ -153,6 +149,7 @@ authoritative list is `app/config.py`. Summary:
 | `audit_view.py` | How one audit row is displayed (clipped text, device, print specs). |
 | `me.py` | User area: consumption, keys, password, settings (theme, language, refresh), requests (`/me`). |
 | `printing.py` | Print from the browser (`/me/print`): checks, quota, options, landscape handling, permissions (same `decide()` as the gateway), Print-Job to CUPS. |
+| `../secheaders.py` (in `app/`) | The Content-Security-Policy added to every HTML page (`SPOOLSTEWARD_CONTENT_SECURITY_POLICY`). It forbids inline scripts and styles: pages must keep their CSS and JavaScript in `static/`. |
 | `common.py` | Shared pieces: templates, session and CSRF dependencies, flash messages, redirects, helpers. |
 | `templates/*.html` | Jinja pages: `base.html` (layout, menu, theme), `macros.html`, one template per page (`docs.html` shows the documentation). |
 
@@ -166,15 +163,15 @@ authoritative list is `app/config.py`. Summary:
 | `app/backup/crypto.py` | Recovery-key encryption (X25519 + HKDF + AES-256-GCM; private key wrapped by scrypt of the passphrase). |
 | `app/backup/service.py` | `backup_target` bookkeeping and the 60 s scheduler. |
 | `app/db/models.py` | All SQLAlchemy models. `session.py`: engine and sessions (SQLite WAL). `migrate.py`: runs Alembic from inside the app. |
-| `app/notices.py`, `app/admin/notices.py` | The bell: notices for administrators with a limit on how often the same one is reported (interval by `CUPSPL_LOG_LEVEL`), and notices for one user; table `notice`. For users: `notify_user_counted` renews the open notice of the same kind and subject (counter, time) instead of adding rows; `SECONDARY_KINDS` (today `job_adjusted`, the forced prints) are marked read by `read_secondary` after `user.secondary_read_minutes` (default 20, 0 = never; `/me/settings`), run on every page render. |
-| `app/secretcheck.py` | At every start: notice when `CUPSPL_SECRET_KEY` is missing or has changed (with how many file names it locked), and the one-time reminder to save it. What was already said is kept in `gateway_setting`, never the key itself. |
+| `app/notices.py`, `app/admin/notices.py` | The bell: notices for administrators with a limit on how often the same one is reported (interval by `SPOOLSTEWARD_LOG_LEVEL`), and notices for one user; table `notice`. For users: `notify_user_counted` renews the open notice of the same kind and subject (counter, time) instead of adding rows; `SECONDARY_KINDS` (today `job_adjusted`, the forced prints) are marked read by `read_secondary` after `user.secondary_read_minutes` (default 20, 0 = never; `/me/settings`), run on every page render. |
+| `app/secretcheck.py` | At every start: notice when `SPOOLSTEWARD_SECRET_KEY` is missing or has changed (with how many file names it locked), and the one-time reminder to save it. What was already said is kept in `gateway_setting`, never the key itself. |
 | `app/printerwatch.py` | Every minute: paper jam, paper out, ink out/low on the physical printers, as notices for administrators and for the users waiting. |
 | `app/keywatch.py` | Every hour: forgets old print keys, if turned on warns of keys about to expire, and tells people whose temporary permission ended. |
 | `app/updates.py`, `app/admin/updates.py` | Daily check for a newer release (note for administrators) and the portal button that hands an update to the `updater` container through files in `/data/update` (the gateway never touches Docker). |
-| `app/crypto_fields.py` | SQLAlchemy column types that encrypt the file names (AES-GCM, key derived from `CUPSPL_SECRET_KEY`); an unreadable value shows as `[encrypted]`. |
-| `app/titles.py` | Background task: encrypts names written before the key existed and, if enabled, erases names older than `CUPSPL_JOB_TITLE_RETENTION_DAYS`. |
+| `app/crypto_fields.py` | SQLAlchemy column types that encrypt the file names (AES-GCM, key derived from `SPOOLSTEWARD_SECRET_KEY`); an unreadable value shows as `[encrypted]`. |
+| `app/titles.py` | Background task: encrypts names written before the key existed and, if enabled, erases names older than `SPOOLSTEWARD_JOB_TITLE_RETENTION_DAYS`. |
 | `app/certwatch.py` | Reads the TLS certificate and `sync-status.json`; opens and closes the certificate notices ([certificates.md](certificates.md)). |
-| `app/logsetup.py` | Log format: time zone of `CUPSPL_TIMEZONE` with the UTC offset, level from `CUPSPL_LOG_LEVEL`. |
+| `app/logsetup.py` | Log format: time zone of `SPOOLSTEWARD_TIMEZONE` with the UTC offset, level from `SPOOLSTEWARD_LOG_LEVEL`. |
 | `app/migrations/` | `env.py` and the revisions `0001`…`0017` (schema history; `0015` adds `permission_rule` and `printer_former`, `0016` adds `permission_grant`, `0017` adds `user.secondary_read_minutes`). From `0014` on a migration may only add (expand/contract; a test checks it), so a rolled-back older version still starts on a newer database. |
 | `app/locales/` | `messages.pot` (template) and `<lang>/messages.po` (it, es, ru, zh). |
 
@@ -188,9 +185,9 @@ authoritative list is `app/config.py`. Summary:
 | `scripts/print-test.sh` | Sends one small text page as a user (uses a sheet of paper). |
 | `scripts/gen_dev_cert.sh` | Development-only self-signed certificate. |
 | `scripts/cert-sync.sh [--dry-run]` | From cron: copies the TLS certificate from the machine that renews it (`rsync` over `ssh`), checks it, installs it in `config/tls/` and restarts the gateway if it changed. Writes `config/tls/sync-status.json`, which the portal reads (`app/certwatch.py`). See [certificates.md](certificates.md). |
-| `scripts/make-release-package.sh VERSION FOLDER` | Builds the release package (`printminder-<version>.tar.gz` + `SHA256SUMS`): compose, scripts, `docker/env.example`, documentation. Used by the release workflow; it never holds `.env`, `config/`, `data/`. |
+| `scripts/make-release-package.sh VERSION FOLDER` | Builds the release package (`spoolsteward-<version>.tar.gz` + `SHA256SUMS`): compose, scripts, `docker/env.example`, documentation. Used by the release workflow; it never holds `.env`, `config/`, `data/`. |
 | `scripts/update.sh [VERSION\|--check]` | Safe update with the published images: backup, downloads and checks (sha256) the release package, replaces the compose file and the scripts (never `.env`, `config/`, `data/`), new version in `.env`, pull, restart, waits for health, automatic return to the previous files and version and, if needed, an offer to restore the backup. It refuses to run in a folder with `.git`. `--from-portal` is the mode used by the `updater` container. |
-| `scripts/queue-restore.sh NAME [--reboot]` / `--list` | Brings back a deleted queue of `CUPS_QUEUES`: takes its name out of `/etc/cups/printminder-queues` in the `cups` container (the list of queues already created once); `--reboot` also restarts that container. |
+| `scripts/queue-restore.sh NAME [--reboot]` / `--list` | Brings back a deleted queue of `CUPS_QUEUES`: takes its name out of `/etc/cups/spoolsteward-queues` in the `cups` container (the list of queues already created once); `--reboot` also restarts that container. |
 | `scripts/i18n.py` | Translation tooling: `extract`, `missing`, `check`, `add`. |
 
 ## 5. Containers and host installation
@@ -199,13 +196,13 @@ authoritative list is `app/config.py`. Summary:
 |---|---|
 | `docker-compose.yml` | The production-style stack (`ipp-usb`, `cups`, `gateway`, `mdns`, optional `radius`). Builds from source or pulls published images. |
 | `docker-compose.test.yml` | Test environment: a real CUPS on `:6310` and FreeRADIUS on `:1812`. |
-| `docker/stack/gateway/Dockerfile` | Gateway image (also used by `mdns`). |
-| `docker/stack/cups/` | CUPS image: `cupsd.conf` (private backend policy), `entrypoint.sh` (creates the queues from `CUPS_QUEUES`, each only once, remembered in `/etc/cups/printminder-queues`), printer drivers (brlaser, gutenprint, splix, foo2zjs). It also sees `/dev/bus/usb` for printers ipp-usb can not serve. |
-| `docker/stack/ipp-usb/` | ipp-usb image, `ipp-usb.conf`, and the entrypoint that restarts it when USB devices change. |
-| `docker/cups/`, `docker/radius/` | Test CUPS image; test RADIUS users (`mario`, `anna`, `admin`). |
-| `docker/stack/updater/` | Optional `updater` image (profile `autoupdate`): waits for `/data/update/request.json`, runs `scripts/update.sh --from-portal`, writes `status.json`. Has the Docker socket. |
+| `docker/stack/Dockerfile` | The one image `spoolsteward`: the application, CUPS and ipp-usb. The services `gateway`, `cups`, `ipp-usb` and `mdns` start it with different commands. |
+| `docker/stack/cups/` | CUPS: `cupsd.conf` (private backend policy), `entrypoint.sh` (creates the queues from `CUPS_QUEUES`, each only once, remembered in `/etc/cups/spoolsteward-queues`), the printer drivers (brlaser, gutenprint, splix, foo2zjs) are installed by the Dockerfile above. It also sees `/dev/bus/usb` for printers ipp-usb can not serve. |
+| `docker/stack/ipp-usb/` | `ipp-usb.conf`, and the entrypoint that restarts it when USB devices change. |
+| `docker/test/`, `docker/radius/` | `cupsd.conf` of the test CUPS (the production one plus a TCP listener; the test CUPS is built from the production image); test RADIUS users (`mario`, `anna`, `admin`). |
+| `docker/stack/updater/` | Optional image `spoolsteward-updater` (profile `autoupdate`): waits for `/data/update/request.json`, runs `scripts/update.sh --from-portal`, writes `status.json`. Has the Docker socket. |
 | `docker/env.example` | The template of `.env`, with every option explained (part A for compose, part B for the program). It is part of the release package. |
-| `deploy/install.sh`, `setup-cups.sh`, `cups-policy-gateway.service`, `cups.socket.d/`, `env.example` | Installation on the host without docker (see [installation.md](installation.md)). |
+| `deploy/install.sh`, `setup-cups.sh`, `spoolsteward.service`, `cups.socket.d/`, `env.example` | Installation on the host without docker (see [installation.md](installation.md)). |
 
 ## 6. Where to look when…
 
@@ -214,7 +211,7 @@ authoritative list is `app/config.py`. Summary:
 | change how a quota is computed | `app/policy/engine.py`, `app/policy/audit.py` |
 | allow/forbid an IPP operation | `app/ipp/gateway.py` |
 | change what colour / one-sided / printer / hours permissions do | `app/policy/permissions.py` (`decide()`), then where it is applied: `app/ipp/gateway.py` and `app/admin/printing.py` |
-| add a portal page | a router in `app/admin/`, a template in `app/admin/templates/`, a menu entry in `base.html` |
-| add a setting | `app/config.py`, then `docker/env.example` (part B, with its explanation and the same default value: a test checks it) and [this page](#22-part-b-of-env-cupspl_-settings) |
+| add a portal page | a router in `app/admin/`, a template in `app/admin/templates/` (styles and scripts in `app/admin/static/css/` and `js/`, never inline), a menu entry in `base.html` |
+| add a setting | `app/config.py`, then `docker/env.example` (part B, with its explanation and the same default value: a test checks it) and [this page](#22-part-b-of-env-spoolsteward_-settings) |
 | change the database | `app/db/models.py` **and** a new Alembic revision (a test checks they match) |
 | translate a text | [languages.md](languages.md) |

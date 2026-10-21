@@ -1,0 +1,23 @@
+/* Small page-specific rules of the admin templates; each class is prefixed by its template. */
+.ar-path { font-size: 12px; }
+.ar-sha { font-size: 11px; }
+.mn-gap, .me-gap, .no-gap, .ac-gap, .av-gap, .ud-row { margin-top: 12px; }
+.gr-head { justify-content: space-between; }
+.gr-title { margin: 0; }
+.ky-revoke { margin-top: 12px; }
+.ss-card { max-width: 720px; margin-left: auto; margin-right: auto; }
+.ss-item { margin: 6px 0; }
+.ss-copy.ss-copy { font-size: 13px; }
+.ud-card { max-width: 640px; }
+.ur-row { margin-top: 8px; }
+.ur-pw { flex: 0 1 280px; min-width: 200px; }
+.ur-btn { margin-left: 8px; }
+.pw-note { margin: 0 0 14px; }
+.ac-form, .av-form { margin-bottom: 12px; }
+.ac-detail, .av-detail { font-size: 12px; }
+.rg-title, .rq-title { text-align: center; }
+.rq-opt { display: block; margin: 6px 0; }
+.ue-grants { margin-top: 10px; }
+.rp-top { width: 90px; }
+.rp-set { border: 1px solid var(--line); border-radius: 6px; margin: 8px 0; }
+.rp-excl { margin-right: 14px; white-space: nowrap; }

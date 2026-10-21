@@ -1,4 +1,4 @@
-"""Checks on CUPSPL_SECRET_KEY at every start, told to the administrators through the bell.
+"""Checks on SPOOLSTEWARD_SECRET_KEY at every start, told to the administrators through the bell.
 
 The key encrypts the file names kept in the audit (app/crypto_fields.py), signs the portal sessions and the channel to the
 mdns announcer. A backup without encryption does not contain it, so whoever loses `.env` loses the names for good.
@@ -16,7 +16,7 @@ a while (notices.KEEP_DISMISSED), and the reminder must not come back at the nex
 import hashlib
 import hmac
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select, text
 
@@ -28,7 +28,7 @@ log = logging.getLogger("app.secretcheck")
 
 CHECK = "secret_key_check"     # fingerprint of the key of the previous start
 TOLD = "secret_key_notice"     # when "save the key" was sent
-_LABEL = b"printminder-key-check-v1"
+_LABEL = b"spoolsteward-key-check-v1"
 
 
 def fingerprint(secret: str) -> str:
@@ -69,13 +69,13 @@ def run(sm) -> None:
     try:
         _run(sm)
     except Exception:
-        log.exception("check of CUPSPL_SECRET_KEY failed")
+        log.exception("check of SPOOLSTEWARD_SECRET_KEY failed")
 
 
 def _run(sm) -> None:
     secret = settings.secret_key
     if not secret:
-        log.warning("CUPSPL_SECRET_KEY is not set: file names are not encrypted and sessions end at every restart")
+        log.warning("SPOOLSTEWARD_SECRET_KEY is not set: file names are not encrypted and sessions end at every restart")
         notices.report(sm, "secret_key_missing", "")
         return
     notices.resolve(sm, "secret_key_missing", "")
@@ -90,14 +90,14 @@ def _run(sm) -> None:
             _put(db, CHECK, fp)
         db.commit()
     if changed is not None:
-        log.warning("CUPSPL_SECRET_KEY changed since the previous start: %d encrypted file name(s) can no longer be read", changed)
+        log.warning("SPOOLSTEWARD_SECRET_KEY changed since the previous start: %d encrypted file name(s) can no longer be read", changed)
         notices.report(sm, "secret_key_changed", "", {"count": changed})
     with sm() as db:
         if _get(db, TOLD) is not None:
             return
         admin = _first_admin(db)
         admin_id = admin.id if admin is not None else None
-        _put(db, TOLD, datetime.now(timezone.utc).isoformat())
+        _put(db, TOLD, datetime.now(UTC).isoformat())
         db.commit()
     if admin_id is not None:
         notices.notify_user(sm, admin_id, "secret_key_save", key="secret_key")

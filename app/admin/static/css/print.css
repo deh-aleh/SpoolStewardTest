@@ -1,0 +1,21 @@
+/* print.html */
+.drop { border:2px dashed var(--line); border-radius:12px; padding:26px 16px; text-align:center; cursor:pointer; display:block; background:var(--bg) }
+.drop:hover, .drop.over { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 6%, var(--bg)) }
+.drop input { display:none } .drop .big { font-size:17px; font-weight:600; display:block } .drop .name { margin-top:8px; word-break:break-all; font-weight:600 }
+.drop svg { width:34px; height:34px; stroke:var(--accent); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; margin-bottom:6px }
+.sh { display:flex; align-items:center; gap:10px; margin:22px 0 10px !important; font-size:16px } .sh:first-of-type { margin-top:8px !important }
+.sh b { flex:none; width:24px; height:24px; border-radius:50%; background:var(--accent); color:#fff; text-align:center; line-height:24px; font-size:13px }
+.printers { display:grid; gap:8px }
+.printers label { display:flex; gap:12px; align-items:center; border:1px solid var(--line); border-radius:10px; padding:10px 12px; cursor:pointer; background:var(--card) }
+.printers label:hover { border-color:var(--accent) }
+.printers input { accent-color:var(--accent); width:18px; height:18px; flex:none; margin:0 }
+.printers .pi { flex:none; width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; background:var(--bg); color:var(--muted); border:1px solid var(--line) }
+.printers .pi svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round }
+.printers .pt { min-width:0; overflow-wrap:anywhere } .printers .pt small { display:flex; gap:6px; flex-wrap:wrap; margin-top:3px }
+.printers .pt small .pill { font-size:11.5px; color:var(--muted) }
+.printers label:has(input:checked) { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 7%, var(--card)) }
+.printers label:has(input:checked) .pi { color:var(--accent); border-color:var(--accent) }
+.printers input:checked + .pi + .pt b { color:var(--accent) }
+button.ico.pt-go { padding:11px 22px }
+.pill.blocked.pt-warn { display:block; border-radius:8px; padding:8px 12px }
+p.muted.pt-mb0 { margin-bottom:0 }

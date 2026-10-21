@@ -26,7 +26,7 @@ class RadiusProvider:
         )
         req = client.CreateAuthPacket(code=packet.AccessRequest, User_Name=username)
         req["User-Password"] = req.PwCrypt(password)
-        req["NAS-Identifier"] = "cups-policy-gateway"
+        req["NAS-Identifier"] = "spoolsteward"
         req.add_message_authenticator()  # required by modern servers (BlastRADIUS mitigation)
         try:
             reply = client.SendPacket(req)

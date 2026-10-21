@@ -13,21 +13,21 @@ Un client verifica tre cose prima di inviare qualunque dato; se una fallisce rif
 2. **Nome**: l'host a cui il client si collega compare nel Subject Alternative Name (SAN) del certificato, come nome DNS o indirizzo IP.
 3. **Validità**: `notAfter` è nel futuro.
 
-L'annuncio (mDNS) pubblica l'indirizzo IP della route di default, oppure `CUPSPL_MDNS_ADDRESSES`, e il nome host di `CUPSPL_MDNS_HOSTNAME`
-(predefinito: la parte host di `CUPSPL_PORTAL_URL`, altrimenti il nome della macchina). I client che trovano la stampante via mDNS si collegano a
+L'annuncio (mDNS) pubblica l'indirizzo IP della route di default, oppure `SPOOLSTEWARD_MDNS_ADDRESSES`, e il nome host di `SPOOLSTEWARD_MDNS_HOSTNAME`
+(predefinito: la parte host di `SPOOLSTEWARD_PORTAL_URL`, altrimenti il nome della macchina). I client che trovano la stampante via mDNS si collegano a
 quell'indirizzo, che deve quindi essere nel SAN. Se l'indirizzo cambia (DHCP) il certificato non corrisponde più: assegna al server un indirizzo fisso.
 
 ## 2. Avvisi nel portale (la campanella)
 
-Il gateway non sostituisce mai il certificato. `app/certwatch.py` legge `CUPSPL_TLS_CERTFILE` e `config/tls/sync-status.json` ogni 6 ore e
+Il gateway non sostituisce mai il certificato. Legge `SPOOLSTEWARD_TLS_CERTFILE` e `config/tls/sync-status.json` ogni 6 ore e
 apre o chiude avvisi per gli amministratori. Un avviso si chiude da solo quando la causa sparisce.
 
 | Avviso (titolo nella campanella) | Condizione | Interruttore |
 |---|---|---|
 | **Il certificato TLS è scaduto** | `notAfter` è passato | sempre attivo |
 | **Non è stato possibile aggiornare il certificato** | l'ultima esecuzione di `scripts/cert-sync.sh` ha scritto `"ok": false` in `sync-status.json` (il messaggio è nell'avviso) | compare solo se usi lo script |
-| **L'indirizzo annunciato non è nel certificato TLS** | nessun indirizzo/nome annunciato (mDNS) è nel SAN; i caratteri jolly (`*.example.com`) coprono una sola etichetta | `CUPSPL_CERT_NAME_CHECK=false` lo spegne |
-| **Il certificato TLS scade il (data)** | mancano meno di `CUPSPL_CERT_EXPIRY_WARN_DAYS` giorni | **spento di default**: `CUPSPL_CERT_EXPIRY_WARN_ENABLED=true` |
+| **L'indirizzo annunciato non è nel certificato TLS** | nessun indirizzo/nome annunciato (mDNS) è nel SAN; i caratteri jolly (`*.example.com`) coprono una sola etichetta | `SPOOLSTEWARD_CERT_NAME_CHECK=false` lo spegne |
+| **Il certificato TLS scade il (data)** | mancano meno di `SPOOLSTEWARD_CERT_EXPIRY_WARN_DAYS` giorni | **spento di default**: `SPOOLSTEWARD_CERT_EXPIRY_WARN_ENABLED=true` |
 
 L'avviso di scadenza aggiunge un suggerimento in base all'ultima sincronizzazione: se è riuscita, la sorgente non ha rinnovato (controlla il
 programma che rinnova); se è fallita, rimanda all'altro avviso; se lo script non è usato, chiede di rinnovare e mettere i file in `config/tls`.
@@ -106,7 +106,7 @@ Il numero di `npm-3` è diverso da installazione a installazione: guarda quale c
 La chiave privata è un segreto, quindi lo script non usa l'account di un amministratore: una chiave ssh rubata darebbe accesso completo alla macchina sorgente.
 Si crea un utente separato che può soltanto leggere i certificati.
 
-Nell'esempio la macchina di NPM si chiama `npm.lan`, quella di PrintMinder `print.lan` (IP `192.168.1.50`), l'utente si chiama `certsync`.
+Nell'esempio la macchina di NPM si chiama `npm.lan`, quella di SpoolSteward `print.lan` (IP `192.168.1.50`), l'utente si chiama `certsync`.
 
 **Passo 1 — su `npm.lan`: crea l'utente** (senza password: ci si entra solo con la chiave).
 
@@ -119,18 +119,18 @@ sudo apt install rsync acl          # se mancano: rsync serve a copiare, acl per
 Servono `rsync` e `ssh` anche su questa macchina (`sudo apt install rsync openssh-client` se mancano).
 
 ```sh
-ssh-keygen -t ed25519 -N "" -C "printminder cert-sync" -f ~/.ssh/printminder_certsync
-cat ~/.ssh/printminder_certsync.pub          # una riga che inizia con ssh-ed25519: la useremo al passo 3
+ssh-keygen -t ed25519 -N "" -C "spoolsteward cert-sync" -f ~/.ssh/spoolsteward_certsync
+cat ~/.ssh/spoolsteward_certsync.pub          # una riga che inizia con ssh-ed25519: la useremo al passo 3
 ```
 
-La chiave privata (`printminder_certsync`, senza `.pub`) non deve uscire da questa macchina. Il percorso completo (per esempio `/home/tu/.ssh/printminder_certsync`)
+La chiave privata (`spoolsteward_certsync`, senza `.pub`) non deve uscire da questa macchina. Il percorso completo (per esempio `/home/tu/.ssh/spoolsteward_certsync`)
 andrà in `CERT_SYNC_KEY`.
 
 **Passo 3 — su `npm.lan`: autorizza la chiave, con dei limiti.** Sostituisci `192.168.1.50` con l'IP di `print.lan` e la parte `ssh-ed25519 AAAA…` con la riga stampata al passo 2.
 
 ```sh
 sudo -u certsync mkdir -p -m 700 /home/certsync/.ssh
-echo 'restrict,from="192.168.1.50" ssh-ed25519 AAAA… printminder cert-sync' | sudo -u certsync tee -a /home/certsync/.ssh/authorized_keys
+echo 'restrict,from="192.168.1.50" ssh-ed25519 AAAA… spoolsteward cert-sync' | sudo -u certsync tee -a /home/certsync/.ssh/authorized_keys
 sudo chmod 600 /home/certsync/.ssh/authorized_keys
 ```
 
@@ -163,7 +163,7 @@ sudo -u certsync touch /home/tu/npm/data/letsencrypt/live/npm-3/prova           
 ```sh
 CERT_SYNC_HOST=npm.lan
 CERT_SYNC_USER=certsync
-CERT_SYNC_KEY=/home/tu/.ssh/printminder_certsync
+CERT_SYNC_KEY=/home/tu/.ssh/spoolsteward_certsync
 CERT_SYNC_REMOTE_DIR=/home/tu/npm/data/letsencrypt/live/npm-3
 ```
 
@@ -183,10 +183,10 @@ Poi la prova vera: `scripts/cert-sync.sh`. Apri il portale: nessun avviso sul ce
 crontab -e
 ```
 
-e aggiungi una riga (cambia il percorso della cartella di PrintMinder):
+e aggiungi una riga (cambia il percorso della cartella di SpoolSteward):
 
 ```
-17 4 * * *  cd /home/tu/printminder && scripts/cert-sync.sh >> data/cert-sync.log 2>&1
+17 4 * * *  cd /home/tu/spoolsteward && scripts/cert-sync.sh >> data/cert-sync.log 2>&1
 ```
 
 Esegue ogni giorno alle 4:17 e aggiunge l'output a `data/cert-sync.log`. Una volta al giorno basta: se il certificato non è cambiato non si installa nulla e non si riavvia nulla.

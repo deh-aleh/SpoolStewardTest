@@ -3,7 +3,7 @@
 A notice is identified by its kind and its source (for example "escl_anonymous_refused" and an IP address). The first time
 it happens it is written to the database and to the log. After that, repeats from the same source are only counted
 in memory until the interval has passed, so a client that retries 100 times a minute produces one line a day, not 100.
-The interval depends on CUPSPL_LOG_LEVEL (a quieter log level means rarer reports) unless CUPSPL_NOTICE_INTERVAL is set:
+The interval depends on SPOOLSTEWARD_LOG_LEVEL (a quieter log level means rarer reports) unless SPOOLSTEWARD_NOTICE_INTERVAL is set:
 
     DEBUG   every minute     (for people looking for a problem)
     INFO    once a day       (default)
@@ -14,10 +14,11 @@ The interval depends on CUPSPL_LOG_LEVEL (a quieter log level means rarer report
 import logging
 import threading
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 
+from app.timeutil import aware
 from app.config import settings
 from app.db.models import Notice
 
@@ -28,7 +29,9 @@ MAX_OPEN_PER_KIND = 200   # sources are limited too: spoofed addresses must not 
 KEEP_DISMISSED = timedelta(days=90)
 LOG_TEXT = {
     "escl_anonymous_refused": "scan request without credentials refused from %s (%d attempt(s) since the last report): "
-                              "scans without login are off (CUPSPL_ESCL_ANONYMOUS=false)",
+                              "scans without login are off (SPOOLSTEWARD_ESCL_ANONYMOUS=false)",
+    "escl_guest_name_taken": "scans without login refused: the account name '%s' (SPOOLSTEWARD_ESCL_GUEST_USERNAME) belongs to a real account "
+                             "(%d refusal(s) since the last report). Set another name in .env and restart the portal",
 }
 
 _lock = threading.Lock()
@@ -41,10 +44,6 @@ def interval() -> int:
     return BY_LEVEL.get(settings.log_level.upper(), BY_LEVEL["INFO"])
 
 
-def _aware(dt: datetime) -> datetime:
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
-
-
 def report(sm, kind: str, key: str, detail: dict | None = None, now: float | None = None) -> bool:
     """Count one more occurrence. Returns True when this one was written (and logged), False when it was only counted."""
     now = time.time() if now is None else now
@@ -55,8 +54,8 @@ def report(sm, kind: str, key: str, detail: dict | None = None, now: float | Non
         if st is None:  # after a restart: the database still knows when this source was last reported
             with sm() as db:
                 last = db.scalar(select(func.max(Notice.last_at)).where(Notice.kind == kind, Notice.key == key, Notice.user_id.is_(None)))
-            if last is not None and now - _aware(last).timestamp() < wait:
-                st = _state[(kind, key)] = {"last": _aware(last).timestamp(), "pending": 0}
+            if last is not None and now - aware(last).timestamp() < wait:
+                st = _state[(kind, key)] = {"last": aware(last).timestamp(), "pending": 0}
         if st is not None and now - st["last"] < wait:
             st["pending"] += 1
             return False
@@ -65,7 +64,7 @@ def report(sm, kind: str, key: str, detail: dict | None = None, now: float | Non
         if len(_state) > 2000:  # forget sources that are past their interval
             for k in [k for k, v in _state.items() if now - v["last"] >= wait]:
                 del _state[k]
-    when = datetime.fromtimestamp(now, timezone.utc)
+    when = datetime.fromtimestamp(now, UTC)
     with sm() as db:
         row = db.scalars(select(Notice).where(Notice.kind == kind, Notice.key == key, Notice.user_id.is_(None), Notice.dismissed_at.is_(None))).first()
         if row is not None:
@@ -90,7 +89,7 @@ def resolve(sm, kind: str, key: str) -> int:
     with sm() as db:
         rows = list(db.scalars(select(Notice).where(Notice.kind == kind, Notice.key == key, Notice.user_id.is_(None), Notice.dismissed_at.is_(None))))
         for row in rows:
-            row.dismissed_at, row.dismissed_by = datetime.now(timezone.utc), "system"
+            row.dismissed_at, row.dismissed_by = datetime.now(UTC), "system"
         db.commit()
     if rows:
         with _lock:
@@ -115,7 +114,7 @@ def notify_user(sm, user_id: int, kind: str, detail: dict | None = None, key: st
     """A notice for one user (their own bell). Every event is written, no rate limit: these are things an administrator
     just did to the user's account. The list per user is capped, the oldest open ones are closed first.
     `key`: what the notice is about (default: the key prefix of the detail), used to find it again."""
-    when = datetime.now(timezone.utc)
+    when = datetime.now(UTC)
     with sm() as db:
         open_rows = list(db.scalars(select(Notice).where(Notice.user_id == user_id, Notice.dismissed_at.is_(None))
                                     .order_by(Notice.id)))
@@ -136,7 +135,7 @@ def notify_user_counted(sm, user_id: int, kind: str, key: str, detail: dict | No
         row = db.scalars(select(Notice).where(Notice.user_id == user_id, Notice.kind == kind, Notice.key == key,
                                               Notice.dismissed_at.is_(None))).first()
         if row is not None:
-            row.last_at, row.count, row.detail_json = datetime.now(timezone.utc), row.count + 1, detail or row.detail_json
+            row.last_at, row.count, row.detail_json = datetime.now(UTC), row.count + 1, detail or row.detail_json
             db.commit()
             return
     notify_user(sm, user_id, kind, detail, key=key)
@@ -147,7 +146,7 @@ def read_secondary(sm, user_id: int, minutes: int, now: datetime | None = None) 
     0 = never. Returns how many."""
     if minutes <= 0:
         return 0
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     with sm() as db:
         rows = list(db.scalars(select(Notice).where(Notice.user_id == user_id, Notice.kind.in_(SECONDARY_KINDS),
                                                     Notice.dismissed_at.is_(None), Notice.last_at < now - timedelta(minutes=minutes))))
@@ -164,7 +163,7 @@ def notify_all_users(sm, kind: str, detail: dict | None = None, key: str = "", e
     per-user cap applies as in notify_user. Returns how many people were notified."""
     from app.db.models import User
 
-    when = datetime.now(timezone.utc)
+    when = datetime.now(UTC)
     with sm() as db:
         ids = [i for i in db.scalars(select(User.id).where(User.enabled.is_(True))) if i != exclude_user_id]
         for uid in ids:
@@ -192,7 +191,7 @@ def resolve_users(sm, kind: str, key: str) -> int:
         rows = list(db.scalars(select(Notice).where(Notice.user_id.is_not(None), Notice.kind == kind, Notice.key == key[:128],
                                                     Notice.dismissed_at.is_(None))))
         for row in rows:
-            row.dismissed_at, row.dismissed_by = datetime.now(timezone.utc), "system"
+            row.dismissed_at, row.dismissed_by = datetime.now(UTC), "system"
         db.commit()
     return len(rows)
 

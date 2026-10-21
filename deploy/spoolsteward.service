@@ -1,20 +1,20 @@
 [Unit]
-Description=CUPS policy gateway (authentication, quotas, audit for IPP printing)
-Documentation=file:///opt/cups-policy-gateway/README.md
+Description=SpoolSteward (authentication, quotas, audit for IPP printing)
+Documentation=file:///opt/spoolsteward/README.md
 After=network-online.target cups.service
 Wants=network-online.target
 Requires=cups.service
 
 [Service]
 Type=simple
-User=cupspl
-Group=cupspl
-EnvironmentFile=/etc/cups-policy-gateway/env
-ExecStart=/opt/cups-policy-gateway/venv/bin/cups-policy-gateway
+User=spoolsteward
+Group=spoolsteward
+EnvironmentFile=/etc/spoolsteward/env
+ExecStart=/opt/spoolsteward/venv/bin/spoolsteward
 Restart=on-failure
 RestartSec=3
-# /var/lib/cups-policy-gateway, owned by the service user
-StateDirectory=cups-policy-gateway
+# /var/lib/spoolsteward, owned by the service user
+StateDirectory=spoolsteward
 StateDirectoryMode=0750
 UMask=0077
 

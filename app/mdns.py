@@ -141,8 +141,8 @@ def build_services(queues: list[dict], host: str, addresses: list[str], port: in
     return out
 
 
-async def main() -> None:
-    setup_logging(settings.log_level, settings.timezone)
+def _announce_settings() -> tuple[str, int, list[str], str]:
+    """(host, port, addresses, portal URL) to announce, from the settings."""
     portal = settings.portal_url.rstrip("/")
     host = settings.mdns_hostname or (urlparse(portal).hostname if portal else "") or socket.gethostname()
     port = settings.mdns_port or settings.port
@@ -151,6 +151,46 @@ async def main() -> None:
         portal = f"https://{host}:{port}/me"
     elif not portal.endswith("/me"):
         portal += "/me"
+    return host, port, addresses, portal
+
+
+async def _scanner_services(policy: dict | None, host: str, addresses: list[str], port: int, portal: str) -> dict[str, list[ServiceInfo]]:
+    """One service per scanner the gateway knows (none in maintenance); without a policy, the default one as before."""
+    out = {}
+    for sc in ([] if policy and policy["maintenance"] else (policy["scanners"] if policy else [{"root": "eSCL"}])):
+        info = await scanner_info(port, sc["root"])
+        if info:
+            label = sc.get("name") or info["model"]
+            name = f"{label} (scanner) @ {host.split('.')[0]}"
+            out[name] = [ServiceInfo(SCAN_SERVICE, f"{name}.{SCAN_SERVICE}", port=port, properties=scanner_txt(info, portal),
+                                     server=f"{host.split('.')[0]}.local.", addresses=[socket.inet_aton(a) for a in addresses])]
+    return out
+
+
+async def _publish(zcs: list[AsyncZeroconf], published: dict[str, list[ServiceInfo]], wanted: dict[str, list[ServiceInfo]]) -> None:
+    """Bring what is announced (`published`, updated in place) in line with `wanted`: withdraw, update, announce."""
+    for name in set(published) - set(wanted):
+        for zc, info in zip(zcs, published.pop(name)):
+            await zc.async_unregister_service(info)
+        log.info("withdrawn: %s", name)
+    for name, infos in wanted.items():
+        if name in published:
+            if all(a.properties == b.properties for a, b in zip(published[name], infos)):
+                continue
+            for zc, info in zip(zcs, infos):
+                await zc.async_update_service(info)
+            published[name] = infos
+            log.info("updated: %s", name)
+        else:
+            for zc, info in zip(zcs, infos):
+                await zc.async_register_service(info, allow_name_change=False, cooperating_responders=True)
+            published[name] = infos
+            log.info("announced: %s", name)
+
+
+async def main() -> None:
+    setup_logging(settings.log_level, settings.timezone)
+    host, port, addresses, portal = _announce_settings()
 
     class _App:  # list_queues only needs app.state.upstream / queues_cache
         class state:  # noqa: N801
@@ -170,31 +210,8 @@ async def main() -> None:
             queues = await list_queues(_App, probe=False)  # the gateway tells which devices are unreachable
             policy = await fetch_policy(port, announce) or policy  # gateway unreachable: keep the last known policy
             wanted = build_services(apply_policy(queues, policy), host, addresses, port, portal)
-            # one service per scanner the gateway knows (none in maintenance); without a policy, the default one as before
-            for sc in ([] if policy and policy["maintenance"] else (policy["scanners"] if policy else [{"root": "eSCL"}])):
-                info = await scanner_info(port, sc["root"])
-                if info:
-                    label = sc.get("name") or info["model"]
-                    name = f"{label} (scanner) @ {host.split('.')[0]}"
-                    wanted[name] = [ServiceInfo(SCAN_SERVICE, f"{name}.{SCAN_SERVICE}", port=port, properties=scanner_txt(info, portal),
-                                                server=f"{host.split('.')[0]}.local.", addresses=[socket.inet_aton(a) for a in addresses])]
-            for name in set(published) - set(wanted):
-                for zc, info in zip(zcs, published.pop(name)):
-                    await zc.async_unregister_service(info)
-                log.info("withdrawn: %s", name)
-            for name, infos in wanted.items():
-                if name in published:
-                    if all(a.properties == b.properties for a, b in zip(published[name], infos)):
-                        continue
-                    for zc, info in zip(zcs, infos):
-                        await zc.async_update_service(info)
-                    published[name] = infos
-                    log.info("updated: %s", name)
-                else:
-                    for zc, info in zip(zcs, infos):
-                        await zc.async_register_service(info, allow_name_change=False, cooperating_responders=True)
-                    published[name] = infos
-                    log.info("announced: %s", name)
+            wanted.update(await _scanner_services(policy, host, addresses, port, portal))
+            await _publish(zcs, published, wanted)
             await asyncio.sleep(settings.mdns_interval)
     finally:
         for zc in zcs:

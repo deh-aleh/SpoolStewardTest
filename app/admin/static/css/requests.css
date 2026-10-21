@@ -1,0 +1,14 @@
+.decide { display:flex; flex-direction:column; gap:10px; min-width:270px }
+.decide .dline { display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center }
+.decide .amt { display:inline-flex; align-items:center; gap:8px }
+.decide input[type=text] { width:100% }
+.decide .untilbox { display:none }
+.decide:has(input[name=duration][value=until]:checked) .untilbox { display:block }
+.reasontext { font:inherit; white-space:pre-wrap; overflow-wrap:anywhere; user-select:text; max-height:50vh; overflow:auto }
+@media (max-width:700px) { .decide { min-width:0 } .decide .dbuttons > * { flex:1 1 100% } .decide .seg { width:100% } .decide .seg label { flex:1 } .decide .seg span { text-align:center; white-space:normal } }
+#grantform [hidden] { display:none !important }
+#grantform .grantpart { margin-top:10px } #grantform .grantlabel { font-weight:600; margin-bottom:6px }
+.rq-x-svg.rq-x-svg { stroke:currentColor; fill:none; stroke-width:2.4; stroke-linecap:round }
+#grantform.rq-grant { margin-top:14px }
+.rq-mt10.rq-mt10 { margin-top:10px }
+.rq-mt14.rq-mt14 { margin-top:14px }

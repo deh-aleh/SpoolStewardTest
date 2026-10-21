@@ -1,9 +1,10 @@
 # Publishes the container images when you push a version tag, for example:  git tag v1.2.0 && git push origin v1.2.0
 # A beta is tagged v1.2.0-beta.1 and written 1.2.0b1 in pyproject.toml; it is published as a GitHub "pre-release", which
 # scripts/update.sh and the portal never offer by themselves.
-# One tag gives one image per service, built for both amd64 (PC, server) and arm64 (Raspberry Pi, ARM NAS).
-# Images go to ghcr.io/<owner>/<service>:<version> (gateway, cups, ipp-usb, updater). The tag must match "version" in pyproject.toml.
-# The release also gets printminder-<version>.tar.gz (+ SHA256SUMS): docker-compose.yml, scripts/, docker/env.example and the docs.
+# One tag gives two images, each built for both amd64 (PC, server) and arm64 (Raspberry Pi, ARM NAS):
+# spoolsteward (the application, CUPS and ipp-usb) and spoolsteward-updater.
+# Images go to ghcr.io/<owner>/<name>:<version>. The tag must match "version" in pyproject.toml.
+# The release also gets spoolsteward-<version>.tar.gz (+ SHA256SUMS): docker-compose.yml, scripts/, docker/env.example and the docs.
 name: Release
 on:
   push:
@@ -34,13 +35,11 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false      # one image failing must not cancel the others: all errors show up in one run
+      fail-fast: false      # one image failing must not cancel the other: both errors show up in one run
       matrix:
         include:
-          - {name: gateway,  context: ".",                    file: docker/stack/gateway/Dockerfile}
-          - {name: cups,     context: docker/stack/cups,      file: docker/stack/cups/Dockerfile}
-          - {name: ipp-usb,  context: docker/stack/ipp-usb,   file: docker/stack/ipp-usb/Dockerfile}
-          - {name: updater,  context: docker/stack/updater,   file: docker/stack/updater/Dockerfile}
+          - {name: spoolsteward,          context: ".",                  file: docker/stack/Dockerfile}
+          - {name: spoolsteward-updater,  context: docker/stack/updater, file: docker/stack/updater/Dockerfile}
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-qemu-action@v3
@@ -80,5 +79,5 @@ jobs:
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, '-beta.') }}
           files: |
-            dist/printminder-*.tar.gz
+            dist/spoolsteward-*.tar.gz
             dist/SHA256SUMS

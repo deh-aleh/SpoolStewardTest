@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Report") }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/pages.css?v={{ app_version }}">{% endblock %}
 {% block body %}
 <div class="card">
   <h1>{{ _("Usage report") }}</h1>
@@ -8,13 +9,13 @@
     <div class="row">
       <label>{{ _("From") }} <input type="date" name="start" value="{{ f.start }}"></label>
       <label>{{ _("To (included)") }} <input type="date" name="end" value="{{ f.end }}"></label>
-      <label>{{ _("Show the first … users") }} <input type="number" name="top" min="1" max="{{ max_top }}" value="{{ f.top }}" placeholder="{{ _('all') }}" style="width:90px"></label>
+      <label>{{ _("Show the first … users") }} <input type="number" name="top" min="1" max="{{ max_top }}" value="{{ f.top }}" placeholder="{{ _('all') }}" class="rp-top"></label>
     </div>
     <p><label><input type="checkbox" name="detail" value="1" {% if detail %}checked{% endif %}> {{ _("Detailed report: also how many prints each user made on each printer") }}</label></p>
     {% if groups %}
-    <fieldset style="border:1px solid var(--line);border-radius:6px;margin:8px 0">
+    <fieldset class="rp-set">
       <legend>{{ _("Leave out these groups") }}</legend>
-      {% for gid, gname in groups %}<label style="margin-right:14px;white-space:nowrap"><input type="checkbox" name="exclude" value="{{ gid }}" {% if gid in exclude %}checked{% endif %}> {{ gname }}</label>{% endfor %}
+      {% for gid, gname in groups %}<label class="rp-excl"><input type="checkbox" name="exclude" value="{{ gid }}" {% if gid in exclude %}checked{% endif %}> {{ gname }}</label>{% endfor %}
     </fieldset>
     {% endif %}
     <div class="row">

@@ -30,6 +30,7 @@ tests/_out/
 
 # notes for whoever maintains the project (releases, development): local only
 /NOTE.md
+/TEST.md
 /.env.bak-*
 
 # update.sh working folders

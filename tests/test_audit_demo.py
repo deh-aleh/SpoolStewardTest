@@ -1,7 +1,7 @@
 """Demo you can look at: prints on the real virtual printer (CUPS test container) with a very long file name and
 comment, then saves the rendered /admin/jobs page as tests/_out/audit-demo.html (+ a variant with the popups open).
 
-    pytest tests/test_audit_demo.py     ->  open tests/_out/audit-demo.html in a browser
+    pytest -m demo tests/test_audit_demo.py     ->  open tests/_out/audit-demo.html in a browser
 """
 
 import time
@@ -16,6 +16,7 @@ from tests.conftest import CUPS_TEST_URL, csrf_of_page, make_user, portal_login,
 from tests.test_audit_ui import GOOD, LONG_COMMENT, LONG_NAME, PDF
 
 OUT = Path(__file__).parent / "_out"
+pytestmark = pytest.mark.demo  # skipped by default (addopts); run with: pytest -m demo
 
 
 @requires_cups
@@ -59,7 +60,9 @@ async def test_print_on_the_virtual_printer_and_save_the_audit_page(portal):
     assert "relazione-trimestrale" in html and html.count("<dialog") >= 4
 
 
-from tests.test_dynamic import two_scanners  # noqa: E402,F401  (fixture: two fake scanners)
+from tests import test_dynamic  # noqa: E402
+
+two_scanners = test_dynamic.two_scanners   # fixture: two fake scanners, found by pytest under this name
 
 
 async def test_save_the_other_pages_too(two_scanners):

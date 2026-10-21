@@ -2,16 +2,16 @@
 {% from "macros.html" import stepper, seg %}
 {% block title %}{{ _("Printers") }}{% endblock %}
 {% block body %}
-<h1 style="margin:0 0 4px;font-size:18px">{{ _("Printers") }} <span class="muted" style="font-size:13px">({{ _("data read from the printers; physical ones first, in your own order") }})</span></h1>
-<p style="margin:0 0 12px">{% set ar_key = 'printers' %}{% set ar_seconds = refresh_seconds %}{% set ar_on = false %}{% include "autorefresh.html" %}</p>
-<form class="card row" method="post" action="/admin/printers/debug" style="justify-content:space-between">
+<h1 class="pr-title">{{ _("Printers") }} <span class="muted pr-sub">({{ _("data read from the printers; physical ones first, in your own order") }})</span></h1>
+<p class="pr-ar">{% set ar_key = 'printers' %}{% set ar_seconds = refresh_seconds %}{% set ar_on = false %}{% include "autorefresh.html" %}</p>
+<form class="card row pr-between" method="post" action="/admin/printers/debug">
   <div><b>{{ _("Test printers") }}</b><div class="muted">{{ _('A virtual printer that writes PDFs instead of printing: it is for trying quotas, audit and blocks without paper (<span class="mono">debugprinter0</span>, <span class="mono">debugprinter1</span>…). Virtual ones can be deleted.') }}</div></div>
   <input type="hidden" name="csrf_token" value="{{ csrf }}"><button>{{ _("Create a test printer") }}</button>
 </form>
-<form class="card row" method="post" action="/admin/printers/discover" style="justify-content:space-between">
+<form class="card row pr-between" method="post" action="/admin/printers/discover">
   <div><b>{{ _("Find printers") }}</b><div class="muted">{{ _("USB printers are added by themselves within a minute of being plugged in: through ipp-usb when the printer supports it, otherwise with a CUPS driver.") }}
     {% if remove_after %}{{ _("A USB printer that stops answering is removed after %(hours)s hours.", hours=remove_hours) }}{% else %}{{ _("Queues of unplugged printers are not removed by themselves.") }}{% endif %}</div>
-    {% for n in notes %}<div style="color:var(--err)">{{ n }}</div>{% endfor %}</div>
+    {% for n in notes %}<div class="pr-err">{{ n }}</div>{% endfor %}</div>
   <input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="sec ico"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>{{ _("Look now") }}</button>
 </form>
 {% for d in devices %}{% set dev = d.device %}
@@ -25,13 +25,13 @@
       <button class="icon" {{ 'disabled' if at_top }} title="{{ _('Already first') if at_top else _('Move up') }}" aria-label="{{ _('Move %(printer)s up', printer=q0.name) }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></form>
     <form method="post" action="/admin/printers/{{ q0.name|urlencode }}/move"><input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="direction" value="down">
       <button class="icon" {{ 'disabled' if at_bottom }} title="{{ _('Already last') if at_bottom else _('Move down') }}" aria-label="{{ _('Move %(printer)s down', printer=q0.name) }}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12l7 7 7-7"/></svg></button></form>
-    <button type="button" class="icon" title="{{ _('Rename the queue') }}" aria-label="{{ _('Rename %(printer)s', printer=q0.name) }}" onclick="document.getElementById('rn-{{ loop.index }}').showModal()">
+    <button type="button" class="icon" title="{{ _('Rename the queue') }}" aria-label="{{ _('Rename %(printer)s', printer=q0.name) }}" data-open-dialog="rn-{{ loop.index }}">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg></button>
   {% if not d.virtual %}
-    <button type="button" class="icon" title="{{ _('Periodic print: keeps the print heads and rollers in good condition') }}{% if ka and ka.enabled %} ({{ _('active') }}){% endif %}" aria-label="{{ _('Periodic print of %(printer)s', printer=q0.name) }}" onclick="document.getElementById('ka-{{ loop.index }}').showModal()">
+    <button type="button" class="icon" title="{{ _('Periodic print: keeps the print heads and rollers in good condition') }}{% if ka and ka.enabled %} ({{ _('active') }}){% endif %}" aria-label="{{ _('Periodic print of %(printer)s', printer=q0.name) }}" data-open-dialog="ka-{{ loop.index }}">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3h8v6M7 17H4v-6h14v2"/><rect x="7" y="13" width="7" height="3" rx=".5"/><circle cx="17.5" cy="17.5" r="4.5" class="bg"/><path d="M17.5 15v2.7l1.8 1"/></svg>
       {% if ka and ka.enabled %}<i class="dot" aria-hidden="true"></i>{% endif %}</button>
-    <button type="button" class="icon" title="{{ _('Test print with the printer statistics') }}" aria-label="{{ _('Test print on %(printer)s', printer=q0.name) }}" onclick="document.getElementById('tp-{{ loop.index }}').showModal()">
+    <button type="button" class="icon" title="{{ _('Test print with the printer statistics') }}" aria-label="{{ _('Test print on %(printer)s', printer=q0.name) }}" data-open-dialog="tp-{{ loop.index }}">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7.5V6a3 3 0 0 1 6 0v1.5"/><rect x="7" y="7.5" width="10" height="12" rx="5"/><path d="M12 7.5v12M3 12h4M17 12h4M4 6l3 2.5M20 6l-3 2.5M4 19l3-2.5M20 19l-3-2.5"/></svg></button>
   {% endif %}
   </div>
@@ -39,12 +39,12 @@
   <dialog id="rn-{{ loop.index }}">
     <div class="dlghead">
       <h3>{{ _("Rename the queue") }}</h3>
-      <form method="dialog" class="x"><button class="sec" aria-label="{{ _('Close') }}" title="{{ _('Close (changes nothing)') }}"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" style="stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></form>
+      <form method="dialog" class="x"><button class="sec" aria-label="{{ _('Close') }}" title="{{ _('Close (changes nothing)') }}"><svg class="pr-x24" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></button></form>
     </div>
     <p class="muted">{{ _("The name of the queue is the last part of the printer address (…/printers/<b>name</b>). Letters, digits and . _ @ + - only.") }}</p>
-    <p class="pill blocked" style="display:block;border-radius:8px;padding:8px 12px">{{ _("Computers and phones where the printer was set up by hand with the old address will stop printing until they are set up again. Block, maintenance print and the places in the lists follow the queue; the audit keeps the old name for what already happened.") }}</p>
+    <p class="pill blocked pr-warn">{{ _("Computers and phones where the printer was set up by hand with the old address will stop printing until they are set up again. Block, maintenance print and the places in the lists follow the queue; the audit keeps the old name for what already happened.") }}</p>
     {% for q in d.queues %}
-    <form method="post" action="/admin/printers/{{ q.name|urlencode }}/rename" class="rnform" style="margin-top:8px"
+    <form method="post" action="/admin/printers/{{ q.name|urlencode }}/rename" class="rnform pr-mt8"
           data-confirm="{{ _t('Rename %(printer)s? Computers and phones where it was set up by hand with the old address will stop printing until they are set up again.', printer=q.name) }}"
           data-confirm-title="{{ _t('Rename the queue') }}" data-confirm-ok="{{ _t('Rename') }}" data-confirm-danger
           data-confirm-check="{{ _t('Tell all users in their notices (administrators too)') }}" data-confirm-check-name="notify" data-confirm-check-on>
@@ -67,19 +67,19 @@
             <span class="muted">{% if f.reason == 'renamed' %}{{ _("renamed on %(date)s", date=day) }}{% elif f.reason == 'removed_offline' %}{{ _("removed automatically on %(date)s", date=day) }}{% else %}{{ _("deleted on %(date)s", date=day) }}{% endif %}</span>
             <form method="post" action="/admin/printers/former/forget" class="forgetform" data-confirm-event data-confirm="{{ _t('Forget the name %(name)s? It will no longer be offered here.', name=f.display) }}" data-confirm-title="{{ _t('Forget this name') }}" data-confirm-ok="{{ _t('Forget') }}">
               <input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="name" value="{{ f.display }}">
-              <button class="sec forget" aria-label="{{ _('Forget this name') }}" title="{{ _('Forget this name') }}"><svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" style="stroke:currentColor;fill:none;stroke-width:2.6;stroke-linecap:round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></form>
+              <button class="sec forget" aria-label="{{ _('Forget this name') }}" title="{{ _('Forget this name') }}"><svg class="pr-x26" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></button></form>
           </li>
           {% endfor %}
         </ul>
-        <p class="muted" style="margin-bottom:0">{{ _("A new printer that takes the name of a removed one prints again for the computers and phones set up with the old address, and the permissions given to that name apply to it again. A computer set up with the driver of the old model may need to be set up again if the new model is different.") }}</p>
+        <p class="muted pr-mb0">{{ _("A new printer that takes the name of a removed one prints again for the computers and phones set up with the old address, and the permissions given to that name apply to it again. A computer set up with the driver of the old model may need to be set up again if the new model is different.") }}</p>
       </div>
     </details>
     {% endif %}
   </dialog>
-  {% if ka and ka.enabled %}<div class="muted" style="margin:-4px 0 8px">{{ _("Periodic print active: %(every)s, %(mode)s", every=describe(ka.interval_hours), mode=_('in colour') if ka.color and q0.color else _('in black and white')) }}
+  {% if ka and ka.enabled %}<div class="muted pr-kanote">{{ _("Periodic print active: %(every)s, %(mode)s", every=describe(ka.interval_hours), mode=_('in colour') if ka.color and q0.color else _('in black and white')) }}
     {%- if next_due(ka) %} · {{ _("next %(when)s", when=next_due(ka)|localtime('%Y-%m-%d %H:%M')) }}{% endif %}
-    {%- if ka.last_status == 'error' %} · <span style="color:var(--err)">{{ _("last attempt failed: %(error)s", error=ka.last_error) }}</span>
-    {%- elif ka.last_status == 'offline' %} · <span style="color:var(--err)">{{ _("printer not reachable: I will retry as soon as it answers") }}</span>{% endif %}</div>{% endif %}
+    {%- if ka.last_status == 'error' %} · <span class="pr-err">{{ _("last attempt failed: %(error)s", error=ka.last_error) }}</span>
+    {%- elif ka.last_status == 'offline' %} · <span class="pr-err">{{ _("printer not reachable: I will retry as soon as it answers") }}</span>{% endif %}</div>{% endif %}
   {% if not d.virtual %}
   <dialog id="ka-{{ loop.index }}">
     <div class="dlghead">
@@ -88,18 +88,18 @@
         <input type="hidden" name="csrf_token" value="{{ csrf }}"><input type="hidden" name="on" value="{{ '0' if ka and ka.enabled else '1' }}">
         <button class="switch{{ ' on' if ka and ka.enabled }}" role="switch" aria-checked="{{ 'true' if ka and ka.enabled else 'false' }}" aria-label="{{ _('Turn on the periodic print') }}" title="{{ _('On: click to turn off') if ka and ka.enabled else _('Off: click to turn on') }}"><i></i></button>
       </form>
-      <form method="dialog" class="x"><button class="sec" aria-label="{{ _('Close') }}" title="{{ _('Close (changes nothing)') }}"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" style="stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></form>
+      <form method="dialog" class="x"><button class="sec" aria-label="{{ _('Close') }}" title="{{ _('Close (changes nothing)') }}"><svg class="pr-x24" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></button></form>
     </div>
     <p class="muted">{{ _('A printer left idle for a long time dries its ink or sticks its rollers. With the periodic print the gateway sends <b class="mono">%(printer)s</b> a maintenance page at regular intervals. It applies to all administrators.', printer=q0.name) }}</p>
     {% set cur = split(ka.interval_hours) if ka else (7, 'days') %}
     <form method="post" action="/admin/printers/{{ q0.name|urlencode }}/keepalive">
       <input type="hidden" name="csrf_token" value="{{ csrf }}">
       <label>{{ _("Every") }}</label>
-      <div class="row" style="margin:4px 0 8px">
+      <div class="row pr-row-a">
         {{ stepper("amount", cur[0], min=1, max=2160, label=_("Interval"), required=true) }}
         {{ seg("unit", [("days", _("days")), ("hours", _("hours"))], cur[1]) }}
       </div>
-      <div class="row" style="margin-bottom:10px">
+      <div class="row pr-row-b">
         {% for hrs, label in presets %}<button type="button" class="sec chip" data-amount="{{ hrs // 24 }}" data-unit="days">{{ _(label) }}</button>{% endfor %}
       </div>
       {% if q0.color %}
@@ -111,8 +111,8 @@
     </form>
   </dialog>
   <dialog id="tp-{{ loop.index }}">
-    <h3 style="margin-top:0">{{ _("Test print on %(printer)s", printer=q0.name) }}</h3>
-    <p class="muted">{{ _("Prints a page with all the statistics you see here: state, ink, counters, data from the gateway and device details.") }}{% if not d.online %} <b style="color:var(--err)">{{ _("The printer does not answer.") }}</b>{% endif %}</p>
+    <h3 class="pr-h3">{{ _("Test print on %(printer)s", printer=q0.name) }}</h3>
+    <p class="muted">{{ _("Prints a page with all the statistics you see here: state, ink, counters, data from the gateway and device details.") }}{% if not d.online %} <b class="pr-err">{{ _("The printer does not answer.") }}</b>{% endif %}</p>
     <form method="post" action="/admin/printers/{{ q0.name|urlencode }}/testprint" class="actions">
       <input type="hidden" name="csrf_token" value="{{ csrf }}">
       <button type="submit" formmethod="dialog" formnovalidate class="sec">{{ _("Cancel") }}</button>
@@ -122,7 +122,7 @@
   </dialog>
   {% endif %}
   {% for q in d.queues %}
-  <div class="row" style="margin-bottom:6px">
+  <div class="row pr-row-c">
     <b class="mono">{{ q.name }}</b>
     {% if q.online %}<span class="pill s-{{ 'ok' if q.state == 'idle' else 'pending' if q.state == 'printing' else 'failed' }}">{{ _(q.state) }}</span>
     {% else %}<span class="pill blocked" title="{{ _('The device does not answer on the network: cable unplugged or printer off? The queue still exists in CUPS') }}">{{ _("NOT REACHABLE") }}</span>{% endif %}
@@ -133,7 +133,7 @@
     {% if q.message and q.online %}<span class="muted">{{ q.message }}</span>{% endif %}
   </div>
   {% set c = controls.get(key(q.name)) %}
-  <div class="row" style="margin-bottom:12px">
+  <div class="row pr-row-d">
     {% if c and c.blocked %}<span class="pill blocked" title="{{ _('Applies to all users, also to the accounts of the administrator group') }}">{{ _("BLOCKED FOR EVERYONE · admins included") }}</span>{% endif %}
     {% if c and c.mdns_hidden %}<span class="pill s-pending" title="{{ _('It is not announced on the network: still usable by whoever knows it') }}">{{ _("hidden from the network (mDNS)") }}</span>{% endif %}
     <form method="post" action="/admin/printers/{{ q.name|urlencode }}/block"
@@ -157,23 +157,23 @@
   </div>
   {% endfor %}
 
-  {% if not d.online %}<div class="pill blocked" style="display:block;border-radius:8px;padding:8px 12px">{{ _("The device does not answer (cable unplugged? printer off?): ink and counters are not shown because they would be stale data.") }}
+  {% if not d.online %}<div class="pill blocked pr-warn">{{ _("The device does not answer (cable unplugged? printer off?): ink and counters are not shown because they would be stale data.") }}
     {% for q in d.queues %}{% if remove_after and is_usb(q.device_uri) and not q.online %}{% set since = offline_since.get(key(q.name)) %}{% if since %}{% set end = since + remove_after %}{% set secs = [((end - now).total_seconds())|int, 0]|max %}
-    <div style="margin-top:6px">{{ _("The queue %(name)s will be removed automatically in %(time)s (%(when)s) unless the printer comes back.", name=q.name, time=('<b class="countdown" data-end="%s">%d:%02d:%02d</b>'|format(end.isoformat(), secs // 3600, secs % 3600 // 60, secs % 60))|safe, when=end|localtime('%Y-%m-%d %H:%M')) }}</div>
+    <div class="pr-mt6">{{ _("The queue %(name)s will be removed automatically in %(time)s (%(when)s) unless the printer comes back.", name=q.name, time=('<b class="countdown" data-end="%s">%d:%02d:%02d</b>'|format(end.isoformat(), secs // 3600, secs % 3600 // 60, secs % 60))|safe, when=end|localtime('%Y-%m-%d %H:%M')) }}</div>
     {% endif %}{% endif %}{% endfor %}</div>{% endif %}
-  <div class="grid2" style="margin-top:12px">
+  <div class="grid2 pr-mt12">
     {% if d.online and d.queues[0].ink %}
     <div><h2>{{ _("Ink left") }}</h2>
       {% for i in d.queues[0].ink %}
-      <div style="margin-bottom:8px"><div class="row" style="justify-content:space-between"><span>{{ i.name }}</span><b {% if i.low %}style="color:var(--err)"{% endif %}>{{ i.level if i.level >= 0 else '?' }}%{% if i.low %} · {{ _("almost empty") }}{% endif %}</b></div>
-        <div class="bar"><i style="width:{{ [i.level, 0]|max }}%;background:{{ i.color }}"></i></div></div>
+      <div class="pr-ink"><div class="row pr-between"><span>{{ i.name }}</span><b {% if i.low %}class="pr-err"{% endif %}>{{ i.level if i.level >= 0 else '?' }}%{% if i.low %} · {{ _("almost empty") }}{% endif %}</b></div>
+        <div class="bar"><i data-w="{{ [i.level, 0]|max }}" data-bg="{{ i.color }}"></i></div></div>
       {% endfor %}
     </div>
     {% endif %}
     {% if dev and dev.usage %}
     <div><h2>{{ _("Printer counters") }}</h2>
-      <table>{% for label, v in dev.usage %}<tr><td>{{ _(label) }}</td><td style="text-align:right"><b>{{ v }}</b></td></tr>{% endfor %}</table>
-      <p class="muted" style="margin:6px 0 0">{{ _("Since the printer was born, including prints made without going through the gateway.") }}</p>
+      <table>{% for label, v in dev.usage %}<tr><td>{{ _(label) }}</td><td class="pr-right"><b>{{ v }}</b></td></tr>{% endfor %}</table>
+      <p class="muted pr-m6">{{ _("Since the printer was born, including prints made without going through the gateway.") }}</p>
     </div>
     {% endif %}
     <div><h2>{{ _("From the gateway") }}</h2>
@@ -182,7 +182,7 @@
         {% for name, st in d.stats.items() %}<tr><td class="mono">{{ name }}</td><td>{{ st.jobs }}</td><td>{{ st.pages }}</td><td class="muted">{{ st.last|localtime('%Y-%m-%d %H:%M') if st.last else '—' }}</td></tr>{% endfor %}
         {% if d.scan_stats %}<tr><td>{{ _("scans") }}</td><td>{{ d.scan_stats.scans }}</td><td></td><td class="muted">{{ d.scan_stats.last|localtime('%Y-%m-%d %H:%M') if d.scan_stats.last else '—' }}</td></tr>{% endif %}
       </table>
-      <p class="muted" style="margin:6px 0 0">{{ _("Only what went through the gateway (pages counted on successful jobs).") }}</p>
+      <p class="muted pr-m6">{{ _("Only what went through the gateway (pages counted on successful jobs).") }}</p>
     </div>
     {% if dev %}
     <div><h2>{{ _("Details") }}</h2>
@@ -213,90 +213,22 @@
 <dialog id="qaddr-dlg" class="wide">
   <div class="dlghead">
     <h3>{{ _("Address of the queue") }}</h3>
-    <form method="dialog" class="x"><button class="sec" aria-label="{{ _('Close') }}" title="{{ _('Close') }}"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" style="stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round"><path d="M5 5l14 14M19 5L5 19"/></svg></button></form>
+    <form method="dialog" class="x"><button class="sec" aria-label="{{ _('Close') }}" title="{{ _('Close') }}"><svg class="pr-x24" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg></button></form>
   </div>
   <div class="qname mono" id="qaddr-name"></div>
-  <p class="muted" style="margin:0">{{ _("The address to add the printer by hand on a computer. When it asks, the user enters their user name and a print key.") }}</p>
+  <p class="muted pr-m0">{{ _("The address to add the printer by hand on a computer. When it asks, the user enters their user name and a print key.") }}</p>
   <div class="dlgfield">{{ _("Address") }}</div>
   {{ copybox("", cls="secret", style="font-size:15px") }}
   <form method="dialog" class="actions"><button class="sec">{{ _("Close") }}</button></form>
 </dialog>
-<script>
-  // names for the rename hints: the queues there are now, and the ones removed (with the day)
-  var QUEUE_NAMES = {{ devices|map(attribute='queues')|sum(start=[])|map(attribute='name')|map('lower')|list|tojson }};
-  var FORMER = [{% for f in former %}[{{ f.display|tojson }}, {{ f.removed_at|localtime('%Y-%m-%d')|tojson }}]{% if not loop.last %}, {% endif %}{% endfor %}];  // most recent first
-  var T_FORMER = {{ _t("Used before: no queue has had this name since %(date)s. Computers set up with this address will print again.", date="DATE")|tojson }};
-  var T_TAKEN = {{ _t("A queue with this name already exists.")|tojson }};
-  var T_SAME = {{ _t("That is already its name.")|tojson }};
-  var T_BAD = {{ _t("Letters, digits and . _ @ + - only.")|tojson }};
-</script>
-<script>
-(function () {
-  var els = document.querySelectorAll('.countdown');
-  if (!els.length) return;
-  function pad(n) { return (n < 10 ? '0' : '') + n; }
-  function tick() {
-    els.forEach(function (el) {
-      var s = Math.max(0, Math.floor((new Date(el.dataset.end) - Date.now()) / 1000));
-      el.textContent = Math.floor(s / 3600) + ':' + pad(Math.floor(s % 3600 / 60)) + ':' + pad(s % 60);
-      if (s === 0) setTimeout(function () { location.reload(); }, 40000);
-    });
-  }
-  tick(); setInterval(tick, 1000);
-})();
-document.addEventListener('confirmed', function (e) {  // "x" next to a name used before: forgotten without reloading the page
-  var f = e.target; if (!f.classList || !f.classList.contains('forgetform')) return;
-  var name = f.elements.name.value;
-  fetch(f.action, {method: 'POST', headers: {'X-Fetch': '1', 'Content-Type': 'application/x-www-form-urlencoded'}, body: new URLSearchParams(new FormData(f))})
-    .then(function (r) { if (!r.ok) throw 0; return r.json(); })
-    .then(function () {
-      FORMER = FORMER.filter(function (x) { return x[0] !== name; });
-      document.querySelectorAll('form.forgetform').forEach(function (g) {  // every queue has its own rename window with the same list
-        if (g.elements.name.value !== name) return;
-        var item = g.closest('li'), details = item.closest('details'); item.remove();
-        var left = details.querySelectorAll('li').length;
-        if (left) details.querySelector('.former-count').textContent = left; else details.remove();
-      });
-      document.querySelectorAll('form.rnform input[name=new_name]').forEach(renameHint);
-    })
-    .catch(function () { f.submit(); });  // anything wrong: the ordinary way, with its message
-}, true);
-document.addEventListener('click', function (e) {
-  var qa = e.target.closest && e.target.closest('button.qaddr');  // "..." next to a queue: its address, ready to copy
-  if (qa) { var dlg = document.getElementById('qaddr-dlg'); dlg.querySelector('[data-copy]').textContent = qa.dataset.url; dlg.querySelector('#qaddr-name').textContent = qa.dataset.queue; dlg.showModal(); return; }
-  var n = e.target.closest && e.target.closest('button.former');  // a name used before: written in the field last used in that dialog
-  if (n) {
-    var dlg = n.closest('dialog'), r = dlg.rnField || dlg.querySelector('input[name=new_name]');
-    r.value = n.dataset.name; renameHint(r); r.focus(); return;
-  }
-  var b = e.target.closest && e.target.closest('button.chip'); if (!b) return;
-  var f = b.closest('form'); f.elements.amount.value = b.dataset.amount; f.elements.unit.value = b.dataset.unit;
-});
-function renameHint(input) {
-  // While a new name is typed: the rest of a name used before that starts the same way appears in grey inside the field
-  // (only a reminder: the whole name must still be typed), and the line under it says if the name is one of the past (and
-  // since when) or the name of a queue that exists. A name that exists, or the current one, can not be sent.
-  var form = input.form, hint = form.querySelector('.rnhint'), ghost = form.querySelector('.ghost'), button = form.querySelector('button');
-  var typed = input.value.trim(), v = typed.toLowerCase(), own = input.placeholder.toLowerCase();
-  var past = FORMER.filter(function (f) { return f[0].toLowerCase() === v; })[0];
-  var bad = typed && !/^[A-Za-z0-9._@+\-]{1,127}$/.test(typed), taken = v !== own && QUEUE_NAMES.indexOf(v) >= 0;
-  hint.className = 'rnhint' + (bad || taken ? ' err' : ' muted');
-  hint.textContent = bad ? T_BAD : v === own ? T_SAME : taken ? T_TAKEN : past ? T_FORMER.replace('DATE', past[1]) : '';
-  button.disabled = !typed || bad || taken || v === own;
-  var guess = v && !bad && input.value === typed && FORMER.filter(function (f) {
-    var l = f[0].toLowerCase(); return l.length > v.length && l.indexOf(v) === 0; })[0];
-  ghost.textContent = '';
-  if (guess && input.scrollWidth <= input.clientWidth) {
-    var hidden = document.createElement('span'); hidden.className = 'typed'; hidden.textContent = input.value;
-    ghost.appendChild(hidden); ghost.appendChild(document.createTextNode(guess[0].slice(typed.length)));
-  }
-}
-document.querySelectorAll('form.rnform input[name=new_name]').forEach(renameHint);
-document.addEventListener('input', function (e) {
-  if (e.target.matches && e.target.matches('form.rnform input[name=new_name]')) renameHint(e.target);
-});
-document.addEventListener('focusin', function (e) {
-  if (e.target.matches && e.target.matches('form.rnform input[name=new_name]')) e.target.closest('dialog').rnField = e.target;
-});
-</script>
 {% endblock %}
+{% block head %}<link rel="stylesheet" href="/admin/static/css/printers.css?v={{ app_version }}">{% endblock %}
+{% block scripts %}<script type="application/json" id="pr-data">{
+  "queues": {{ devices|map(attribute='queues')|sum(start=[])|map(attribute='name')|map('lower')|list|tojson }},
+  "former": [{% for f in former %}[{{ f.display|tojson }}, {{ f.removed_at|localtime('%Y-%m-%d')|tojson }}]{% if not loop.last %}, {% endif %}{% endfor %}],
+  "t_former": {{ _t("Used before: no queue has had this name since %(date)s. Computers set up with this address will print again.", date="DATE")|tojson }},
+  "t_taken": {{ _t("A queue with this name already exists.")|tojson }},
+  "t_same": {{ _t("That is already its name.")|tojson }},
+  "t_bad": {{ _t("Letters, digits and . _ @ + - only.")|tojson }}
+}</script>
+<script src="/admin/static/js/printers.js?v={{ app_version }}" defer></script>{% endblock %}

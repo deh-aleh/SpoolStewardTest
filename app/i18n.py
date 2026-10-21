@@ -2,7 +2,7 @@
 (`app/locales/<language>/messages.po`), which are read when first needed and compiled in memory: no build step.
 
 The language of a request is, in order: the one the signed-in user chose in their profile (kept in the session),
-the browser's Accept-Language, the installation default (`CUPSPL_LANGUAGE`), English. A text with no translation
+the browser's Accept-Language, the installation default (`SPOOLSTEWARD_LANGUAGE`), English. A text with no translation
 is shown in English, so a missing translation never breaks a page.
 
 Rules for the texts: variables are named (`_("Key %(label)s revoked", label=x)`), never concatenated; a literal

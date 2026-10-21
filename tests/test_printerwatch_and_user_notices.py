@@ -2,7 +2,7 @@
 account; an administrator has ONE bell."""
 
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy import select
@@ -47,9 +47,9 @@ def boss(portal):
     make_user(portal.sm, "ann", password=GOOD)
     make_user(portal.sm, "bob", password=GOOD)
     with portal.sm() as s:
-        s.add(JobLog(ts=datetime.now(timezone.utc), user_id=uid(portal, "ann"), user_name="ann", kind=JobKind.print, printer="hp",
+        s.add(JobLog(ts=datetime.now(UTC), user_id=uid(portal, "ann"), user_name="ann", kind=JobKind.print, printer="hp",
                      state=JobState.accepted, cups_job_id=5))
-        s.add(JobLog(ts=datetime.now(timezone.utc), user_id=uid(portal, "bob"), user_name="bob", kind=JobKind.print, printer="hp",
+        s.add(JobLog(ts=datetime.now(UTC), user_id=uid(portal, "bob"), user_name="bob", kind=JobKind.print, printer="hp",
                      state=JobState.completed, cups_job_id=4))
         s.commit()
     printerwatch._streak.clear()

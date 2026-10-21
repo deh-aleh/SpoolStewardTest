@@ -11,7 +11,7 @@ cd "$(dirname "$0")/.."
 mkdir -p config/tls data/audit-archive data/backups
 
 if [ ! -e .env ]; then
-    [ -f docker/env.example ] || { echo "docker/env.example not found: run this from the PrintMinder folder" >&2; exit 1; }
+    [ -f docker/env.example ] || { echo "docker/env.example not found: run this from the SpoolSteward folder" >&2; exit 1; }
     # the version: the file VERSION of the release package, or pyproject.toml in a git clone
     version="$(cat VERSION 2>/dev/null || sed -n 's/^version *= *"\([0-9][0-9.]*\(b[0-9][0-9]*\)\{0,1\}\)".*/\1/p' pyproject.toml 2>/dev/null | head -1)"
     version="$(printf '%s' "$version" | sed 's/^\([0-9][0-9.]*\)b\([0-9][0-9]*\)$/\1-beta.\2/')"   # pyproject says 0.3.1b1, the images are 0.3.1-beta.1
@@ -24,7 +24,7 @@ if [ ! -e .env ]; then
     sed -e "s|__VERSION__|$(esc "$version")|g" -e "s|__PUID__|$(id -u)|g" -e "s|__PGID__|$(id -g)|g" \
         -e "s|__PROJECT_DIR__|$(esc "$here")|g" -e "s|__GENERATED__|$secret|g" docker/env.example > .env
     chmod 600 .env
-    echo "created .env (version $version). Set the time zone and, if you use RADIUS, CUPSPL_RADIUS_HOST / CUPSPL_RADIUS_SECRET in it."
+    echo "created .env (version $version). Set the time zone and, if you use RADIUS, SPOOLSTEWARD_RADIUS_HOST / SPOOLSTEWARD_RADIUS_SECRET in it."
 fi
 
 if [ ! -e config/tls/privkey.pem ]; then

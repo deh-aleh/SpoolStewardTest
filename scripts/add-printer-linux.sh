@@ -2,7 +2,7 @@
 # Adds a gateway printer to THIS Linux computer's CUPS, remembering the print key so nobody is asked again.
 #   scripts/add-printer-linux.sh <server[:port]> <queue> <username> [local-name]
 #   e.g.  scripts/add-printer-linux.sh print.lan:8631 HP7305 mario
-# The key (portal -> "Il mio profilo" -> Crea una chiave) is asked silently, or taken from $PRINT_KEY.
+# The key (portal -> My profile -> Create a key) is asked silently, or taken from $PRINT_KEY.
 # It is stored in /etc/cups/printers.conf, which only root and the cups group can read. It is a print-only key:
 # if this computer is lost, revoke it in the portal and the domain password was never on the machine.
 set -eu

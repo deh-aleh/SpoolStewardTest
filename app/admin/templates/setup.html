@@ -7,7 +7,7 @@
   <h1>{{ _("First start") }}</h1>
   <form method="post" action="/setup">
     <p>{{ _("Set the password of the administrator <b>%(user)s</b>.", user=username) }}</p>
-    <p class="muted" style="text-align:left;margin:0 0 14px">{{ _("The one-time code is printed in the gateway log: <code>docker compose logs gateway</code>. Whoever has no access to the server cannot complete this page.") }}</p>
+    <p class="muted su-note">{{ _("The one-time code is printed in the portal log: <code>docker compose logs gateway</code>. Whoever has no access to the server cannot complete this page.") }}</p>
     <input type="text" name="code" placeholder="{{ _('One-time code') }}" aria-label="{{ _t('One-time code') }}" autocomplete="off" required>
     {% with name="password", placeholder=_t('New password (min. 12 characters)'), autocomplete="new-password" %}{% include "_pwfield.html" %}{% endwith %}
     {% with name="confirm", placeholder=_t('Repeat the password'), autocomplete="new-password" %}{% include "_pwfield.html" %}{% endwith %}

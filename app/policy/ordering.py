@@ -6,11 +6,12 @@ CUPS does not say when a queue was created, so the gateway notes the first time 
 that already existed when this was introduced share the same moment and fall back to alphabetical order among
 themselves; everything connected afterwards is ordered by connection time."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 
+from app.timeutil import aware
 from app.db.models import PrinterControl, PrinterKeepalive, PrinterOffline, PrinterOrder, PrinterSeen
 
 VIRTUAL_SCHEMES = ("cups-pdf", "file")  # queues that write a file instead of printing: no hardware behind them
@@ -24,10 +25,6 @@ def is_virtual(device_uri: str) -> bool:
     return device_uri.split(":", 1)[0].lower() in VIRTUAL_SCHEMES
 
 
-def _aware(dt: datetime) -> datetime:
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
-
-
 def note_seen(sm, names: list[str]) -> dict[str, datetime]:
     """Remember the first sighting of every name in `names` (blocking) and return {name key: first sighting}."""
     wanted = {key(n) for n in names}
@@ -37,14 +34,14 @@ def note_seen(sm, names: list[str]) -> dict[str, datetime]:
         known = {r.printer: r.first_seen for r in db.scalars(select(PrinterSeen).where(PrinterSeen.printer.in_(wanted)))}
         missing = wanted - known.keys()
         if missing:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             db.add_all(PrinterSeen(printer=n, first_seen=now) for n in sorted(missing))
             try:
                 db.commit()
             except IntegrityError:  # another request noted the same queue a moment ago
                 db.rollback()
             known = {r.printer: r.first_seen for r in db.scalars(select(PrinterSeen).where(PrinterSeen.printer.in_(wanted)))}
-    return {n: _aware(t) for n, t in known.items()}
+    return {n: aware(t) for n, t in known.items()}
 
 
 def positions(sm, user_id: int) -> dict[str, int]:
@@ -67,10 +64,11 @@ def reorder(sm, user_id: int, cards: list[list[str]], i: int, j: int) -> None:
     order[i], order[j] = order[j], order[i]
     where = {n: p for p, c in zip(order, cards) for n in map(key, c)}
     with sm() as db:
-        for r in db.scalars(select(PrinterOrder).where(PrinterOrder.user_id == user_id)):
-            if r.printer not in where:
-                db.delete(r)  # a queue that is gone
         have = {r.printer: r for r in db.scalars(select(PrinterOrder).where(PrinterOrder.user_id == user_id))}
+        for name, row in list(have.items()):
+            if name not in where:
+                db.delete(row)  # a queue that is gone
+                del have[name]
         for n, p in where.items():
             if n in have:
                 have[n].position = p
@@ -98,5 +96,5 @@ def rename(db, old: str, new: str) -> None:
 
 
 def sort_key(name: str, device_uri: str, seen: dict[str, datetime]):
-    far = datetime.max.replace(tzinfo=timezone.utc)
+    far = datetime.max.replace(tzinfo=UTC)
     return (is_virtual(device_uri), seen.get(key(name), far), key(name))

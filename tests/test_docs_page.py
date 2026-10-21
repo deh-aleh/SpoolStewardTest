@@ -109,7 +109,7 @@ def test_links_are_rewritten():
     assert 'href="#local"' in h and 'href="#local" target' not in h
     version = docs.app_version()
     ref = f"v{version}" if version != "unknown" else "main"
-    assert f'href="https://github.com/deh-aleh/PrintMinder/blob/{ref}/app/config.py" target="_blank" rel="noopener noreferrer"' in h
+    assert f'href="https://github.com/deh-aleh/SpoolSteward/blob/{ref}/app/config.py" target="_blank" rel="noopener noreferrer"' in h
     assert f"blob/{ref}/README.it.md" in h
     assert 'href="https://example.com/p" target="_blank" rel="noopener noreferrer"' in h
     assert f"blob/{ref}/docs/en/nothing.md" in h                  # not a page of the portal: GitHub (the file may be there)
