@@ -17,6 +17,8 @@ Ogni amministratore crea i **propri** backup programmati, con cartella, ora, num
 settimanali, mensili) e cifratura. Modifica ed elimina solo i propri; *Esegui ora* è disponibile a tutti. Il backup *Generale*
 dell'installazione si mostra in sola lettura: si imposta in `.env` (`SPOOLSTEWARD_BACKUP_*`).
 
+![Un backup programmato: proprietario, cartella, ora, copie tenute, cifratura con passphrase, ultimo esito e i pulsanti Esegui ora, Modifica, Sospendi ed Elimina](../images/it/admin-backup.png)
+
 - Un backup è scritto in `.partial`, **riletto e verificato**, rinominato; solo dopo si tolgono le copie vecchie. *Esegui ora* aggiunge
   una copia senza cancellarne (la pulizia la fa la prossima esecuzione programmata).
 - Se un backup è fallito, o l'ultimo ha più di 48 h, la pagina lo mostra in rosso **e nella campanella compare un avviso** con il nome del backup (vedi «Avvisi» più sotto). L'avviso si chiude da solo al primo backup riuscito.
@@ -60,6 +62,7 @@ Comportamento del gateway con un disco di rete:
 - Su SMB/CIFS e in alcune configurazioni NFS i permessi dei file li decidono le opzioni di montaggio, **non** il gateway: il solito
   `chmod 600` non ha effetto e chiunque legga la condivisione legge i file. **Usa la cifratura** per i backup su una condivisione.
 - Usa montaggi `soft` (NFS: `soft,timeo=100`; CIFS: `soft`), mai `hard`, così un NAS morto non blocca il server.
+- Un disco che smette di rispondere **mentre un backup viene scritto** può lasciare quel backup bloccato: i successivi dicono allora «Un altro backup è in corso» finché il gateway non viene riavviato (`docker compose restart gateway`). Quello che era già salvato non si perde.
 - Il backup è «fuori dalla macchina» solo se la condivisione sta su un'altra macchina. Un disco USB attaccato al server protegge da un disco rotto, non da un incendio.
 
 ### Avvisi quando il backup non riesce
@@ -122,6 +125,7 @@ scripts/backup.sh restore FILE.tar.gz      # ferma prima il gateway e chiede con
 Include il database (con la chiamata di backup di SQLite), `config/` (segreti compresi), `.env`, l'archivio audit e la configurazione
 di CUPS (le code). Non include le immagini né lo spool dei job in corso. L'archivio contiene segreti: tienilo riservato quanto il server.
 `restore` riporta il `.env` del backup, quindi anche la sua versione: se i file della cartella sono di un'altra versione, ti dice di eseguire `scripts/update.sh <versione>` (vedi "Tornare a una versione più vecchia" in [installazione.md](installazione.md)).
+`scripts/backup.sh` non ha bisogno di Internet: usa l'immagine che lo stack sta già eseguendo, e il ripristino controlla tutto prima e ferma l'applicazione solo quando è sicuro di poter proseguire.
 `restore` è provato solo a mano.
 
 ## 4. Limiti

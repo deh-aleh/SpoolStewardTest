@@ -191,3 +191,70 @@ async def test_scanner_without_a_label_uses_its_model_and_hidden_queues_are_drop
     names = [o[3] for o in env.ops if o[1:2] == ("register",)]
     P, S = mdns.SERVICE, mdns.SCAN_SERVICE
     assert names == [f"Info c @ gw.{P}", f"Info c @ gw.{P}", f"Scan 1 (scanner) @ gw.{S}", f"Named (scanner) @ gw.{S}"]
+
+
+async def test_a_pass_that_fails_does_not_end_the_announcer(env, caplog):
+    env.stop_after = 2
+    env.queues = [[q("a")]]
+    calls = []
+    real = mdns.build_services
+
+    def flaky(*a, **k):
+        calls.append(1)
+        if len(calls) == 1:
+            raise RuntimeError("zeroconf said no")
+        return real(*a, **k)
+    mdns.build_services = flaky
+    try:
+        await run(env)
+    finally:
+        mdns.build_services = real
+    assert "announcement pass failed" in caplog.text
+    assert [o[3] for o in env.ops if o[1:2] == ("register",) and o[3].startswith("Info a")] == [f"Info a @ gw.{mdns.SERVICE}"] * 2   # announced by the second pass
+
+
+@pytest.mark.parametrize("why, words", [("no_key", "SPOOLSTEWARD_SECRET_KEY=<value>"), ("token", "--force-recreate gateway mdns")])
+async def test_when_the_gateway_refuses_nothing_is_announced_and_the_log_says_what_to_do(env, caplog, why, words):
+    env.policies = [{mdns.REFUSED: why}]
+    env.stop_after = 3
+    await run(env)
+    assert not [o for o in env.ops if o[1:2] == ("register",)]
+    assert [m for m in caplog.messages if "mDNS is OFF" in m and words in m] and len([m for m in caplog.messages if "mDNS is OFF" in m]) == 1   # said once, not at every pass
+
+
+async def test_something_that_was_announced_is_withdrawn_when_the_gateway_starts_refusing(env):
+    env.stop_after = 2
+    env.policies = [None, {mdns.REFUSED: "token"}]
+    await run(env)
+    withdrawn = [o for o in env.ops if o[1:2] == ("unregister",)]
+    assert {o[3] for o in withdrawn} == {f"Info a @ gw.{mdns.SERVICE}", f"Info b @ gw.{mdns.SERVICE}", f"Scan 1 (scanner) @ gw.{mdns.SCAN_SERVICE}"}
+
+
+async def test_fetch_policy_refuses_without_a_key_and_on_404(monkeypatch):
+    import httpx
+
+    monkeypatch.setattr(settings, "secret_key", "")
+    assert await mdns.fetch_policy(8631) == {mdns.REFUSED: "no_key"}      # no network call at all
+    monkeypatch.setattr(settings, "secret_key", "k" * 64)
+
+    class Client:
+        status = 404
+
+        def __init__(self, **kw):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *a):
+            return False
+
+        async def get(self, url, headers=None):
+            return httpx.Response(self.status, json={"maintenance": False, "hidden": [], "offline": [], "scanners": []})
+
+    monkeypatch.setattr(mdns.httpx, "AsyncClient", Client)
+    assert await mdns.fetch_policy(8631) == {mdns.REFUSED: "token"}
+    Client.status = 500
+    assert await mdns.fetch_policy(8631) is None                          # an unwell gateway is not a refusal: keep what was known
+    Client.status = 200
+    assert (await mdns.fetch_policy(8631))["maintenance"] is False

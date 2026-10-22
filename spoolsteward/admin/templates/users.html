@@ -31,7 +31,7 @@
     <p class="muted">{{ _("Account managed here, without RADIUS. If you leave the password empty a temporary one is generated (you will see it only once).") }}</p>
     <input type="hidden" name="csrf_token" value="{{ csrf }}">
     <div class="row">
-      <input type="text" name="username" placeholder="{{ _('user name') }}" required>
+      <input type="text" name="username" placeholder="{{ _('user name') }}" class="ur-name" required>
       <select name="group_id"><option value="0">{{ _("Default group (%(group)s)", group=default_group) }}</option>{% for g in groups if g.name != default_group %}<option value="{{ g.id }}">{{ g.name }}</option>{% endfor %}</select>
     </div>
     <div class="row ur-row">

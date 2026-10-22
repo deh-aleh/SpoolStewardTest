@@ -17,6 +17,23 @@ L'annuncio (mDNS) pubblica l'indirizzo IP della route di default, oppure `SPOOLS
 (predefinito: la parte host di `SPOOLSTEWARD_PORTAL_URL`, altrimenti il nome della macchina). I client che trovano la stampante via mDNS si collegano a
 quell'indirizzo, che deve quindi essere nel SAN. Se l'indirizzo cambia (DHCP) il certificato non corrisponde più: assegna al server un indirizzo fisso.
 
+**Browser e solo HTTPS (HSTS).** A ogni risposta HTTPS il portale invia `Strict-Transport-Security: max-age=<secondi>`
+(`SPOOLSTEWARD_HSTS_SECONDS`; **spenta di default**, `0` = mai). Per accenderla imposta per esempio `2592000` (30 giorni) ed esegui `docker compose up -d`. Dice al browser di usare solo HTTPS con questo **nome host**. Come va a finire:
+
+- **Un certificato di cui il browser non si fida** (l'autofirmato di `scripts/docker-init.sh`, con un avviso a cui passi oltre): il browser
+  **ignora** l'intestazione, come richiede lo standard. Non cambia nulla.
+- **Un certificato di cui il browser si fida** (un'autorità vera, o la CA aziendale installata sul computer, §3): il browser se la ricorda. Da quel momento
+  un indirizzo scritto o linkato come `http://stampe.lan` diventa da solo `https://stampe.lan`, e **un errore di certificato non si può più scavalcare**.
+  Esempio: Mario si fida della CA aziendale. Apre il portale; il certificato scade 20 giorni dopo e nessuno lo rinnova; il suo browser mostra «la
+  connessione non è privata» **senza** il link «Avanzate – continua», quindi non riesce nemmeno a raggiungere il portale per leggere l'avviso. Appena il
+  certificato è rinnovato torna a funzionare subito: il browser ricorda «niente scavalcamento», non l'errore.
+- **Vale per nome host, non per porta.** Se lo stesso nome serve qualcos'altro solo in `http` semplice (una seconda pagina web dello stesso Raspberry su
+  un'altra porta), quel browser la forza a `https` e smette di aprirsi.
+
+Se l'hai accesa e vuoi spegnerla, imposta `SPOOLSTEWARD_HSTS_SECONDS=0` ed esegui `docker compose up -d`: i browser che già la ricordano tengono la regola finché il suo tempo non
+è finito (al massimo 30 giorni), o finché non ricevono l'intestazione con `0` su una connessione HTTPS valida, o finché non si cancellano i dati del sito nel
+browser. Con un certificato di un'autorità vera che si rinnova da solo puoi poi alzarla a `31536000` (un anno).
+
 ## 2. Avvisi nel portale (la campanella)
 
 Il gateway non sostituisce mai il certificato. Legge `SPOOLSTEWARD_TLS_CERTFILE` e `config/tls/sync-status.json` ogni 6 ore e

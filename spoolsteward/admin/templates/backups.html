@@ -52,7 +52,7 @@
 {% for r in rows %}{% set t = r.t %}{% set h = hl[r.health] %}
 <div class="card">
   <div class="row bk-head">
-    <h2 class="bk-h2">{{ t.name }}{% if t.is_global %} <span class="pill">.env</span>{% elif r.mine %} <span class="pill">{{ _("mine") }}</span>{% endif %}</h2>
+    <h2 class="bk-h2">{{ backup_name(t.name) }}{% if t.is_global %} <span class="pill">.env</span>{% elif r.mine %} <span class="pill">{{ _("mine") }}</span>{% endif %}</h2>
     <span class="pill {{ h[0] }}">{{ h[1] }}</span>
   </div>
   <dl class="kv bk-kv">
@@ -108,8 +108,8 @@
   </dl>
   <div id="m-passphrase">
     <dl class="kv bk-center">
-      <dt>{{ _("Passphrase") }}</dt><dd><input type="password" name="passphrase" autocomplete="new-password" minlength="{{ min_pass }}"> <span class="muted">{{ _("at least %(n)s characters", n=min_pass) }}</span></dd>
-      <dt>{{ _("Repeat") }}</dt><dd><input type="password" name="passphrase2" autocomplete="new-password"></dd>
+      <dt>{{ _("Passphrase") }}</dt><dd>{% with name="passphrase", autocomplete="new-password", minlength=min_pass, optional=true, cls="bk-pw" %}{% include "_pwfield.html" %}{% endwith %} <span class="muted">{{ _("at least %(n)s characters", n=min_pass) }}</span></dd>
+      <dt>{{ _("Repeat") }}</dt><dd>{% with name="passphrase2", autocomplete="new-password", optional=true, cls="bk-pw" %}{% include "_pwfield.html" %}{% endwith %}</dd>
     </dl>
     <p class="muted">{{ _("<b>Do not use your account password:</b> the gateway does not know it (it only stores a hash), it changes over time, and for a RADIUS user it is not even theirs. Choose a dedicated one and keep it in a safe place (password manager). The gateway <b>does not store it</b>: it writes the backups without asking for it, but <b>without it nobody can open them</b>, not even another administrator.") }}</p>
   </div>

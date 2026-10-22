@@ -32,8 +32,16 @@ disappears within ~30 s. The `mdns` service announces each scanner as `_uscans._
 - Where to save: Chromium browsers open a folder-picker (File System Access API); others save to the downloads folder (a web
   page can not write to a hand-typed path).
 - The scan runs as a **background task on the server**: you can leave the page and download later (the result is kept
-  **15 minutes in memory**, visible only to its owner; one web scan at a time). If the scanner answers 409/503 (waking up)
+  **10 minutes in memory**, visible only to its owner; one web scan at a time). If the scanner answers 409/503 (waking up)
   the gateway retries 3 times.
+- The finished scans wait **in the memory of the server** (a colour page at 300 dpi is about 1 MB; a feeder of 100 pages can be
+  100 MB). Three settings in `.env` keep it under control: `SPOOLSTEWARD_SCAN_KEEP_MINUTES` (default 10) is how long a finished
+  scan stays; `SPOOLSTEWARD_SCAN_KEEP_MB` (default 50) is how much all the people together can keep: when a new scan does not fit,
+  the **oldest finished ones are dropped first** (the newest is always kept, even if it alone is bigger); and
+  `SPOOLSTEWARD_SCAN_DELETE_AFTER_DOWNLOAD` (default `false`): with `true` a scan leaves the memory and the page as soon as its
+  download has finished, so it can be downloaded once. A scan that has been dropped must be scanned again: download it soon.
+
+![A scan from the glass in progress: the Scan button is greyed out and the bar under it says that the scan is running](../images/en/scan-running.png)
 
 ## 3. Scanning with eSCL clients
 

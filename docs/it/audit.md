@@ -16,6 +16,8 @@ Gli id non si riusano mai. **Nessuna funzione del portale cancella righe.** L'au
 Ogni riga ha: numero progressivo (N.), ora, utente, dispositivo (coda di stampa o scanner), nome file, tipo (stampa / scansione), esito,
 pagine, motivo del rifiuto e opzioni (carta, colore, fronte-retro, sorgente, copie, intervallo di pagine, commento, `via` web / IPP…).
 
+![La pagina dell'audit: interruttore dell'aggiornamento automatico, filtri per utente, nome del file e stato, esportazione CSV e report, e una scansione completata](../images/it/admin-audit.png)
+
 **Il nome del file è cifrato** nel database e si può smettere di salvarlo con il pulsante verde/rosso in alto a destra della pagina; con la retention (`.env`) sparisce
 dopo un numero di giorni a scelta. La riga resta sempre, con tutto il resto. Dettagli in [protezione-dati.md](protezione-dati.md).
 
@@ -34,7 +36,7 @@ Le scansioni senza credenziali (eSCL anonimo) mostrano IP e nome host di chi chi
 
 ### Report di utilizzo
 
-*Report* (pulsante accanto a *Esporta CSV* in `/admin/jobs`, pagina `/admin/report`) ordina gli utenti per pagine stampate in un periodo. Scegli le date (predefinito: ultimi 30 giorni),
+*Report* (pulsante accanto a *Esporta CSV* in `/admin/jobs`, pagina `/admin/report`) ordina gli utenti per pagine stampate in un periodo. Scegli il periodo con un pulsante (*Oggi*, *Ultimi 7 giorni*, *Questo mese*, *Mese scorso*, *Ultimi 30 giorni*, *Quest'anno*) oppure scrivendo le due date come `2026-10-31` (anno-mese-giorno; non c'è il calendario a comparsa, perché il suo aspetto e la sua lingua dipenderebbero dal browser; predefinito: ultimi 30 giorni),
 quanti utenti elencare, i gruppi da **escludere** (secondo il gruppo che ogni utente ha adesso; un account eliminato non ne ha e viene sempre contato) e **Report dettagliato**, che aggiunge
 per ogni utente le stampe per stampante. Si può vedere nella pagina o scaricare in **CSV** o **PDF**. Contano solo le stampe (completate, in attesa o in corso); quelle fallite o annullate e le scansioni no.
 Le righe già spostate in un archivio compresso non vengono lette: la pagina avvisa quando il periodo arriva fin lì. Il PDF è in inglese e usa i font standard, quindi i nomi con

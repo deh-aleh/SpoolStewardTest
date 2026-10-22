@@ -209,9 +209,10 @@ def eligible_backup(db, now: datetime):
 
 
 def write_request(version: str, who: str, backup: str) -> None:
-    """Hand the update to the updater. `version` must be x.y.z or x.y.z-beta.N, of the same major as the installed one."""
+    """Hand the update to the updater. `version` must be x.y.z or x.y.z-beta.N, of the same major as the installed one and NEWER than
+    it: the portal never goes back (scripts/update.sh does, from a terminal; the updater refuses it too)."""
     installed, wanted = _order(app_version()), _order(version) if _RELEASE.fullmatch(version) else None
-    if wanted is None or installed is None or wanted[0] != installed[0]:
+    if wanted is None or installed is None or wanted[0] != installed[0] or wanted <= installed:
         raise ValueError("version not allowed from the portal")
     d = _dir()
     d.mkdir(parents=True, exist_ok=True)

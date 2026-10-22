@@ -105,6 +105,29 @@ def test_update_replaces_the_package_files_and_never_touches_user_data(site):
     assert "OK: now on 1.1.0" in r.stdout
 
 
+def test_the_portal_only_goes_forward_but_a_terminal_can_go_back(site):
+    """--from-portal comes from the gateway, the part that faces the network: an old version with a known flaw must not be reachable that way."""
+    build(site.rel, "0.9.0", {"docker-compose.yml": "# compose 0.9.0\n", "scripts/update.sh": UPDATE.read_text(), "scripts/backup.sh": BACKUP_STUB})
+    for older in ("0.9.0", "1.0.0", "1.0.0-beta.1"):        # older, the same, and a beta of the version already installed
+        r = site("--from-portal", older)
+        assert r.returncode == 1 and "only installs a version newer than 1.0.0" in r.stderr, older
+        assert "scripts/update.sh " + older in r.stderr                 # and it says how to do it by hand
+        assert "SPOOLSTEWARD_VERSION=1.0.0" in site.env() and (site.project / "docker-compose.yml").read_text() == "# compose 1.0.0\n"
+        assert site.log() == ""                                          # nothing was run: no backup, no docker
+    r = site("0.9.0", healthy="0.9.0", stdin="YES\n")              # an older version from a terminal: allowed, as it always was (it asks, as for any big jump)
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert "SPOOLSTEWARD_VERSION=0.9.0" in site.env() and (site.project / "docker-compose.yml").read_text() == "# compose 0.9.0\n"
+
+
+def test_the_portal_goes_forward_to_a_beta_and_to_a_release(site):
+    build(site.rel, "1.1.0-beta.1", {"docker-compose.yml": "# beta\n", "scripts/update.sh": UPDATE.read_text(), "scripts/backup.sh": BACKUP_STUB})
+    r = site("--from-portal", "1.1.0-beta.1", healthy="1.1.0-beta.1")
+    assert r.returncode == 0, r.stderr + r.stdout
+    assert "SPOOLSTEWARD_VERSION=1.1.0-beta.1" in site.env()
+    r = site("--from-portal", "1.1.0", healthy="1.1.0")             # the release that follows its own beta is newer
+    assert r.returncode == 0 and "SPOOLSTEWARD_VERSION=1.1.0\n" in site.env()
+
+
 def test_a_package_that_does_not_match_its_checksum_changes_nothing(site):
     shutil.rmtree(site.rel / "v1.1.0")
     build(site.rel, "1.1.0", {"docker-compose.yml": "# evil\n"}, corrupt_sum=True)

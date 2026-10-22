@@ -34,6 +34,8 @@ Per chi gestisce l'installazione. Il portale è su `https://<server>:8631/` (acc
 L'elenco è in sola lettura: limite proprio o ereditato (in corsivo), concessioni attive come `+N` colorato, consumo e chiavi attive.
 **Modifica** apre la pagina con tutti i campi, che mostra l'**origine** dell'account (locale o RADIUS, solo informativa), ed **Elimina** (scrivi il nome per confermare).
 
+![La pagina Utenti: l'amministratore e un utente locale che deve cambiare la password, con gruppo, limiti, consumo della settimana e chiavi](../images/it/admin-users.png)
+
 - Crea **locale**: si mostra una password temporanea una volta; l'utente la cambia al primo accesso.
 - Crea **RADIUS**: scegli il gruppo; la persona entra con la password d'ufficio.
 - **Reimposta password** (locale): nuova password temporanea, mostrata una volta.
@@ -48,6 +50,8 @@ Eliminare conserva lo storico ([account.md](account.md#7-eliminare-un-utente)).
 Un gruppo ha dei limiti (job / pagine, settimanali / mensili) e un flag **richiedibile**. I gruppi di sistema `default` e `administrator`
 non si eliminano; eliminare un altro gruppo sposta i suoi utenti in `default`. I limiti personali si impostano nella pagina di modifica
 dell'utente. Dettagli in [quote.md](quote.md).
+
+![La pagina Gruppi: i due gruppi di sistema senza limiti e un gruppo con 10 job e 20 pagine a settimana a cui gli utenti possono chiedere di unirsi](../images/it/admin-groups.png)
 
 **Permessi avanzati.** In fondo alla pagina del gruppo e a quella dell'utente, il pulsante **Permessi avanzati** apre colore, stampa solo
 fronte, quali stampanti, e quali giorni e orari. Il campo di un utente è "come il gruppo" oppure ha un valore proprio. L'amministratore di

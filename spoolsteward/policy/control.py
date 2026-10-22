@@ -13,6 +13,7 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from spoolsteward.auth.compare import same_text
 from spoolsteward.config import settings
 from spoolsteward.db.models import GatewaySetting, PrinterControl, User
 from spoolsteward.i18n import N_
@@ -92,4 +93,6 @@ def mdns_token() -> str:
 
 
 def mdns_token_ok(given: str) -> bool:
-    return not settings.secret_key or hmac.compare_digest(given or "", mdns_token())
+    """Without SPOOLSTEWARD_SECRET_KEY nobody can prove who they are: the answer is always no (the announcer then announces
+    nothing and logs how to fix it, see spoolsteward/mdns.py)."""
+    return bool(settings.secret_key) and same_text(given or "", mdns_token())

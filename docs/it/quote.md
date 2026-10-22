@@ -87,6 +87,8 @@ Le quote dicono *quanto*. I permessi dicono *cosa*, *dove* e *quando*. Si impost
 alla pagina del gruppo (*Gruppi* → modifica) e a quella dell'utente (*Utenti* → modifica). Il blocco è chiuso quando tutto è al
 valore predefinito, ed è aperto quando qualcosa è diverso.
 
+![La pagina di modifica di un gruppo: nome, limiti di job e pagine, periodo, richiedibile, e il blocco Permessi avanzati aperto con colore consentito e solo fronte non consentito](../images/it/admin-group-edit.png)
+
 | Permesso | Se non è concesso |
 |---|---|
 | **Colore** | Le stampe escono in bianco e nero. |

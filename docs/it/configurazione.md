@@ -66,12 +66,13 @@ elencare questa macchina come client, con lo stesso segreto. Se RADIUS non rispo
 | `SPOOLSTEWARD_RADIUS_SECRET` | `none` | Segreto condiviso con il server (non è la password di un utente). Metti gli apici se contiene `$` o `#`. |
 | `SPOOLSTEWARD_RADIUS_TIMEOUT` | `5` | Secondi di attesa della risposta. Alzalo per un server lento o lontano. |
 | `SPOOLSTEWARD_AUTH_CACHE_SECONDS` | `60` | Un accesso riuscito viene ricordato per questo tempo, così il server non è interpellato a ogni richiesta. |
+| `SPOOLSTEWARD_PASSWORD_CHECKS_AT_ONCE` | `3` | Quante verifiche di password degli account locali girano nello stesso momento (1–16); le altre aspettano. Ognuna usa 32 MiB per qualche decimo di secondo (di più su un Raspberry Pi), quindi una raffica di tentativi di accesso rallenta invece di usare tutta la memoria di una macchina piccola. Alzalo su una macchina grande. |
 
 ### Autenticazione di stampa e chiavi
 
 | Variabile | Predefinito | Cosa fa |
 |---|---|---|
-| `SPOOLSTEWARD_IPP_AUTH` | `keys` | Cosa può presentare come password un **client di stampa** (computer, telefono). `keys` = solo le chiavi di stampa personali (consigliato: la password dell'ufficio non viene mai salvata su un dispositivo e una chiave persa si revoca). `keys+radius` = anche la password RADIUS, solo per un periodo di transizione. Per il portale web serve sempre la password. |
+| `SPOOLSTEWARD_IPP_AUTH` | `keys` | Cosa può presentare come password un **client di stampa** (computer, telefono). `keys` = solo le chiavi di stampa personali (consigliato: la password dell'ufficio non viene mai salvata su un dispositivo e una chiave persa si revoca). `keys+radius` = anche la password RADIUS, solo per un periodo di transizione (solo account RADIUS; ciò che inizia con `cpk-` è trattato come chiave di stampa e non va mai a RADIUS). Per il portale web serve sempre la password. |
 | `SPOOLSTEWARD_KEY_TTL_DAYS_RADIUS` | `90` | La durata **massima** che un utente RADIUS può scegliere per una chiave di stampa, in giorni (il menu mostra solo le scelte che ci stanno). Breve apposta: per rinnovarla deve rifare il login RADIUS, così chi lascia l'azienda smette di stampare quando la chiave scade. |
 | `SPOOLSTEWARD_KEY_TTL_DAYS_LOCAL` | `730` | Lo stesso, per gli account locali. |
 | `SPOOLSTEWARD_KEY_ONCE_HOURS` | `24` | Una chiave "una sola stampa" che nessuno usa smette di funzionare dopo queste ore. |
@@ -84,6 +85,7 @@ elencare questa macchina come client, con lo stesso segreto. Se RADIUS non rispo
 | `SPOOLSTEWARD_CUPS_USER_PREFIX` | `gw:` | Messo davanti al nome utente che vede CUPS (`gw:mario`). Non può coincidere con un account locale del server, così un utente RADIUS chiamato `root` non diventa amministratore di CUPS. Non cambiarlo senza un motivo. |
 | `SPOOLSTEWARD_ANONYMOUS_DISCOVERY` | `true` | Risponde a "che stampante sei?" senza login. I client IPP Everywhere (Linux, Android, macOS) lo chiedono alla stampante prima di avere le credenziali. Non permette di stampare e non mostra nomi o documenti. Metti `false` solo se sai che i tuoi client non ne hanno bisogno. |
 | `SPOOLSTEWARD_CONTENT_SECURITY_POLICY` | `enforce` | La regola del browser che vieta script e stili in linea nelle pagine del portale, così uno script infilato in un nome o in un messaggio non viene eseguito. `report-only`: il browser scrive solo nella sua console ciò che bloccherebbe (per capire perché una pagina non funziona dietro un proxy che modifica le pagine). `off`: nessuna regola. |
+| `SPOOLSTEWARD_HSTS_SECONDS` | `0` | Secondi per cui un browser deve usare solo HTTPS con questo **nome host** (intestazione `Strict-Transport-Security`, inviata solo nelle risposte HTTPS; `0` = mai inviata, il predefinito). Il browser la tiene solo se **si fida del certificato**: con quello autofirmato a cui passi oltre, viene ignorata. Una volta tenuta, gli indirizzi `http://` diventano `https://` e un errore di certificato non si può scavalcare finché il certificato è sbagliato; vale per ogni porta di quel nome. Spenta di default; con un certificato attendibile prova `2592000` (30 giorni), poi `31536000` (un anno). Vedi [certificati.md](certificati.md). |
 
 ### Primo avvio
 
@@ -125,6 +127,7 @@ compressi, controllate e solo dopo tolte dal database ([audit.md](audit.md)).
 | `SPOOLSTEWARD_AUDIT_MAX_MB` | `50` | Dimensione dell'audit attivo che fa partire l'archiviazione. Alzala per un database più grande, abbassala per archiviare prima. |
 | `SPOOLSTEWARD_AUDIT_ARCHIVE_DIR` | `/data/audit-archive` | Cartella dei file compressi **dentro il contenitore**. Il file compose la collega a `./data/audit-archive` sull'host: cambia quel collegamento, non questa riga. |
 | `SPOOLSTEWARD_AUDIT_ARCHIVE_HOST_PATH` | impostata dall'init | Solo **mostrata** nel portale, perché si sappia dove sono i file su questa macchina. Si riempie da `AUDIT_ARCHIVE_HOST_PATH` della parte A. |
+| `SPOOLSTEWARD_DB_SYNC` | `full` | Quanto è prudente il database nel salvare. `full` = dopo ogni salvataggio il programma aspetta il disco: un'interruzione di corrente non fa perdere nulla. `normal` = non aspetta: più veloce su un disco lento (la scheda SD di un Raspberry Pi), ma dopo un'interruzione di corrente (o un arresto improvviso di tutta la macchina, non del programma) gli ultimi secondi di salvataggi possono mancare, per esempio una stampa appena accettata. In entrambi i casi il database non si danneggia. Cambialo solo se stampa o portale sono lenti su una macchina piccola. |
 | `SPOOLSTEWARD_AUDIT_CHECK_INTERVAL` | `3600` | Secondi tra i controlli "serve archiviare?" |
 | `SPOOLSTEWARD_JOB_TITLE_RETENTION_ENABLED` | `false` | `true` cancella i nomi dei file stampati dopo i giorni qui sotto. La riga (chi, quando, pagine, stato) resta, perché serve alle quote. I nomi già dentro i file d'archivio non vengono toccati. |
 | `SPOOLSTEWARD_JOB_TITLE_RETENTION_DAYS` | `90` | Dopo quanti giorni il nome viene cancellato (solo se la riga sopra è attiva). |
@@ -173,6 +176,9 @@ Come aggiornare: [installazione.md](installazione.md).
 | `SPOOLSTEWARD_RECONCILE_INTERVAL` | `30` | Secondi tra i confronti dei lavori del gateway con CUPS (così si correggono le quote e le pagine reali). Se CUPS non è raggiungibile, nel log compare `reconcile:`. |
 | `SPOOLSTEWARD_SCAN_URL` | l'immagine imposta `http://ipp-usb:60000` | Scanner eSCL. Gli scanner si trovano da soli; scrivila solo per **aggiungerne** altri che non si trovano (una stampante di rete con eSCL su una porta insolita), come `nome=indirizzo` separati da virgole: `http://ipp-usb:60000,ufficio=https://192.168.1.50:443`. `none` = la scansione è spenta. |
 | `SPOOLSTEWARD_SCAN_TIMEOUT` | `180` | Secondi per una scansione (una pagina dal vetro può essere lenta). |
+| `SPOOLSTEWARD_SCAN_KEEP_MB` | `50` | Megabyte di scansioni del portale finite tenute in memoria, **tutte le persone insieme**. Quando una nuova scansione non ci sta, le più vecchie già finite vengono tolte per prime; la più recente resta sempre, anche se da sola è più grande. |
+| `SPOOLSTEWARD_SCAN_KEEP_MINUTES` | `10` | Minuti per cui una scansione del portale finita resta in memoria. Dopo non c'è più e va rifatta. |
+| `SPOOLSTEWARD_SCAN_DELETE_AFTER_DOWNLOAD` | `false` | `true` = una scansione esce dalla memoria e dal portale appena il suo download è finito (si può scaricare una volta sola). |
 | `SPOOLSTEWARD_ESCL_ANONYMOUS` | `false` | `true` accetta scansioni da app che non sanno inviare le credenziali (per esempio NAPS2). Sono attribuite all'account ospite (riga seguente) con l'IP di chi le manda. Lascia `false` se la rete non è fidata ([scansione.md](scansione.md)). |
 | `SPOOLSTEWARD_ESCL_GUEST_USERNAME` | `unknown-guest` | Il nome di quell'account ospite: locale, senza password, creato da solo. Se esiste già un account con questo nome e quello è un account vero (con password, da RADIUS o un amministratore), non viene mai usato: le scansioni senza login sono rifiutate, gli amministratori ricevono un avviso nella campanella e il log dice perché. In quel caso scegli un altro nome. Lettere minuscole, cifre, punto, trattino, underscore, fino a 63; il nome dell'amministratore di emergenza viene rifiutato all'avvio. |
 | `SPOOLSTEWARD_ESCL_WINDOW` | `true` | `true` mostra in *Scansione* un pulsante che apre una **finestra di scansione**: per qualche minuto le richieste senza credenziali che arrivano dall'indirizzo IP di chi l'ha premuto sono accettate come sue. È un ultimo rimedio: NAT e reverse proxy lo vanificano (limiti in [scansione.md](scansione.md)). `false` toglie il pulsante. Funziona sia con `SPOOLSTEWARD_ESCL_ANONYMOUS` acceso sia spento ([scansione.md](scansione.md)). |
@@ -280,7 +286,7 @@ gateway o aprire una falla di sicurezza.
 | Variabile | Valore nel contenitore | Perché |
 |---|---|---|
 | `SPOOLSTEWARD_TLS_CERTFILE`, `SPOOLSTEWARD_TLS_KEYFILE` | `/tls/fullchain.pem`, `/tls/privkey.pem` | La cartella `config/tls`. Senza TLS il gateway non parte. |
-| `SPOOLSTEWARD_DATABASE_URL` | `sqlite:////data/spoolsteward.db` | Il file SQLite nel volume `portal-data`. |
+| `SPOOLSTEWARD_DATABASE_URL` | `sqlite:////data/spoolsteward.db` | Il file SQLite nel volume `portal-data`. Funziona solo SQLite: qualunque altro tipo di database (PostgreSQL, MySQL…) viene rifiutato all'avvio. |
 | `SPOOLSTEWARD_CUPS_URL` | `unix:///run/cups/cups.sock` | Il socket privato condiviso con CUPS. CUPS non è mai raggiungibile dalla rete. |
 | `SPOOLSTEWARD_ALLOW_INSECURE_AUTH` | `false` | `true` accetterebbe password su HTTP in chiaro. Solo per prove in un laboratorio chiuso. Mai in produzione. |
 | `SPOOLSTEWARD_HOST`, `SPOOLSTEWARD_PORT` | `0.0.0.0`, `8631` | Dove il programma ascolta **dentro** il contenitore. Per cambiare la porta che usano le persone, cambia `PORTAL_PORT` (parte A). |

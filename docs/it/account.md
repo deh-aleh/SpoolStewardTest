@@ -76,7 +76,9 @@ password di dominio: usano una **chiave di stampa personale**.
 
 `SPOOLSTEWARD_IPP_AUTH=keys` (predefinito) accetta per stampare solo le chiavi. `keys+radius` accetta anche la password RADIUS per gli utenti
 RADIUS durante una transizione (mai per gli account locali): incoraggia a salvare la password di dominio sui client, quindi usala solo
-temporaneamente.
+temporaneamente. Tutto ciò che inizia con `cpk-` è preso per una chiave di stampa: se non è valida (scaduta, revocata, disattivata) viene rifiutato
+subito e **non viene mai inviato a RADIUS**, così una vecchia chiave rimasta su un telefono non aggiunge accessi falliti all'account di dominio
+(che potrebbe bloccarsi). Unica conseguenza: una password di dominio che inizia con `cpk-` non si può usare per stampare.
 
 ## 6. Protezione dei login
 

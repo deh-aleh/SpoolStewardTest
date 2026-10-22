@@ -54,9 +54,17 @@ if [ ! -e config/tls/privkey.pem ]; then
         esac
     done
     cn="${1:-localhost}"
-    openssl req -x509 -newkey rsa:3072 -nodes -days 825 \
+    if [ "${#cn}" -gt 64 ]; then   # OpenSSL refuses a common name longer than 64 characters
+        cn=localhost
+        echo "the name is longer than 64 characters: the certificate's main name is localhost; the long name is in its alternative names"
+    fi
+    if ! err="$(openssl req -x509 -newkey rsa:3072 -nodes -days 825 \
         -keyout config/tls/privkey.pem -out config/tls/fullchain.pem \
-        -subj "/CN=$cn" -addext "subjectAltName=$san" 2>/dev/null
+        -subj "/CN=$cn" -addext "subjectAltName=$san" 2>&1)"; then
+        echo "can not create the TLS certificate: $err" >&2
+        echo "Fix the cause (is openssl installed? are the names valid?) or put your own fullchain.pem and privkey.pem in config/tls/ and run this again." >&2
+        exit 1
+    fi
     chmod 600 config/tls/privkey.pem
     echo "created self-signed certificate for: $san"
     echo "(replace config/tls/fullchain.pem + privkey.pem with your CA-signed pair when you have it)"

@@ -6,7 +6,8 @@
 #   scripts/update.sh --check      only say if a newer version exists
 #   scripts/update.sh 1.3.0-beta.1 a beta (a GitHub pre-release) can always be named, whatever SPOOLSTEWARD_UPDATE_BETA says
 #   (--from-portal VERSION is used by the "updater" container: the portal already made the backup, there are no questions,
-#    and the updater container itself is left alone while it works)
+#    and the updater container itself is left alone while it works. It only goes FORWARD: an older version is refused there,
+#    and installed here, from a terminal, as above)
 #
 # What it does, in order:
 #   1. saves a full backup (data/backups/pre-update/) - if this fails, nothing is changed
@@ -112,15 +113,20 @@ function outside(r,   i, c, n) {
 }
 END { if (bad || !seen || depth != 0 || !instr) print "ERR" }
 '
-# PICK reads those lines with cur= (installed), beta= (true/false), want= (a named version, or empty for the newest) and
-# prints VERSION BETA BREAKING, BREAKING meaning that a release after cur up to that version says so in its notes;
-# nothing when no release is newer. Order: 1.2.3-beta.2 < 1.2.3 < 1.2.4-beta.1.
-PICK='
+# The order of versions as a string that sorts: 1.2.3-beta.2 < 1.2.3 < 1.2.4-beta.1 ("" when it is not a version)
+KEYFN='
 function key(v,   a, n) {
     sub(/^v/, "", v); n = split(v, a, /[.-]/)
     if (length(a[1]) > 9 || length(a[2]) > 9 || length(a[3]) > 9 || length(a[5]) > 9) return ""
     return sprintf("k%09d.%09d.%09d.%d.%09d", a[1], a[2], a[3], n == 3, n == 3 ? 0 : a[5])
 }
+'
+# newer A B: is version A newer than version B? (both must be versions)
+newer() { awk -v a="$1" -v b="$2" "$KEYFN"'BEGIN { ka = key(a); kb = key(b); exit !(ka != "" && kb != "" && ka > kb) }'; }
+# PICK reads those lines with cur= (installed), beta= (true/false), want= (a named version, or empty for the newest) and
+# prints VERSION BETA BREAKING, BREAKING meaning that a release after cur up to that version says so in its notes;
+# nothing when no release is newer.
+PICK="$KEYFN"'
 $1 != "-" && $2 == "false" { n++; K[n] = key($1); V[n] = $1; sub(/^v/, "", V[n]); P[n] = ($3 != "false" || $1 ~ /-beta\./); B[n] = $4 }
 END {
     now = key(cur); if (now == "") exit
@@ -180,6 +186,13 @@ elif [ "$listed" = 1 ] && valid "$target"; then
     pick="$(printf '%s\n' "$list" | LC_ALL=C awk -F '\t' -v cur="$current" -v beta="$beta" -v want="$target" "$PICK")"
 fi
 valid "$target" || { echo "'$target' is not a version number like 1.2.3 (or 1.2.3-beta.1)" >&2; return 1; }
+# The portal only goes forward. Going back (after a restore, or to leave a version that does not work for you) is for a person at a
+# terminal: scripts/update.sh 1.2.0. The request of the portal comes from the gateway, the one part of the system that faces the network;
+# were it ever taken over, it could ask for an old version with a known flaw.
+if [ "$portal" = 1 ] && ! newer "$target" "$current"; then
+    echo "refused: the portal only installs a version newer than $current ($target is not). To go back to an older version run in a terminal:  scripts/update.sh $target" >&2
+    return 1
+fi
 if [ -n "${pick:-}" ]; then is_beta="$(printf '%s' "$pick" | cut -f2)"; notes="$(printf '%s' "$pick" | cut -f3)"; fi
 case "$target" in *-beta.*) is_beta=1 ;; esac
 notes_page="https://github.com/$repo/releases/tag/v$target"

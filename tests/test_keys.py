@@ -221,6 +221,41 @@ async def test_keys_plus_radius_mode_accepts_the_domain_password_but_never_for_l
     assert (await send(ipp, get_jobs(), "loc", GOOD)).status_code == 401              # nor does the portal password work here
 
 
+def _watched_radius(ipp, users):
+    radius, asked = StubRadius(users), []
+    real = radius.authenticate
+
+    async def spy(username, password):
+        asked.append((username, password))
+        return await real(username, password)
+    radius.authenticate = spy
+    ipp.app.state.auth = radius
+    return asked
+
+
+async def test_a_bad_print_key_is_never_sent_to_radius(ipp, monkeypatch):
+    """A phone that keeps an old key must not make RADIUS count failed logins of the domain account (it can lock it)."""
+    monkeypatch.setattr(settings, "ipp_auth", "keys+radius")
+    make_user(ipp.sm, "radu", provider="radius")
+    asked = _watched_radius(ipp, {"radu": "domain-pass"})
+    _, old = new_key(ipp.sm, "radu", ttl=1, now=NOW - timedelta(days=5))     # expired
+    for secret in (old, "cpk-guess", "cpk-"):
+        assert (await send(ipp, get_jobs(), "radu", secret)).status_code == 401
+    assert asked == []                                                         # RADIUS was never asked
+
+
+@requires_cups
+async def test_the_domain_password_still_reaches_radius_next_to_valid_keys(ipp, monkeypatch):
+    monkeypatch.setattr(settings, "ipp_auth", "keys+radius")
+    make_user(ipp.sm, "radu", provider="radius")
+    asked = _watched_radius(ipp, {"radu": "domain-pass"})
+    _, plain = new_key(ipp.sm, "radu")
+    assert (await send(ipp, get_jobs(), "radu", plain)).status_code == 200     # a valid key: RADIUS is not involved
+    assert asked == []
+    assert (await send(ipp, get_jobs(), "radu", "domain-pass")).status_code == 200
+    assert asked == [("radu", "domain-pass")]                                  # the real domain password is what RADIUS hears
+
+
 async def test_every_way_a_key_can_be_wrong_is_just_a_401(ipp):
     make_user(ipp.sm, "ann", password=GOOD)
     make_user(ipp.sm, "bob", password=GOOD)

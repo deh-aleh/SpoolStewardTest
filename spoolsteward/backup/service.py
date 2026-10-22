@@ -20,7 +20,7 @@ from spoolsteward.i18n import _
 log = logging.getLogger("spoolsteward.backup")
 RETRY_AFTER = timedelta(hours=1)
 STALE_AFTER = timedelta(hours=48)
-GLOBAL_NAME = "Generale (.env)"
+GLOBAL_NAME = core.GLOBAL_NAME   # English in the database, shown translated: core.display_name
 _RUN = threading.Lock()  # one backup at a time: they all read the same database
 
 
@@ -44,6 +44,7 @@ def sync_global(db) -> None:
         row = BackupTarget(is_global=True, owner_name=".env", name=GLOBAL_NAME, folder=settings.backup_dir)
         db.add(row)
     want = dict(
+        name=GLOBAL_NAME,   # also puts right a row written under another name (an older version called it in Italian)
         enabled=settings.backup_enabled, folder=settings.backup_dir, require_marker=settings.backup_require_marker, hour=min(max(settings.backup_hour, 0), 23),
         keep_daily=max(settings.backup_keep_daily, 1), keep_weekly=max(settings.backup_keep_weekly, 0),
         keep_monthly=max(settings.backup_keep_monthly, 0),

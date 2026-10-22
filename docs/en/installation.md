@@ -15,6 +15,7 @@ Problems: [troubleshooting.md](troubleshooting.md).
 | Printer | USB (through `ipp-usb`) or on the network (IPP). Anything CUPS can drive. |
 | Network | One TCP port reachable by clients (default **8631**; `631` if no other CUPS uses it). Clients must trust the certificate (§3.3). |
 | Architecture | **amd64** (PC, server) and **arm64** (Raspberry Pi 4/5, ARM NAS). The published images contain both and Docker picks the right one. 32-bit ARM (armv7) is not supported. |
+| Memory | About **550 MB** of free RAM for the whole stack, Docker itself included. Measured at rest on a Raspberry Pi 4 (arm64) and on an amd64 machine: roughly 400 MB on both; the rest is a margin for printing and scanning. A job with a large document needs more for a moment. Measure your own machine with `scripts/resources.sh` (CPU and RAM of the containers and of Docker, added up; `watch -n 5 scripts/resources.sh` to follow it). |
 | One gateway per USB printer | `ipp-usb` needs exclusive use of the device (§3.4). |
 
 ## 2. Quick path
@@ -177,7 +178,7 @@ docker compose up -d
 If you do not want that risk, keep it off and use `scripts/update.sh`. To turn it off again: remove the line from `.env` and run
 `docker compose stop updater`.
 
-**Going back to an older version.** `scripts/update.sh <version>` puts the files and images of that version back. An older version
+**Going back to an older version.** `scripts/update.sh <version>` puts the files and images of that version back. It is done **only from a terminal**: the *Update* button of the portal goes forward only, and refuses an older version (the request comes from the gateway, the part of the system that faces the network, and must not be able to install a version with a known flaw). An older version
 starts on a database that a newer one migrated only if those migrations kept it readable; when it does not start, or the new version
 damaged something, use the backup that `update.sh` made **before** the update:
 

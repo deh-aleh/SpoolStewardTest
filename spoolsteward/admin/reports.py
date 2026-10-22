@@ -27,6 +27,27 @@ MAX_TOP = 1000
 DEFAULT_DAYS = 30
 
 
+PERIODS = ("today", "last7", "month", "last-month", "last30", "year")
+
+
+def period_range(name: str, today: date) -> tuple[date, date] | None:
+    """The first and last day of a ready-made period (the buttons above the dates), None for an unknown name."""
+    if name == "today":
+        return today, today
+    if name == "last7":
+        return today - timedelta(days=6), today
+    if name == "last30":
+        return today - timedelta(days=DEFAULT_DAYS - 1), today
+    if name == "month":
+        return today.replace(day=1), today
+    if name == "last-month":
+        last = today.replace(day=1) - timedelta(days=1)
+        return last.replace(day=1), last
+    if name == "year":
+        return today.replace(month=1, day=1), today
+    return None
+
+
 def parse_day(text: str) -> date | None:
     try:
         return date.fromisoformat(text.strip())
@@ -155,7 +176,7 @@ def _params(start: str, end: str, top: str, request: Request) -> tuple[date, dat
 
 @router.get("/report", response_class=HTMLResponse)
 async def report_page(request: Request, start: str = "", end: str = "", top: str = "20", detail: int = 0,
-                      exclude: list[int] = Query(default=[]), admin: User = Depends(current_admin)):
+                      period: str = "", exclude: list[int] = Query(default=[]), admin: User = Depends(current_admin)):
     def load(s: date | None, e: date | None, n: int | None):
         with request.app.state.sessionmaker() as db:
             groups = [(g.id, g.name) for g in db.scalars(select(Group).order_by(Group.name))]
@@ -163,12 +184,15 @@ async def report_page(request: Request, start: str = "", end: str = "", top: str
                 return groups, None, False
             return groups, build(db, s, e, exclude, n, bool(detail)), archive_note(db, s)
 
+    today = datetime.now(local_tz()).date()
+    if (preset := period_range(period, today)):          # a period button was pressed: it wins over the typed dates
+        start, end = preset[0].isoformat(), preset[1].isoformat()
     p = _params(start, end, top, request)
     groups, data, archived = await run_in_threadpool(load, *(p or (None, None, None)))
-    today = datetime.now(local_tz()).date()
     return render(request, "report.html", admin, groups=groups, data=data, archived=archived, exclude=exclude, detail=bool(detail),
                   f={"start": start or (p[0] if p else today - timedelta(days=DEFAULT_DAYS - 1)).isoformat(),
-                     "end": end or (p[1] if p else today).isoformat(), "top": top}, max_top=MAX_TOP)
+                     "end": end or (p[1] if p else today).isoformat(), "top": top}, max_top=MAX_TOP,
+                  periods=[(n, period_range(n, today) == (p[0], p[1]) if p else False) for n in PERIODS])
 
 
 @router.get("/report/download")

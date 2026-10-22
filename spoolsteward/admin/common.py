@@ -1,6 +1,5 @@
 """Shared pieces of the portal: templates, session/CSRF dependencies, helpers."""
 
-import hmac
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -11,7 +10,8 @@ from sqlalchemy.orm import Session
 
 from spoolsteward import i18n
 from spoolsteward.timeutil import local_tz
-from spoolsteward.backup.core import app_version
+from spoolsteward.auth.compare import same_text
+from spoolsteward.backup.core import app_version, display_name
 from spoolsteward.config import settings
 from spoolsteward.db.models import User
 from spoolsteward.netutil import client_ip  # noqa: F401  (re-exported: the portal modules import it from here)
@@ -39,6 +39,7 @@ def isotime(value: str | None) -> str:
 
 templates.env.filters["localtime"] = localtime
 templates.env.filters["isotime"] = isotime
+templates.env.globals["backup_name"] = display_name
 templates.env.globals.update(_=i18n.html_gettext, _p=i18n.html_pgettext, _t=i18n.plain_gettext, _js=i18n.raw_gettext, ngettext=i18n.html_ngettext, lang=i18n.current, languages=i18n.LANGUAGES,
                             hours_text=describe_hours, perm_text=describe_grant)
 
@@ -78,7 +79,7 @@ def current_admin(user: User = Depends(current_user)) -> User:
 
 def check_csrf(request: Request, token: str) -> None:
     expected = request.session.get("csrf", "")
-    if not expected or not hmac.compare_digest(expected, token):
+    if not expected or not same_text(token, expected):
         raise HTTPException(403, "invalid CSRF token")
 
 

@@ -49,7 +49,7 @@ Deliberate differences from a "classic" design:
 | Language | **Python 3.12+** | Easy to debug, many libraries; the IPP codec is isolated and replaceable |
 | Web / proxy | **FastAPI + uvicorn**, **httpx** (async, also over a unix socket) | Streams documents without loading them in memory |
 | Database | **SQLAlchemy 2** + **SQLite** (WAL), **Alembic** migrations | Zero configuration; a single file, no server to manage |
-| Local passwords | **argon2id** (`argon2-cffi`) | Human-chosen secrets: slow hash |
+| Local passwords | **argon2id** (`argon2-cffi`) | Human-chosen secrets: slow hash (32 MiB per check; at most `SPOOLSTEWARD_PASSWORD_CHECKS_AT_ONCE` run at the same time, the others wait) |
 | Print keys | 192 random bits, **sha256** | High entropy: a fast hash is enough and does not slow down each IPP request |
 | RADIUS | **pyrad** (PAP + Message-Authenticator) | The office already has a RADIUS server |
 | Portal | **Jinja2** server-rendered pages, signed sessions (**itsdangerous**) | HTML from the server; JavaScript only for small helpers (copy, hints, popups, auto-refresh) |

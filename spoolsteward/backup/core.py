@@ -29,11 +29,22 @@ from importlib import metadata
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from spoolsteward.i18n import _
+from spoolsteward.i18n import N_, _
 from spoolsteward.backup.crypto import CHUNK, MAGIC, CryptoError, DecryptReader, EncryptWriter
 from spoolsteward.config import BACKUP_FOLDER_RE, settings
 
 log = logging.getLogger(__name__)
+
+# The name of the backup that follows .env. It is stored in English, whatever language the portal speaks, and translated when it is
+# shown (`display_name`): nothing finds this backup by its name (the row is the one with `is_global`; the files carry the instance id and
+# the number of the target), so the language of the portal can change without touching a backup.
+GLOBAL_NAME = N_("General (.env)")
+
+
+def display_name(name: str) -> str:
+    """The name of a backup as people read it: the one of the .env backup is translated, the others are what an administrator typed."""
+    return _(name) if name == GLOBAL_NAME else name
+
 
 NAME_RE = re.compile(r"^spoolsteward-(?P<inst>[0-9a-f]{8})-t(?P<tid>\d+)-(?P<ts>\d{8}-\d{6})\.tar\.gz(?P<enc>\.enc)?$")
 FOLDER_RE = BACKUP_FOLDER_RE   # one rule, also checked for SPOOLSTEWARD_BACKUP_DIR at start (spoolsteward/config.py)

@@ -76,7 +76,9 @@ domain password: they use a **personal print key**.
 
 `SPOOLSTEWARD_IPP_AUTH=keys` (default) accepts only keys for printing. `keys+radius` also accepts the RADIUS password for RADIUS
 users during a transition (never for local accounts): it encourages saving the domain password on clients, so use it only
-temporarily.
+temporarily. Whatever starts with `cpk-` is taken for a print key: if it is not valid (expired, revoked, switched off) it is refused
+at once and **never sent to RADIUS**, so an old key left on a phone cannot add failed logins to the domain account (which could lock it).
+The only consequence: a domain password that begins with `cpk-` can not be used for printing.
 
 ## 6. Protection of logins
 

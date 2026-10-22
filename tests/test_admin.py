@@ -83,6 +83,8 @@ async def test_post_without_csrf_rejected(env):
     assert r.status_code == 403
     r = await env.post("/admin/groups", data={"name": "evil", "csrf_token": "wrong"})
     assert r.status_code == 403
+    r = await env.post("/admin/groups", data={"name": "evil", "csrf_token": "caf\u00e9 \u65e5\u672c"})    # not ASCII: a refusal, not a 500
+    assert r.status_code == 403
     assert q(env, Group, name="evil") is None
 
 

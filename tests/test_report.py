@@ -86,6 +86,32 @@ async def test_bad_dates_and_numbers_do_not_crash(rep):
         assert (await rep.get("/admin/report/download", params=params, follow_redirects=False)).status_code == 303
 
 
+def test_ready_made_periods():
+    from datetime import date
+    from spoolsteward.admin.reports import PERIODS, period_range
+    today = date(2026, 3, 15)
+    assert period_range("today", today) == (today, today)
+    assert period_range("last7", today) == (date(2026, 3, 9), today)
+    assert period_range("last30", today) == (date(2026, 2, 14), today)
+    assert period_range("month", today) == (date(2026, 3, 1), today)
+    assert period_range("last-month", today) == (date(2026, 2, 1), date(2026, 2, 28))
+    assert period_range("last-month", date(2026, 1, 5)) == (date(2025, 12, 1), date(2025, 12, 31))
+    assert period_range("year", today) == (date(2026, 1, 1), today)
+    assert period_range("", today) is None and period_range("../x", today) is None
+    assert all(period_range(n, today) for n in PERIODS)
+
+
+async def test_a_period_button_fills_the_dates_and_wins_over_typed_ones(rep):
+    today = datetime.now(UTC).date()
+    page = (await rep.get("/admin/report", params={"period": "today", "start": "2001-01-01", "end": "2001-01-02"})).text
+    assert f'name="start" value="{today.isoformat()}"' in page and f'name="end" value="{today.isoformat()}"' in page
+    assert 'value="today" aria-pressed="true"' in page and 'value="year" aria-pressed="false"' in page
+    assert (await rep.get("/admin/report", params={"period": "nonsense"})).status_code == 200   # unknown name: ignored
+    # no native calendar: plain text boxes (the browser's own picker is not themed and speaks the system's language)
+    assert 'type="date"' not in page and 'name="start"' in page
+    assert page.index('<button hidden') < page.index('name="period"')          # Enter presses "Show", not the first period
+
+
 async def test_only_administrators(rep):
     make_user(rep.sm, "carl", password=GOOD)
     import httpx

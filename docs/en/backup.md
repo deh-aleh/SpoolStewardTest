@@ -17,6 +17,8 @@ Every administrator creates **their own** targets, with folder, hour, number of 
 and encryption. They edit and delete only their own; *Run now* is available to all. The *General* backup of the installation is
 shown read-only: it is set in `.env` (`SPOOLSTEWARD_BACKUP_*`).
 
+![A backup target: owner, folder, time, copies kept, encryption with a passphrase, the last result and the buttons Run now, Edit, Suspend and Delete](../images/en/admin-backup.png)
+
 - A backup is written to `.partial`, **read back and verified**, renamed; only then are older copies removed.
   *Run now* adds a copy without deleting any (the next scheduled run prunes).
 - If a backup failed, or the last one is older than 48 h, the page shows it in red **and a notice appears in the bell** with the name of the backup (see "Notices when a backup fails" below). The notice closes by itself at the first successful backup.
@@ -60,6 +62,7 @@ Behaviour of the gateway with a network disk:
 - On SMB/CIFS and some NFS setups file permissions are decided by the mount options, **not** by the gateway: the usual `chmod 600` has
   no effect and anyone who can read the share can read the files. **Use encryption** for backups on a share.
 - Use `soft` mounts (NFS: `soft,timeo=100`; CIFS: `soft`), never `hard`, so a dead NAS does not freeze the server.
+- A disk that stops answering **while a backup is being written** can leave that backup stuck: the next ones then say "Another backup is running" until the gateway is restarted (`docker compose restart gateway`). Nothing already saved is lost.
 - The backup is only "outside the machine" if the share is on another machine. A USB disk plugged into the server protects from a broken disk, not from a fire.
 
 ### Notices when a backup fails
@@ -121,6 +124,7 @@ scripts/backup.sh restore FILE.tar.gz      # stops the gateway first and asks fo
 Includes the database (SQLite backup call), `config/` (with secrets), `.env`, the audit archive and the CUPS configuration (queues).
 Not included: images and the spool of jobs in progress. The archive holds secrets: keep it as private as the server.
 `restore` brings back the `.env` of the backup, hence its version too: if the files in the folder are of another version, it tells you to run `scripts/update.sh <version>` (see "Going back to an older version" in [installation.md](installation.md)).
+`scripts/backup.sh` needs no Internet: it uses the image the stack already runs, and a restore checks everything first and stops the application only when it is sure it can go on.
 `restore` has only been tested by hand.
 
 ## 4. Limits

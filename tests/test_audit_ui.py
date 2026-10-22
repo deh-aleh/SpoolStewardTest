@@ -284,6 +284,19 @@ async def test_mdns_policy_feed_and_filter(admin, monkeypatch):
     assert (await admin.get("/mdns/policy", headers={"X-Mdns-Token": control.mdns_token()})).json()["maintenance"] is True
 
 
+async def test_mdns_policy_refuses_everybody_without_a_secret_key(admin, monkeypatch):
+    monkeypatch.setattr(settings, "secret_key", "")
+    assert (await admin.get("/mdns/policy")).status_code == 404
+    assert (await admin.get("/mdns/policy", headers={"X-Mdns-Token": ""})).status_code == 404
+    assert (await admin.get("/mdns/policy", headers={"X-Mdns-Token": control.mdns_token()})).status_code == 404   # the token of the empty key
+
+
+async def test_mdns_policy_answers_404_and_not_500_to_a_header_with_odd_characters(admin, monkeypatch):
+    monkeypatch.setattr(settings, "secret_key", "s3cret")
+    r = await admin.get("/mdns/policy", headers={"X-Mdns-Token": "caf\xe9".encode("latin-1")})
+    assert r.status_code == 404
+
+
 # ---------------------------------------------------------------- IPP clients: colour / sides are audited
 
 @pytest.fixture

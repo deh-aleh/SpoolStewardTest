@@ -15,6 +15,7 @@ installa dal pacchetto della release con le immagini pubblicate. Costruire le im
 | Stampante | USB (tramite `ipp-usb`) o di rete (IPP). Qualunque cosa CUPS sappia pilotare. |
 | Rete | Una porta TCP raggiungibile dai client (predefinita **8631**; `631` se nessun altro CUPS la usa). I client devono fidarsi del certificato (§3.3). |
 | Architettura | **amd64** (PC, server) e **arm64** (Raspberry Pi 4/5, NAS ARM). Le immagini pubblicate contengono entrambe e Docker sceglie quella giusta. ARM a 32 bit (armv7) non è supportato. |
+| Memoria | Circa **550 MB** di RAM libera per tutto lo stack, Docker compreso. Misurati a riposo su un Raspberry Pi 4 (arm64) e su una macchina amd64: circa 400 MB in entrambi i casi; il resto è margine per stampa e scansione. Un lavoro con un documento grande ne usa di più per qualche istante. Misura la tua macchina con `scripts/resources.sh` (CPU e RAM dei container e di Docker, sommate; `watch -n 5 scripts/resources.sh` per seguirle nel tempo). |
 | Un gateway per stampante USB | `ipp-usb` vuole il dispositivo in esclusiva (§3.4). |
 
 ## 2. Percorso rapido
@@ -182,7 +183,7 @@ docker compose up -d
 Se non vuoi quel rischio, lascialo spento e usa `scripts/update.sh`. Per spegnerlo di nuovo: togli la riga da `.env` ed esegui
 `docker compose stop updater`.
 
-**Tornare a una versione precedente.** `scripts/update.sh <versione>` rimette i file e le immagini di quella versione. Una versione più
+**Tornare a una versione precedente.** `scripts/update.sh <versione>` rimette i file e le immagini di quella versione. Si fa **solo da terminale**: il pulsante *Aggiorna* del portale va solo avanti e rifiuta una versione più vecchia (la richiesta arriva dal gateway, la parte del sistema esposta alla rete, e non deve poter installare una versione con una falla nota). Una versione più
 vecchia parte su un database che una più nuova ha migrato solo se quelle migrazioni lo hanno lasciato leggibile; quando non parte, o la
 versione nuova ha rovinato qualcosa, usa il backup che `update.sh` ha fatto **prima** dell'aggiornamento:
 

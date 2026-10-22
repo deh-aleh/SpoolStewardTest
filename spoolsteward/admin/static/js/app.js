@@ -11,16 +11,20 @@ document.querySelectorAll('table.stack').forEach(function (t) {
 });
 
 // show/hide password (_pwfield.html): the button is hidden until scripts run
+function pwShow(b, show) {
+  b.parentNode.querySelector('input').type = show ? 'text' : 'password';
+  b.classList.toggle('shown', show);
+  b.setAttribute('aria-pressed', show ? 'true' : 'false');
+  var label = show ? b.dataset.hide : b.dataset.show;
+  b.setAttribute('aria-label', label); b.title = label;
+}
 document.querySelectorAll('.pwtoggle').forEach(function (b) {
   b.hidden = false;
-  b.addEventListener('click', function () {
-    var input = b.parentNode.querySelector('input'), show = input.type === 'password';
-    input.type = show ? 'text' : 'password';
-    b.classList.toggle('shown', show);
-    b.setAttribute('aria-pressed', show ? 'true' : 'false');
-    var label = show ? b.dataset.hide : b.dataset.show;
-    b.setAttribute('aria-label', label); b.title = label;
-  });
+  b.addEventListener('click', function () { pwShow(b, !b.classList.contains('shown')); });
+});
+// hidden again before sending, so the browser's password manager still sees a password box
+document.addEventListener('submit', function (e) {
+  e.target.querySelectorAll('.pwtoggle.shown').forEach(function (b) { pwShow(b, false); });
 });
 
 // copy button (macros.html): copies the text next to it, shows a check mark for a moment

@@ -34,6 +34,8 @@ For people who run the installation. The portal is at `https://<server>:8631/` (
 The list is read-only: a user's own limit or the inherited one (italics), active grants as a coloured `+N`, consumption and active keys.
 **Edit** opens the page with every field, which shows the **source** of the account (local or RADIUS, for information only), and **Delete** (type the name to confirm).
 
+![The Users page: the administrator and a local user who must change the password, with group, limits, weekly usage and keys](../images/en/admin-users.png)
+
 - Create **local**: a temporary password is shown once; the user changes it at first login.
 - Create **RADIUS**: choose the group; the person signs in with their office password.
 - **Reset password** (local): new temporary password, shown once.
@@ -47,6 +49,8 @@ Deleting keeps the history ([accounts.md](accounts.md#7-deleting-a-user)).
 
 A group has limits (jobs / pages, weekly / monthly) and a **requestable** flag. System groups `default` and `administrator` can not be
 deleted; deleting another group moves its users to `default`. Personal limits are set in the user's edit page. Details in [quotas.md](quotas.md).
+
+![The Groups page: the two system groups without limits and a group with 10 jobs and 20 pages a week that users may ask to join](../images/en/admin-groups.png)
 
 **Advanced permissions.** At the bottom of the group page and of the user page, the **Advanced permissions** button opens colour, one-sided
 prints, which printers, and which days and hours. A user's field is "as the group" or has its own value. The emergency administrator has no group and no

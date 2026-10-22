@@ -660,8 +660,9 @@ def clean_basename(raw: str, default: str) -> str:
 
 
 # The scan runs as a background task of the server, not of the browser request: leaving the page (or a phone going to
-# sleep) used to abort it half way and leave the scanner busy. The page polls; the result waits a few minutes.
-RESULT_TTL = 900.0
+# sleep) used to abort it half way and leave the scanner busy. The page polls; the result waits in memory for the person to
+# download it: at most SPOOLSTEWARD_SCAN_KEEP_MINUTES, and at most SPOOLSTEWARD_SCAN_KEEP_MB for everybody together.
+DOWNLOAD_CHUNK = 64 << 10
 _SCAN_LABELS = {"running": N_("in progress"), "done": N_("ready"), "error": N_("unsuccessful")}
 
 
@@ -670,12 +671,19 @@ def _default_scan_name() -> str:
 
 
 def _scans(app) -> dict:
+    """The scans of the portal (running, finished, failed), after forgetting the ones whose time is over and, when the finished ones
+    take more memory than allowed, the oldest of them. The newest finished scan is never forgotten: it may be bigger than the limit
+    by itself, and the person has just made it."""
     d = getattr(app.state, "web_scans", None)
     if d is None:
         d = app.state.web_scans = {}
-    now = time.monotonic()
-    for sid in [k for k, v in d.items() if v["state"] != "running" and now - v["ts"] > RESULT_TTL]:
+    now, keep = time.monotonic(), settings.scan_keep_minutes * 60.0
+    for sid in [k for k, v in d.items() if v["state"] != "running" and now - v["ts"] > keep]:
         d.pop(sid)
+    held = sorted((sid for sid, v in d.items() if v.get("data") is not None), key=lambda sid: d[sid]["ts"])
+    total = sum(len(d[sid]["data"]) for sid in held)
+    while total > settings.scan_keep_mb << 20 and len(held) > 1:
+        total -= len(d.pop(held.pop(0))["data"])
     return d
 
 
@@ -689,6 +697,7 @@ async def _run_scan(app, rec: dict, user: User, scanner: Scanner, source: str, c
         log.exception("web scan crashed")
         rec["state"], rec["error"] = "error", _("Unexpected error during the scan")
     rec["ts"] = time.monotonic()
+    _scans(app)     # a scan that makes the memory over the limit pushes out the oldest ones now, not when somebody next looks
 
 
 def _view(sid: str, rec: dict) -> dict:
@@ -705,7 +714,8 @@ async def scan_form(request: Request, user: User = Depends(current_user)):
     return render(request, "scan.html", user, enabled=bool(found), found=list(found.values()), caps=caps,
                   default_name=_default_scan_name(), mine=mine,
                   window_on=settings.escl_window and bool(found), window_seconds=settings.escl_window_seconds,
-                  window_left=_windows(request.app).remaining(user.id), window_doc=_window_doc_href())
+                  window_left=_windows(request.app).remaining(user.id), window_doc=_window_doc_href(),
+                  keep_minutes=settings.scan_keep_minutes)
 
 
 # the section of the user guide about the scan window (the popup links to it); the headings are in docs/{en,it}/
@@ -796,6 +806,16 @@ async def scan_file(request: Request, sid: str, user: User = Depends(current_use
         raise HTTPException(404)
     name = f'{rec["name"]}.{rec["ext"]}'
     ascii_name = "".join(c if c.isascii() and c not in '"\\;' else "_" for c in name)
-    return Response(rec["data"], media_type=rec["ctype"], headers={
-        "Content-Disposition": f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(name)}",
-        "Cache-Control": "no-store"})
+    headers = {"Content-Disposition": f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(name)}",
+               "Cache-Control": "no-store"}
+    if not settings.scan_delete_after_download:
+        return Response(rec["data"], media_type=rec["ctype"], headers=headers)
+    data = rec["data"]
+
+    async def once() -> AsyncIterator[bytes]:
+        for i in range(0, len(data), DOWNLOAD_CHUNK):
+            yield data[i:i + DOWNLOAD_CHUNK]
+        # reached only when the server has taken the last piece (an interrupted download stops the generator at the yield above):
+        # then the scan leaves the memory, and with it the list of the portal
+        _scans(request.app).pop(sid, None)
+    return StreamingResponse(once(), media_type=rec["ctype"], headers={**headers, "Content-Length": str(len(data))})

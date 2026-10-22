@@ -10,7 +10,9 @@
 .ss-copy.ss-copy { font-size: 13px; }
 .ud-card { max-width: 640px; }
 .ur-row { margin-top: 8px; }
-.ur-pw { flex: 0 1 280px; min-width: 200px; }
+/* user name above and password + eye below share one column, so the next column starts at the same place */
+.ur-name, .ur-pw { flex: 0 1 280px; min-width: 200px; }
+@media (max-width: 700px) { .ur-name, .ur-pw { flex: 1 1 100%; } }
 .ur-btn { margin-left: 8px; }
 .pw-note { margin: 0 0 14px; }
 .ac-form, .av-form { margin-bottom: 12px; }
@@ -19,5 +21,11 @@
 .rq-opt { display: block; margin: 6px 0; }
 .ue-grants { margin-top: 10px; }
 .rp-top { width: 90px; }
+form[action="/admin/report"] > button[hidden] { display: none; }  /* the invisible default button of the report form */
+.rp-date { width: 130px; min-width: 0; }
+.rp-set { padding: 8px 14px 4px; }
+.rp-presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.rp-presets button.on { border-color: var(--accent); color: var(--accent); }
+.rp-hint { margin: 2px 0 6px; font-size: 13px; }
 .rp-set { border: 1px solid var(--line); border-radius: 6px; margin: 8px 0; }
 .rp-excl { margin-right: 14px; white-space: nowrap; }

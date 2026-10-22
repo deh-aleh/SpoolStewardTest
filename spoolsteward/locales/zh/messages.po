@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spoolsteward VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-21 16:54+0200\n"
+"POT-Creation-Date: 2026-10-22 16:56+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh\n"
@@ -70,45 +70,45 @@ msgstr "扫描仪没有输出任何页面"
 msgid "The scanner does not answer"
 msgstr "扫描仪没有响应"
 
-#: spoolsteward/escl.py:665
+#: spoolsteward/escl.py:666
 msgid "in progress"
 msgstr "进行中"
 
-#: spoolsteward/escl.py:665
+#: spoolsteward/escl.py:666
 msgid "ready"
 msgstr "已就绪"
 
-#: spoolsteward/escl.py:665
+#: spoolsteward/escl.py:666
 msgid "unsuccessful"
 msgstr "未成功"
 
-#: spoolsteward/escl.py:669
+#: spoolsteward/escl.py:670
 #, python-format
 msgid "scan-%(stamp)s"
 msgstr "扫描-%(stamp)s"
 
-#: spoolsteward/escl.py:690
+#: spoolsteward/escl.py:698
 msgid "Unexpected error during the scan"
 msgstr "扫描过程中出现意外错误"
 
-#: spoolsteward/escl.py:732
+#: spoolsteward/escl.py:742
 msgid "The server can not tell which address you are connecting from."
 msgstr "服务器无法确定您是从哪个地址连接的。"
 
-#: spoolsteward/escl.py:735
+#: spoolsteward/escl.py:745
 msgid "Too many scan windows are open: try again in a few minutes."
 msgstr "同时打开的扫描窗口过多：请几分钟后再试。"
 
-#: spoolsteward/escl.py:758
+#: spoolsteward/escl.py:768
 #, python-format
 msgid "The scanner “%(name)s” does not answer: refresh the page."
 msgstr "扫描仪“%(name)s”没有响应：请刷新页面。"
 
-#: spoolsteward/escl.py:758
+#: spoolsteward/escl.py:768
 msgid "No scanner available."
 msgstr "没有可用的扫描仪。"
 
-#: spoolsteward/escl.py:765
+#: spoolsteward/escl.py:775
 #, python-format
 msgid "%(name)s is already scanning: wait for it to finish."
 msgstr "%(name)s 正在扫描：请等待其完成。"
@@ -174,7 +174,7 @@ msgstr "已结束"
 msgid "temporary"
 msgstr "临时"
 
-#: spoolsteward/admin/accounts.py:174 spoolsteward/admin/me.py:37
+#: spoolsteward/admin/accounts.py:175 spoolsteward/admin/me.py:37
 #: spoolsteward/admin/templates/me.html:37
 #: spoolsteward/admin/templates/requests.html:14
 #: spoolsteward/admin/templates/requests.html:24
@@ -184,6 +184,7 @@ msgstr "临时"
 #: spoolsteward/admin/templates/requests.html:97
 #: spoolsteward/admin/templates/requests.html:128
 #: spoolsteward/admin/templates/user_edit.html:45 spoolsteward/i18n.py:167
+#: spoolsteward/policy/bulk.py:66
 msgid "permanent"
 msgstr "永久"
 
@@ -235,56 +236,56 @@ msgstr "缺失"
 msgid "modified"
 msgstr "已修改"
 
-#: spoolsteward/admin/accounts.py:40
+#: spoolsteward/admin/accounts.py:41 spoolsteward/policy/bulk.py:76
 #, python-format
 msgid "%(used)s/%(limit)s %(metric)s (%(period)s)"
 msgstr "%(used)s/%(limit)s %(metric)s（%(period)s）"
 
-#: spoolsteward/admin/accounts.py:52
+#: spoolsteward/admin/accounts.py:53
 msgid "You cannot disable or demote yourself"
 msgstr "您不能停用或降级自己"
 
-#: spoolsteward/admin/accounts.py:54
+#: spoolsteward/admin/accounts.py:55
 #, python-format
 msgid "%(user)s is the emergency administrator: it can not be disabled or demoted"
 msgstr "%(user)s 是应急管理员：不能被停用或降级"
 
-#: spoolsteward/admin/accounts.py:56 spoolsteward/admin/accounts.py:459
+#: spoolsteward/admin/accounts.py:57 spoolsteward/admin/accounts.py:462
 msgid "That is the last administrator"
 msgstr "这是最后一位管理员"
 
-#: spoolsteward/admin/accounts.py:65 spoolsteward/admin/accounts.py:106
-#: spoolsteward/admin/accounts.py:113
+#: spoolsteward/admin/accounts.py:66 spoolsteward/admin/accounts.py:107
+#: spoolsteward/admin/accounts.py:114
 msgid "Invalid permission value"
 msgstr "权限值无效"
 
-#: spoolsteward/admin/accounts.py:74
+#: spoolsteward/admin/accounts.py:75
 #, python-format
 msgid "Invalid printer name %(name)s"
 msgstr "打印机名称无效：%(name)s"
 
-#: spoolsteward/admin/accounts.py:78
+#: spoolsteward/admin/accounts.py:79
 msgid "Choose at least one printer, or choose “all printers”"
 msgstr "请至少选择一台打印机，或选择“所有打印机”"
 
-#: spoolsteward/admin/accounts.py:80
+#: spoolsteward/admin/accounts.py:81
 #, python-format
 msgid "Too many printers in the list (at most %(max)s)"
 msgstr "列表中的打印机太多（最多 %(max)s 台）"
 
-#: spoolsteward/admin/accounts.py:86
+#: spoolsteward/admin/accounts.py:87
 msgid "Choose at least one day of the week for the hours"
 msgstr "请至少选择一个星期几作为时段"
 
-#: spoolsteward/admin/accounts.py:90
+#: spoolsteward/admin/accounts.py:91
 msgid "Enter the hours as HH:MM, for example 08:00 and 17:30"
 msgstr "请按 HH:MM 填写时间，例如 08:00 和 17:30"
 
-#: spoolsteward/admin/accounts.py:92
+#: spoolsteward/admin/accounts.py:93
 msgid "The start and the end of the hours must be different"
 msgstr "时段的开始和结束时间必须不同"
 
-#: spoolsteward/admin/accounts.py:153 spoolsteward/admin/accounts.py:154
+#: spoolsteward/admin/accounts.py:154 spoolsteward/admin/accounts.py:155
 #: spoolsteward/admin/templates/_perm_fields.html:16
 #: spoolsteward/admin/templates/_perm_fields.html:20
 #: spoolsteward/admin/templates/me.html:30
@@ -292,227 +293,227 @@ msgstr "时段的开始和结束时间必须不同"
 msgid "allowed"
 msgstr "允许"
 
-#: spoolsteward/admin/accounts.py:153 spoolsteward/admin/accounts.py:154
+#: spoolsteward/admin/accounts.py:154 spoolsteward/admin/accounts.py:155
 #: spoolsteward/admin/templates/_perm_fields.html:16
 #: spoolsteward/admin/templates/_perm_fields.html:20
 msgid "not allowed"
 msgstr "不允许"
 
-#: spoolsteward/admin/accounts.py:155
+#: spoolsteward/admin/accounts.py:156
 #: spoolsteward/admin/templates/_perm_fields.html:24
 msgctxt "printers"
 msgid "all"
 msgstr "全部"
 
-#: spoolsteward/admin/accounts.py:155
+#: spoolsteward/admin/accounts.py:156
 #: spoolsteward/admin/templates/backup_edit.html:20
 msgid "none"
 msgstr "无"
 
-#: spoolsteward/admin/accounts.py:156
+#: spoolsteward/admin/accounts.py:157
 #: spoolsteward/admin/templates/_perm_fields.html:35
 #: spoolsteward/admin/templates/me.html:33
 msgid "any time"
 msgstr "任何时间"
 
-#: spoolsteward/admin/accounts.py:173
+#: spoolsteward/admin/accounts.py:174 spoolsteward/policy/bulk.py:65
 msgid "limit inherited from the group"
 msgstr "限额继承自群组"
 
-#: spoolsteward/admin/accounts.py:174
+#: spoolsteward/admin/accounts.py:175 spoolsteward/policy/bulk.py:66
 #, python-format
 msgid "temporary, expires on %(date)s"
 msgstr "临时，%(date)s 到期"
 
-#: spoolsteward/admin/accounts.py:239 spoolsteward/admin/accounts.py:273
-#: spoolsteward/admin/accounts.py:303
+#: spoolsteward/admin/accounts.py:242 spoolsteward/admin/accounts.py:276
+#: spoolsteward/admin/accounts.py:306
 msgid "Unknown group"
 msgstr "未知群组"
 
-#: spoolsteward/admin/accounts.py:240
+#: spoolsteward/admin/accounts.py:243
 #, python-format
 msgid "Group \"%(group)s\" is only for administrators: tick the administrator box instead"
 msgstr "群组“%(group)s”仅限管理员：请改为勾选“管理员”选项"
 
-#: spoolsteward/admin/accounts.py:241
+#: spoolsteward/admin/accounts.py:244
 msgid "Invalid username (letters, digits, dot, dash, underscore; max 63)"
 msgstr "用户名无效（字母、数字、点、连字符、下划线；最多 63 个字符）"
 
-#: spoolsteward/admin/accounts.py:242 spoolsteward/admin/accounts.py:279
+#: spoolsteward/admin/accounts.py:245 spoolsteward/admin/accounts.py:282
 #, python-format
 msgid "User %(name)s already exists"
 msgstr "用户 %(name)s 已存在"
 
-#: spoolsteward/admin/accounts.py:243 spoolsteward/admin/accounts.py:311
+#: spoolsteward/admin/accounts.py:246 spoolsteward/admin/accounts.py:314
 #, python-format
 msgid "The name %(name)s is reserved for the emergency administrator"
 msgstr "名称 %(name)s 保留给紧急管理员使用"
 
-#: spoolsteward/admin/accounts.py:259 spoolsteward/admin/accounts.py:287
+#: spoolsteward/admin/accounts.py:262 spoolsteward/admin/accounts.py:290
 #, python-format
 msgid "User %(name)s created"
 msgstr "已创建用户 %(name)s"
 
-#: spoolsteward/admin/accounts.py:259 spoolsteward/admin/accounts.py:413
-#: spoolsteward/admin/accounts.py:498
+#: spoolsteward/admin/accounts.py:262 spoolsteward/admin/accounts.py:416
+#: spoolsteward/admin/accounts.py:501
 msgid "Temporary password"
 msgstr "临时密码"
 
-#: spoolsteward/admin/accounts.py:260
+#: spoolsteward/admin/accounts.py:263
 msgid "Give it to the user over a safe channel. They must choose their own at first login."
 msgstr "请通过安全渠道交给用户。用户首次登录时必须设置自己的密码。"
 
-#: spoolsteward/admin/accounts.py:271
+#: spoolsteward/admin/accounts.py:274
 msgid "RADIUS is not configured: create a local user instead"
 msgstr "尚未配置 RADIUS：请改为创建本地用户"
 
-#: spoolsteward/admin/accounts.py:275
+#: spoolsteward/admin/accounts.py:278
 #, python-format
 msgid "Group \"%(group)s\" is only for administrators: make them administrator from their page"
 msgstr "群组“%(group)s”仅限管理员：请在其页面中将其设为管理员"
 
-#: spoolsteward/admin/accounts.py:277
+#: spoolsteward/admin/accounts.py:280
 msgid "Invalid username"
 msgstr "用户名无效"
 
-#: spoolsteward/admin/accounts.py:305
+#: spoolsteward/admin/accounts.py:308
 msgid "Unknown or unavailable login method"
 msgstr "未知或不可用的登录方式"
 
-#: spoolsteward/admin/accounts.py:313
+#: spoolsteward/admin/accounts.py:316
 #, python-format
 msgid "%(user)s is the emergency administrator: it must stay a local account"
 msgstr "%(user)s 是应急管理员：必须保持为本地账户"
 
-#: spoolsteward/admin/accounts.py:332
+#: spoolsteward/admin/accounts.py:335
 #, python-format
 msgid "Group \"%(group)s\" is only for administrators"
 msgstr "群组“%(group)s”仅限管理员"
 
-#: spoolsteward/admin/accounts.py:334
+#: spoolsteward/admin/accounts.py:337
 #, python-format
 msgid "Administrators stay in \"%(group)s\": remove the admin right first"
 msgstr "管理员必须留在“%(group)s”中：请先取消其管理员权限"
 
-#: spoolsteward/admin/accounts.py:412
+#: spoolsteward/admin/accounts.py:415
 #, python-format
 msgid "%(user)s is now a local account"
 msgstr "%(user)s 现在是本地账户"
 
-#: spoolsteward/admin/accounts.py:414
+#: spoolsteward/admin/accounts.py:417
 msgid "The user must choose their own at the next login. Their print keys keep working."
 msgstr "用户下次登录时必须设置自己的密码。其打印密钥仍然有效。"
 
-#: spoolsteward/admin/accounts.py:416 spoolsteward/admin/accounts.py:729
+#: spoolsteward/admin/accounts.py:419 spoolsteward/admin/accounts.py:732
 #, python-format
 msgid "Saved %(name)s"
 msgstr "已保存 %(name)s"
 
-#: spoolsteward/admin/accounts.py:455
+#: spoolsteward/admin/accounts.py:458
 msgid "You cannot delete yourself"
 msgstr "您不能删除自己"
 
-#: spoolsteward/admin/accounts.py:457
+#: spoolsteward/admin/accounts.py:460
 #, python-format
 msgid "%(user)s is the emergency administrator: it can not be deleted"
 msgstr "%(user)s 是应急管理员：不能被删除"
 
-#: spoolsteward/admin/accounts.py:471
+#: spoolsteward/admin/accounts.py:474
 msgid "The name you typed does not match: nothing was deleted"
 msgstr "输入的名称不匹配：未删除任何内容"
 
-#: spoolsteward/admin/accounts.py:479
+#: spoolsteward/admin/accounts.py:482
 #, python-format
 msgid "Account %(name)s deleted (%(n)s print record(s) kept in the audit)"
 msgstr "已删除账户 %(name)s（审计中保留了 %(n)s 条打印记录）"
 
-#: spoolsteward/admin/accounts.py:490
+#: spoolsteward/admin/accounts.py:493
 msgid "That account signs in through RADIUS: its password is managed there"
 msgstr "该账户通过 RADIUS 登录：其密码在 RADIUS 中管理"
 
-#: spoolsteward/admin/accounts.py:497
+#: spoolsteward/admin/accounts.py:500
 #, python-format
 msgid "New password for %(user)s"
 msgstr "%(user)s 的新密码"
 
-#: spoolsteward/admin/accounts.py:499
+#: spoolsteward/admin/accounts.py:502
 msgid "The user must choose a new one at the next login. Their print keys keep working."
 msgstr "用户下次登录时必须设置新密码。其打印密钥仍然有效。"
 
-#: spoolsteward/admin/accounts.py:514
+#: spoolsteward/admin/accounts.py:517
 #, python-format
 msgid "%(n)s key(s) of %(user)s revoked"
 msgstr "已撤销 %(user)s 的 %(n)s 个密钥"
 
-#: spoolsteward/admin/accounts.py:539 spoolsteward/admin/me.py:138
+#: spoolsteward/admin/accounts.py:542 spoolsteward/admin/me.py:138
 #, python-format
 msgid "Key %(label)s revoked"
 msgstr "已撤销密钥 %(label)s"
 
-#: spoolsteward/admin/accounts.py:566
+#: spoolsteward/admin/accounts.py:569
 #, python-format
 msgid "Key %(label)s switched off: its expiry date keeps running"
 msgstr "密钥 %(label)s 已停用：其到期日期仍在继续计算"
 
-#: spoolsteward/admin/accounts.py:578
+#: spoolsteward/admin/accounts.py:581
 #, python-format
 msgid "Key %(label)s switched on"
 msgstr "密钥 %(label)s 已重新启用"
 
-#: spoolsteward/admin/accounts.py:590 spoolsteward/auth/keys.py:179
+#: spoolsteward/admin/accounts.py:593 spoolsteward/auth/keys.py:179
 msgid "choose one of the validity periods in the list"
 msgstr "请从列表中选择一个有效期"
 
-#: spoolsteward/admin/accounts.py:598
+#: spoolsteward/admin/accounts.py:601
 #, python-format
 msgid "Key %(label)s now expires on %(date)s"
 msgstr "密钥 %(label)s 现在的到期日期为 %(date)s"
 
-#: spoolsteward/admin/accounts.py:600
+#: spoolsteward/admin/accounts.py:603
 msgid "This key can not be extended"
 msgstr "此密钥无法延期"
 
-#: spoolsteward/admin/accounts.py:608
+#: spoolsteward/admin/accounts.py:611
 #, python-format
 msgid "The group “%(name)s” has %(n)s user: it will be moved to the default group “%(group)s” (with that group's limits). Delete the group?"
 msgid_plural "The group “%(name)s” has %(n)s users: they will be moved to the default group “%(group)s” (with that group's limits). Delete the group?"
 msgstr[0] "群组“%(name)s”有 %(n)s 个用户：他们将被移到默认群组“%(group)s”（沿用该群组的限额）。要删除该群组吗？"
 
-#: spoolsteward/admin/accounts.py:611
+#: spoolsteward/admin/accounts.py:614
 #, python-format
 msgid "Delete the group “%(name)s”? It has no users."
 msgstr "要删除群组“%(name)s”吗？它没有用户。"
 
-#: spoolsteward/admin/accounts.py:666 spoolsteward/admin/accounts.py:711
+#: spoolsteward/admin/accounts.py:669 spoolsteward/admin/accounts.py:714
 msgid "Invalid group name"
 msgstr "群组名称无效"
 
-#: spoolsteward/admin/accounts.py:668 spoolsteward/admin/accounts.py:714
+#: spoolsteward/admin/accounts.py:671 spoolsteward/admin/accounts.py:717
 #, python-format
 msgid "Group %(name)s already exists"
 msgstr "群组 %(name)s 已存在"
 
-#: spoolsteward/admin/accounts.py:682
+#: spoolsteward/admin/accounts.py:685
 #, python-format
 msgid "Group %(name)s created"
 msgstr "已创建群组 %(name)s"
 
-#: spoolsteward/admin/accounts.py:708
+#: spoolsteward/admin/accounts.py:711
 #, python-format
 msgid "\"%(name)s\" is a system group: it can not be renamed"
 msgstr "“%(name)s”是系统群组：不能重命名"
 
-#: spoolsteward/admin/accounts.py:740
+#: spoolsteward/admin/accounts.py:743
 #, python-format
 msgid "\"%(name)s\" is a system group: it can not be deleted"
 msgstr "“%(name)s”是系统群组：不能删除"
 
-#: spoolsteward/admin/accounts.py:758
+#: spoolsteward/admin/accounts.py:761
 #, python-format
 msgid "Group %(name)s deleted"
 msgstr "已删除群组 %(name)s"
 
-#: spoolsteward/admin/accounts.py:758
+#: spoolsteward/admin/accounts.py:761
 #, python-format
 msgid "; %(n)s user(s) moved to %(group)s"
 msgstr "；%(n)s 个用户已移到 %(group)s"
@@ -724,12 +725,12 @@ msgstr "备份失败：%(message)s"
 msgid "Backup “%(name)s” deleted. The files already written in the folder stay where they are"
 msgstr "已删除备份“%(name)s”。文件夹中已写入的文件会保留在原处"
 
-#: spoolsteward/admin/common.py:150
+#: spoolsteward/admin/common.py:151
 #, python-format
 msgid "invalid limit %(value)s"
 msgstr "限额无效：%(value)s"
 
-#: spoolsteward/admin/common.py:153
+#: spoolsteward/admin/common.py:154
 #, python-format
 msgid "limit too large (max %(max)s)"
 msgstr "限额过大（最大 %(max)s）"
@@ -1319,15 +1320,15 @@ msgstr " — %(n)s 页"
 msgid "The print server did not accept the file. Try another format (PDF works best)."
 msgstr "打印服务器没有接受该文件。请尝试其他格式（PDF 效果最好）。"
 
-#: spoolsteward/admin/reports.py:142
+#: spoolsteward/admin/reports.py:163
 msgid "The dates must look like 2026-10-31"
 msgstr "日期格式应为 2026-10-31"
 
-#: spoolsteward/admin/reports.py:145
+#: spoolsteward/admin/reports.py:166
 msgid "The end of the period is before its start"
 msgstr "结束日期早于开始日期"
 
-#: spoolsteward/admin/reports.py:150
+#: spoolsteward/admin/reports.py:171
 #, python-format
 msgid "The number of users must be between 1 and %(max)s"
 msgstr "用户数量必须在 1 到 %(max)s 之间"
@@ -1799,11 +1800,11 @@ msgstr "到"
 msgid "An end earlier than the start goes past midnight (22:00 to 06:00): it belongs to the day it starts. The end time itself is not included."
 msgstr "结束早于开始时会跨过午夜（22:00 到 06:00），属于开始的那一天。结束时刻本身不包含在内。"
 
-#: spoolsteward/admin/templates/_pwfield.html:4
+#: spoolsteward/admin/templates/_pwfield.html:5
 msgid "Show password"
 msgstr "显示密码"
 
-#: spoolsteward/admin/templates/_pwfield.html:4
+#: spoolsteward/admin/templates/_pwfield.html:5
 msgid "Hide password"
 msgstr "隐藏密码"
 
@@ -1915,6 +1916,7 @@ msgstr "内容"
 #: spoolsteward/admin/templates/groups.html:16
 #: spoolsteward/admin/templates/me.html:11
 #: spoolsteward/admin/templates/me.html:15
+#: spoolsteward/admin/templates/report.html:11
 #: spoolsteward/admin/templates/user_edit.html:36
 #: spoolsteward/admin/templates/users.html:10
 #: spoolsteward/admin/templates/users.html:20
@@ -1994,7 +1996,7 @@ msgstr "%(n)s 条结果"
 #: spoolsteward/admin/templates/jobs.html:36
 #: spoolsteward/admin/templates/jobs.html:41
 #: spoolsteward/admin/templates/login.html:8
-#: spoolsteward/admin/templates/report.html:36
+#: spoolsteward/admin/templates/report.html:47
 #: spoolsteward/admin/templates/requests.html:9
 #: spoolsteward/admin/templates/requests.html:61
 #: spoolsteward/admin/templates/requests.html:76
@@ -2015,7 +2017,7 @@ msgstr "打印机"
 #: spoolsteward/admin/templates/archive_view.html:12
 #: spoolsteward/admin/templates/print.html:50
 #: spoolsteward/admin/templates/printers.html:181
-#: spoolsteward/admin/templates/report.html:36
+#: spoolsteward/admin/templates/report.html:47
 #: spoolsteward/admin/templates/request_quota.html:15
 #: spoolsteward/admin/templates/users.html:10
 #: spoolsteward/admin/templates/users.html:19
@@ -2759,7 +2761,7 @@ msgstr "此处为只读：要修改请点击<b>编辑</b>。限额留空 = 不�
 
 #: spoolsteward/admin/templates/groups.html:9
 #: spoolsteward/admin/templates/groups.html:12
-#: spoolsteward/admin/templates/report.html:36
+#: spoolsteward/admin/templates/report.html:47
 #: spoolsteward/admin/templates/user_edit.html:19
 #: spoolsteward/admin/templates/users.html:10
 #: spoolsteward/admin/templates/users.html:15
@@ -3333,7 +3335,7 @@ msgid "not allowed: prints are made double-sided"
 msgstr "不允许：打印件为双面"
 
 #: spoolsteward/admin/templates/me.html:32
-#: spoolsteward/admin/templates/report.html:12
+#: spoolsteward/admin/templates/report.html:23
 msgid "all"
 msgstr "全部"
 
@@ -3567,8 +3569,8 @@ msgstr "<b>密钥自上次启动以来已更改</b>（<span class=\"mono\">.env<
 
 #: spoolsteward/admin/templates/notices.html:49
 #, python-format
-msgid "<b>No secret key is set.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> is missing from <span class=\"mono\">.env</span> or set to <span class=\"mono\">none</span>: the file names in the audit are stored without encryption and everybody has to sign in again after every restart. Write a random value (the output of <span class=\"mono\">openssl rand -hex 32</span>) after <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> in <span class=\"mono\">.env</span>, run <span class=\"mono\">docker compose up -d</span> and save the key in a safe place. <a href=\"%(url)s\">Step by step</a>."
-msgstr "<b>未设置密钥。</b><span class=\"mono\">.env</span> 中缺少 <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span>，或其值为 <span class=\"mono\">none</span>：审计中的文件名以未加密方式保存，并且每次重启后所有人都必须重新登录。在 <span class=\"mono\">.env</span> 中的 <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> 后面写入一个随机值（<span class=\"mono\">openssl rand -hex 32</span> 的输出），运行 <span class=\"mono\">docker compose up -d</span>，并将密钥保存在安全的地方。<a href=\"%(url)s\">分步说明</a>。"
+msgid "<b>No secret key is set.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> is missing from <span class=\"mono\">.env</span> or set to <span class=\"mono\">none</span>: the file names in the audit are stored without encryption, everybody has to sign in again after every restart and the printers are not announced on the network (mDNS). Write a random value (the output of <span class=\"mono\">openssl rand -hex 32</span>) after <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> in <span class=\"mono\">.env</span>, run <span class=\"mono\">docker compose up -d</span> and save the key in a safe place. <a href=\"%(url)s\">Step by step</a>."
+msgstr "<b>未设置密钥。</b><span class=\"mono\">.env</span> 中缺少 <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span>，或其值为 <span class=\"mono\">none</span>：审计中的文件名以未加密方式保存，每次重启后所有人都必须重新登录，并且打印机不会在网络上被公布（mDNS）。在 <span class=\"mono\">.env</span> 中的 <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> 后面写入一个随机值（<span class=\"mono\">openssl rand -hex 32</span> 的输出），运行 <span class=\"mono\">docker compose up -d</span>，并将密钥保存在安全的地方。<a href=\"%(url)s\">分步说明</a>。"
 
 #: spoolsteward/admin/templates/notices.html:51
 #, python-format
@@ -4111,7 +4113,7 @@ msgid "Queue"
 msgstr "队列"
 
 #: spoolsteward/admin/templates/printers.html:181
-#: spoolsteward/admin/templates/report.html:36
+#: spoolsteward/admin/templates/report.html:47
 #: spoolsteward/admin/templates/request_quota.html:15
 #: spoolsteward/admin/templates/users.html:10
 #: spoolsteward/admin/templates/users.html:18
@@ -4168,70 +4170,98 @@ msgstr "使用情况报表"
 msgid "Who printed most in a period. It counts the prints that used paper (completed, waiting or running); scans are not included. Prints that were already moved to the compressed archive are not in the report."
 msgstr "统计某段时间内打印最多的人。计入用掉纸张的打印（已完成、等待中或进行中）；不含扫描。已移入压缩归档的打印不在报表中。"
 
-#: spoolsteward/admin/templates/report.html:10
+#: spoolsteward/admin/templates/report.html:13
+msgid "Today"
+msgstr "今天"
+
+#: spoolsteward/admin/templates/report.html:13
+msgid "Last 7 days"
+msgstr "最近 7 天"
+
+#: spoolsteward/admin/templates/report.html:13
+msgid "This month"
+msgstr "本月"
+
+#: spoolsteward/admin/templates/report.html:13
+msgid "Last month"
+msgstr "上个月"
+
+#: spoolsteward/admin/templates/report.html:13
+msgid "Last 30 days"
+msgstr "最近 30 天"
+
+#: spoolsteward/admin/templates/report.html:13
+msgid "This year"
+msgstr "今年"
+
+#: spoolsteward/admin/templates/report.html:17
 #: spoolsteward/admin/templates/requests.html:61
 #: spoolsteward/admin/templates/requests.html:125
 msgid "From"
 msgstr "起始"
 
-#: spoolsteward/admin/templates/report.html:11
+#: spoolsteward/admin/templates/report.html:18
 msgid "To (included)"
 msgstr "到（含）"
 
-#: spoolsteward/admin/templates/report.html:12
+#: spoolsteward/admin/templates/report.html:20
+msgid "Dates are written year-month-day, for example 2026-10-31."
+msgstr "日期按 年-月-日 书写，例如 2026-10-31。"
+
+#: spoolsteward/admin/templates/report.html:23
 msgid "Show the first … users"
 msgstr "显示前 … 位用户"
 
-#: spoolsteward/admin/templates/report.html:14
+#: spoolsteward/admin/templates/report.html:25
 msgid "Detailed report: also how many prints each user made on each printer"
 msgstr "详细报表：同时列出每位用户在每台打印机上的打印数"
 
-#: spoolsteward/admin/templates/report.html:17
+#: spoolsteward/admin/templates/report.html:28
 msgid "Leave out these groups"
 msgstr "排除这些组"
 
-#: spoolsteward/admin/templates/report.html:22
+#: spoolsteward/admin/templates/report.html:33
 msgid "Show"
 msgstr "显示"
 
-#: spoolsteward/admin/templates/report.html:23
+#: spoolsteward/admin/templates/report.html:34
 msgid "Download CSV"
 msgstr "下载 CSV"
 
-#: spoolsteward/admin/templates/report.html:24
+#: spoolsteward/admin/templates/report.html:35
 msgid "Download PDF"
 msgstr "下载 PDF"
 
-#: spoolsteward/admin/templates/report.html:26
+#: spoolsteward/admin/templates/report.html:37
 msgid "The PDF is in English and can only show Western letters (other characters appear as ?): the CSV has every name as it is."
 msgstr "PDF 为英文，只能显示西文字母（其他字符显示为 ?）：CSV 中保留每个名字的原样。"
 
-#: spoolsteward/admin/templates/report.html:31
+#: spoolsteward/admin/templates/report.html:42
 msgid "The period reaches back before the oldest row of the active audit: older prints are in the archive and are not counted here."
 msgstr "该时间段早于当前审计中最早的记录：更早的打印在归档中，此处不计入。"
 
-#: spoolsteward/admin/templates/report.html:32
+#: spoolsteward/admin/templates/report.html:43
 #, python-format
 msgid "%(n)s user"
 msgid_plural "%(n)s users"
 msgstr[0] "%(n)s 位用户"
 
-#: spoolsteward/admin/templates/report.html:32
+#: spoolsteward/admin/templates/report.html:43
 #, python-format
 msgid "%(jobs)s jobs"
 msgstr "%(jobs)s 个作业"
 
-#: spoolsteward/admin/templates/report.html:32
+#: spoolsteward/admin/templates/report.html:43
 #, python-format
 msgid "%(pages)s pages"
 msgstr "%(pages)s 页"
 
-#: spoolsteward/admin/templates/report.html:33
+#: spoolsteward/admin/templates/report.html:44
 #, python-format
 msgid "only the first %(top)s are listed"
 msgstr "仅列出前 %(top)s 位"
 
-#: spoolsteward/admin/templates/report.html:42
+#: spoolsteward/admin/templates/report.html:53
 msgid "No prints in this period."
 msgstr "该时间段内没有打印。"
 
@@ -4568,8 +4598,10 @@ msgid "Scanning…"
 msgstr "正在扫描…"
 
 #: spoolsteward/admin/templates/scan.html:37
-msgid "Scanning… with several sheets it can take a minute. You can also leave this page: the file stays below for 15 minutes."
-msgstr "正在扫描…多张纸可能需要一分钟。您也可以离开此页面：文件会在下方保留 15 分钟。"
+#, python-format
+msgid "Scanning… with several sheets it can take a minute. You can also leave this page: the file stays below for %(n)s minute."
+msgid_plural "Scanning… with several sheets it can take a minute. You can also leave this page: the file stays below for %(n)s minutes."
+msgstr[0] "正在扫描…多张纸可能需要一分钟。您也可以离开此页面：文件会在下方保留 %(n)s 分钟。"
 
 #: spoolsteward/admin/templates/scan.html:44
 msgid "Your scan app can scan now, without a password, from the address below. Only that address is accepted; any other is refused."
@@ -5100,57 +5132,61 @@ msgstr "%(n)s 天"
 msgid "one print only (void after %(h)s hours if unused)"
 msgstr "仅限一次打印（若未使用，%(h)s 小时后失效）"
 
-#: spoolsteward/auth/passwords.py:31
+#: spoolsteward/auth/passwords.py:60
 #, python-format
 msgid "the password must be at least %(n)s characters long"
 msgstr "密码至少需要 %(n)s 个字符"
 
-#: spoolsteward/auth/passwords.py:33
+#: spoolsteward/auth/passwords.py:62
 #, python-format
 msgid "the password must be at most %(n)s characters long"
 msgstr "密码最多 %(n)s 个字符"
 
-#: spoolsteward/auth/passwords.py:35
+#: spoolsteward/auth/passwords.py:64
 msgid "the password must not be the username"
 msgstr "密码不能与用户名相同"
 
-#: spoolsteward/auth/passwords.py:37
+#: spoolsteward/auth/passwords.py:66
 msgid "the password is too repetitive"
 msgstr "密码重复字符过多"
 
-#: spoolsteward/backup/core.py:70
+#: spoolsteward/backup/core.py:41
+msgid "General (.env)"
+msgstr "通用 (.env)"
+
+#: spoolsteward/backup/core.py:81
 msgid "Folder name not valid: letters, digits, space . _ - and / for sub-folders (max 4 levels)"
 msgstr "文件夹名称无效：只能使用字母、数字、空格、. _ -，子文件夹用 / 分隔（最多 4 层）"
 
-#: spoolsteward/backup/core.py:73
+#: spoolsteward/backup/core.py:84
 #, python-format
 msgid "Backup root %(root)s is not available: mount a folder there (see docker-compose.yml)"
 msgstr "备份根目录 %(root)s 不可用：请在该处挂载一个文件夹（参见 docker-compose.yml）"
 
-#: spoolsteward/backup/core.py:77
+#: spoolsteward/backup/core.py:88
 msgid "Folder is outside the backup root"
 msgstr "该文件夹在备份根目录之外"
 
-#: spoolsteward/backup/core.py:84
+#: spoolsteward/backup/core.py:95
 #, python-format
 msgid "Folder %(folder)s is not writable by the gateway: %(error)s"
 msgstr "网关无法写入文件夹 %(folder)s：%(error)s"
 
-#: spoolsteward/backup/core.py:100
+#: spoolsteward/backup/core.py:111
 msgid "The backup disk is not answering (earlier requests are still waiting). Check the network disk."
 msgstr "备份磁盘无响应(之前的请求仍在等待)。请检查网络磁盘。"
 
-#: spoolsteward/backup/core.py:115
+#: spoolsteward/backup/core.py:126
 #, python-format
 msgid "The backup disk did not answer in %(s)s seconds: is the network disk reachable?"
 msgstr "备份磁盘在 %(s)s 秒内没有响应:网络磁盘可以访问吗?"
 
-#: spoolsteward/backup/core.py:130
+#: spoolsteward/backup/core.py:141
 #, python-format
 msgid "Cannot write the marker file in the folder: %(error)s"
 msgstr "无法在文件夹中写入标记文件:%(error)s"
 
-#: spoolsteward/backup/core.py:135
+#: spoolsteward/backup/core.py:146
 msgid "The marker file is missing in this folder: the network disk or USB disk may not be mounted. Nothing was written."
 msgstr "此文件夹中缺少标记文件:网络盘或 USB 盘可能未挂载。未写入任何内容。"
 
@@ -5167,19 +5203,19 @@ msgstr "口令短语至少需要 %(n)s 个字符"
 msgid "recovery key is not valid (expected cpgbk1.<public>.<wrapped>)"
 msgstr "恢复密钥无效（应为 cpgbk1.<公钥>.<封装>）"
 
-#: spoolsteward/backup/service.py:87
+#: spoolsteward/backup/service.py:88
 msgid "Another backup is running: try again in a minute"
 msgstr "另一个备份正在运行：请一分钟后重试"
 
-#: spoolsteward/backup/service.py:92
+#: spoolsteward/backup/service.py:93
 msgid "Backup target not found"
 msgstr "找不到备份目标"
 
-#: spoolsteward/policy/control.py:22
+#: spoolsteward/policy/control.py:23
 msgid "printer disabled by the administrator (applies to everyone, administrators included)"
 msgstr "打印机已被管理员停用（对所有人生效，包括管理员）"
 
-#: spoolsteward/policy/control.py:23
+#: spoolsteward/policy/control.py:24
 msgid "gateway in maintenance: only administrators can print or scan"
 msgstr "网关维护中：只有管理员可以打印或扫描"
 

@@ -11,6 +11,8 @@ l'installazione usa RADIUS. Una password temporanea va cambiata al primo accesso
 
 ## 2. Il mio profilo (`/me`)
 
+![La pagina del profilo: job e pagine usati nella settimana rispetto al limite, i pulsanti per stampare, scansionare e chiedere più quota, e i permessi dell'account](../images/it/me-profile.png)
+
 - **Consumo**: job e pagine usati nella settimana o nel mese in corso, il tuo limite (compresa l'eventuale quota extra concessa) e
   quando si azzera.
 - **Documentazione**: l'icona **?** nella barra in alto (`/docs`) apre questa guida e la guida passo passo per [Windows](windows.md). Gli amministratori trovano lì tutta la documentazione, con la stessa icona.
@@ -49,11 +51,19 @@ di pagine (`1,5` o `2-4`), le copie e un commento facoltativo (50 caratteri, vis
 Stessa quota e stesso audit di ogni altra stampa. Funziona da un telefono senza installare nulla. Per collegare un computer vedi
 [stampa.md](stampa.md).
 
+![La pagina di stampa: il riquadro del file, l'elenco delle stampanti e le opzioni (commento, formato carta, orientamento, colore, fronte-retro, pagine)](../images/it/print-form.png)
+
 ## 4. Scansione (`/me/scan`)
 
 Scegli lo scanner (se ce n'è più di uno), la sorgente (automatica, vetro o caricatore per tutti i fogli), il colore, la qualità, il
 formato carta, il formato di uscita (PDF o JPEG) e un nome per il file. Puoi lasciare la pagina mentre scansiona e tornare a scaricare
-il file entro 15 minuti. Vedi [scansione.md](scansione.md).
+il file presto: resta 10 minuti, salvo diversa impostazione dell'amministratore, e meno se la memoria del server per le scansioni è piena. Vedi [scansione.md](scansione.md).
+
+![La pagina di scansione: scanner, nome del file, formato, dove sono i fogli, colore e qualità, poi il pulsante Scansiona](../images/it/scan-form.png)
+
+Quando la scansione è finita, il file compare sotto *Le tue scansioni recenti*, con il pulsante *Scarica*:
+
+![Una scansione finita sotto Le tue scansioni recenti, con una pagina e il pulsante Scarica](../images/it/scan-done.png)
 
 ### Scansione da un'app che non sa accedere
 

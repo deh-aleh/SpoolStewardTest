@@ -13,6 +13,10 @@ curl -sk https://<server>:8631/healthz             # 200 = gateway e database ok
 
 Per più dettaglio metti `SPOOLSTEWARD_LOG_LEVEL=DEBUG` in `.env` e poi `docker compose up -d`.
 
+Quanta CPU e RAM usa? `scripts/resources.sh` elenca i container e Docker stesso e li somma (`docker stats` da solo non dà il totale e lascia fuori Docker). Se mostra 0 MB per ogni container, il kernel non misura la memoria per container: su un Raspberry Pi aggiungi `cgroup_enable=memory cgroup_memory=1` all'unica riga di `/boot/firmware/cmdline.txt` e riavvia.
+
+Ogni servizio conserva solo gli ultimi 30 MB di log (3 file da 10 MB, impostati in `docker-compose.yml`): le righe più vecchie sono perse, quindi guarda presto dopo un problema. Un server acceso per mesi non riempie il disco con i log.
+
 ## 1. Il gateway non parte
 
 | Sintomo | Causa e rimedio |
@@ -46,8 +50,8 @@ Gli amministratori vedono questo avviso nella campanella:
 **Cosa vuol dire.**
 
 - I nomi dei file stampati e scansionati sono salvati nell'audit senza cifratura ([protezione-dati.md](protezione-dati.md)).
-- Il gateway crea una chiave casuale nuova a ogni avvio: dopo ogni riavvio tutti rifanno il login al portale, e il canale tra `gateway` e
-  `mdns` non è protetto.
+- Il gateway crea una chiave casuale nuova a ogni avvio: dopo ogni riavvio tutti rifanno il login al portale, e `mdns` non annuncia
+  nulla (senza la chiave l'annunciatore non può provare al gateway chi è, e il gateway non gli risponde).
 - Non si perde nulla. I nomi salvati senza chiave restano leggibili dopo che l'hai aggiunta: al primo avvio con la chiave il gateway li cifra.
 
 **Come si risolve.**
@@ -102,7 +106,7 @@ Gli amministratori vedono questo avviso nella campanella:
 | Sintomo | Causa e rimedio |
 |---|---|
 | Avviso sul certificato, o il dispositivo rifiuta di collegarsi | Il dispositivo non si fida del certificato. Installa la CA, oppure usa un certificato firmato da una CA in `config/tls/`. Il nome o l'IP usato deve stare nel certificato. |
-| Le stampanti non compaiono sul telefono | `mdns` deve girare con la rete host sulla stessa LAN; `docker compose logs mdns`. Imposta `SPOOLSTEWARD_MDNS_ADDRESSES` se la macchina ha più schede di rete e `SPOOLSTEWARD_MDNS_HOSTNAME` con un nome presente nel certificato. Docker Desktop non può farlo. Una stampante nascosta, irraggiungibile, o la modalità manutenzione, tolgono anche l'annuncio. |
+| Le stampanti non compaiono sul telefono | `mdns` deve girare con la rete host sulla stessa LAN; `docker compose logs mdns`. Imposta `SPOOLSTEWARD_MDNS_ADDRESSES` se la macchina ha più schede di rete e `SPOOLSTEWARD_MDNS_HOSTNAME` con un nome presente nel certificato. Docker Desktop non può farlo. Una stampante nascosta, irraggiungibile, o la modalità manutenzione, tolgono anche l'annuncio. Se `docker compose logs mdns` dice **"mDNS is OFF"**, in `.env` manca `SPOOLSTEWARD_SECRET_KEY` (o i due container ne leggono due diverse): senza, non viene annunciato nulla, per scelta. Impostala (`openssl rand -hex 32`) ed esegui `docker compose up -d`. |
 | Android: il servizio di sistema vede la stampante ma fallisce | Non sa autenticarsi. Installa **Mopria Print Service** o stampa dal portale. |
 | Il desktop Linux mostra le stampanti ma non stampa | Le stampanti annunciate non hanno la chiave. GNOME non sa aggiungerla dalla sua finestra: esegui il comando `lpadmin` della pagina «Crea una chiave» o `scripts/add-printer-linux.sh`, che la salvano nell'indirizzo della coda. |
 | Windows: «Operazione non riuscita» o «sto connettendo» troppo a lungo quando aggiungi la stampante (procedura completa in [windows.md](windows.md)) | Windows chiede al gateway se il lavoro andrebbe bene (`Validate-Job`) prima di avere una password, e la finestra «Aggiungi dispositivo» non sa chiederla. Il gateway risponde a questa domanda senza password, mentre la stampa vera chiede sempre il login. Aspetta 3-4 minuti; se non si collega: Pannello di controllo → Account utente → Gestione credenziali → Gestione credenziali Windows → Aggiungi credenziali Windows; come indirizzo scrivi lo stesso nome o IP della stampante, come utente il tuo nome e come password la **chiave di stampa** (non la password dell'account). |
@@ -118,7 +122,7 @@ Gli amministratori vedono questo avviso nella campanella:
 | Ho premuto il pulsante della finestra di scansione ma la scansione è rifiutata | La campanella dice «la finestra era per X, la richiesta arriva da Y». I due indirizzi differiscono: IPv4 contro IPv6, NAT o un proxy (vedi i limiti in [scansione.md](scansione.md)). Apri il portale dal dispositivo su cui gira l'app di scansione, con lo stesso tipo di indirizzo che usa l'app; dietro un reverse proxy aprilo direttamente sulla porta 8631. L'audit ha una riga *negata* con i due indirizzi. |
 | Non c'è il pulsante della finestra di scansione | `SPOOLSTEWARD_ESCL_WINDOW=false`, oppure nessuno scanner è collegato. |
 | NAPS2 riceve 401 senza finestra | Non sa inviare le credenziali. Imposta `SPOOLSTEWARD_ESCL_ANONYMOUS=true` (solo su reti fidate) e inserisci IP e porta a mano. |
-| Il risultato della scansione è sparito | I risultati restano 15 minuti in memoria, solo per il proprietario. |
+| Il risultato della scansione è sparito | I risultati restano in memoria per `SPOOLSTEWARD_SCAN_KEEP_MINUTES` (10 di default), solo per il proprietario, e le più vecchie se ne vanno per prime quando le scansioni di tutte le persone insieme superano `SPOOLSTEWARD_SCAN_KEEP_MB` (50). Con `SPOOLSTEWARD_SCAN_DELETE_AFTER_DOWNLOAD=true` una scansione si scarica una volta sola. Rifai la scansione e scarica prima. |
 
 ## 6. Backup e audit
 
@@ -145,6 +149,7 @@ Gli amministratori vedono questo avviso nella campanella:
 |---|---|
 | `scripts/update.sh` dice `SPOOLSTEWARD_REGISTRY is empty` | La riga `SPOOLSTEWARD_REGISTRY=` di `.env` ha perso il suo valore. Riscrivila come in `docker/env.example` (`SPOOLSTEWARD_REGISTRY=ghcr.io/deh-aleh`) ed esegui di nuovo lo script. |
 | `scripts/update.sh` dice «This folder is a git clone» | Lo script aggiorna una cartella creata dal pacchetto della release. Un clone git è una copia da sviluppatore e non si aggiorna così ([CONTRIBUTING.md](../../CONTRIBUTING.md)). |
+| `refused: the portal only installs a version newer than …` | Il portale ha chiesto una versione che non è più recente di quella installata. Il pulsante *Aggiorna* non torna mai indietro: per tornare indietro esegui `scripts/update.sh <versione>` da terminale. |
 | `the package does not match its sha256 sum` | Il file scaricato non è quello pubblicato (download interrotto, o una rete che lo modifica). Non è stato cambiato nulla: riprova; se persiste, scaricalo dal browser dalla pagina delle release. |
 | `NOT healthy after the update: going back` | La versione nuova non è diventata sana in due minuti. Lo script ha rimesso i file e la versione di prima. Guarda `docker compose logs --tail 50 gateway` per capire perché. |
 | Dopo l'aggiornamento non parte né la versione nuova né la vecchia | La nuova ha già cambiato il database. `update.sh` ti propone di ripristinare il backup preso all'inizio (`YES`); a mano: `scripts/backup.sh restore data/backups/pre-update/<file>`. |

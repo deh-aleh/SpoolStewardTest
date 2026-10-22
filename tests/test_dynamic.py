@@ -12,6 +12,7 @@ from sqlalchemy import select
 from spoolsteward.config import settings
 from spoolsteward.db.models import AdminAudit, JobLog
 from spoolsteward.escl import paper_label, parse_caps
+from spoolsteward.policy import control
 from tests.conftest import CUPS_SOCK, csrf_of_page, make_user, portal_login, requires_cups
 
 GOOD = "correct horse battery"
@@ -169,7 +170,8 @@ async def test_a_printer_that_does_not_answer_is_unreachable_everywhere(stack, m
     with stack.sm() as s:
         assert s.scalars(select(JobLog)).first() is None                                              # nothing was queued
     stack.app.state.queues_cache = None
-    pol = (await stack.get("/mdns/policy")).json()
+    monkeypatch.setattr(settings, "secret_key", "s3cret")                  # the feed of the announcer is closed without a key
+    pol = (await stack.get("/mdns/policy", headers={"X-Mdns-Token": control.mdns_token()})).json()
     assert "virtual" in pol["offline"]                                                                # and it stops being announced
 
 

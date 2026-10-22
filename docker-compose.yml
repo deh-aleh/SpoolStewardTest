@@ -21,11 +21,19 @@ x-image: &image ${SPOOLSTEWARD_REGISTRY:-spoolsteward}/spoolsteward:${SPOOLSTEWA
 x-build: &build
   context: .
   dockerfile: docker/stack/Dockerfile
+# Docker keeps everything a container prints, for ever, unless told otherwise: on a small server (a Raspberry Pi with an SD card)
+# the logs would fill the disk in the end. Every service keeps at most 3 files of 10 MB (the newest 30 MB of log).
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
 
 services:
   # USB <-> IPP bridge. Needs exclusive use of the printer: stop the host's ipp-usb first
   # (sudo systemctl disable --now ipp-usb && sudo systemctl mask ipp-usb).
   ipp-usb:
+    logging: *logging
     image: *image
     build: *build
     command: ["/usr/local/lib/spoolsteward/ipp-usb.sh"]
@@ -40,6 +48,7 @@ services:
 
   # Private backend: unix socket only, shared with the gateway through a volume.
   cups:
+    logging: *logging
     image: *image
     build: *build
     command: ["/usr/local/lib/spoolsteward/cups.sh"]
@@ -65,6 +74,7 @@ services:
 
   # The application: IPP and eSCL proxy, web portal, schedulers.
   gateway:
+    logging: *logging
     image: *image
     build: *build
     # runs as the host user (decided here, not when the image is built, so one published image fits every machine):
@@ -106,6 +116,7 @@ services:
   # Announces the queues on the LAN (DNS-SD/Bonjour: _ipps._tcp + AirPrint subtype) so phones and computers find them.
   # Multicast does not cross a bridge network, hence host networking; it only reads the queue list from CUPS.
   mdns:
+    logging: *logging
     image: *image
     build: *build
     command: ["python", "-m", "spoolsteward.mdns"]
@@ -127,6 +138,7 @@ services:
   # Details and alternatives (scripts/update.sh in a terminal): docs/en/installation.md, section "Updates".
   # PROJECT_DIR is written into .env by scripts/docker-init.sh (the full path of this folder).
   updater:
+    logging: *logging
     image: ${SPOOLSTEWARD_REGISTRY:-spoolsteward}/spoolsteward-updater:${SPOOLSTEWARD_VERSION:-dev}
     build: ./docker/stack/updater
     profiles: [autoupdate]
@@ -144,6 +156,7 @@ services:
   # Point .env at it with SPOOLSTEWARD_RADIUS_HOST=radius, SPOOLSTEWARD_RADIUS_SECRET=testing123.
   # (RADIUS is optional: with host/secret empty only local accounts exist.)
   radius:
+    logging: *logging
     image: freeradius/freeradius-server:3.2.10
     profiles: [radius-test]
     restart: unless-stopped

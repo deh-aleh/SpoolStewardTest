@@ -13,6 +13,10 @@ curl -sk https://<server>:8631/healthz             # 200 = gateway and database 
 
 Increase detail with `SPOOLSTEWARD_LOG_LEVEL=DEBUG` in `.env`, then `docker compose up -d`.
 
+How much CPU and RAM does it use? `scripts/resources.sh` lists the containers and Docker itself and adds them up (`docker stats` alone has no total and leaves Docker out). If it shows 0 MB for every container, the kernel does not measure memory per container: on a Raspberry Pi add `cgroup_enable=memory cgroup_memory=1` to the one line of `/boot/firmware/cmdline.txt` and reboot.
+
+Each service keeps only its newest 30 MB of log (3 files of 10 MB, set in `docker-compose.yml`): older lines are gone, so look soon after a problem. A server that stays on for months does not fill its disk with logs.
+
 ## 1. The gateway does not start
 
 | Symptom | Cause and fix |
@@ -46,8 +50,8 @@ The administrators see this notice in the bell:
 **What it means.**
 
 - The file names of prints and scans are stored in the audit without encryption ([data-protection.md](data-protection.md)).
-- The gateway makes a new random key at every start: after each restart everybody signs in to the portal again, and the channel between
-  `gateway` and `mdns` is not protected.
+- The gateway makes a new random key at every start: after each restart everybody signs in to the portal again, and `mdns` announces
+  nothing (without the key the announcer cannot prove to the gateway who it is, and the gateway will not answer it).
 - Nothing is lost. Names saved without a key stay readable after you add one: at the first start with the key the gateway encrypts them.
 
 **Fix.**
@@ -102,7 +106,7 @@ The administrators see this notice in the bell:
 | Symptom | Cause and fix |
 |---|---|
 | Certificate warning, or the device refuses to connect | The device does not trust the certificate. Install the CA, or use a CA-signed certificate in `config/tls/`. The name or IP used must be in the certificate. |
-| The printers do not appear on the phone | `mdns` must run with host networking on the same LAN; `docker compose logs mdns`. Set `SPOOLSTEWARD_MDNS_ADDRESSES` if the machine has several network cards, and `SPOOLSTEWARD_MDNS_HOSTNAME` to a name that is in the certificate. Docker Desktop cannot do this. A printer that is blocked-hidden or unreachable, or maintenance mode, also removes the announcement. |
+| The printers do not appear on the phone | `mdns` must run with host networking on the same LAN; `docker compose logs mdns`. Set `SPOOLSTEWARD_MDNS_ADDRESSES` if the machine has several network cards, and `SPOOLSTEWARD_MDNS_HOSTNAME` to a name that is in the certificate. Docker Desktop cannot do this. A printer that is blocked-hidden or unreachable, or maintenance mode, also removes the announcement. If `docker compose logs mdns` says **"mDNS is OFF"**, `SPOOLSTEWARD_SECRET_KEY` is missing in `.env` (or the two containers read different ones): without it nothing is announced, by design. Set it (`openssl rand -hex 32`) and run `docker compose up -d`. |
 | Android: the system print service sees the printer but fails | It cannot authenticate. Install **Mopria Print Service**, or print from the portal. |
 | Linux desktop shows the printers but nothing prints | Announced printers have no key. GNOME can not add the key from its dialog: run the `lpadmin` command from the "Create a key" page or `scripts/add-printer-linux.sh`, which store it in the queue address. |
 | Windows: "Operation failed" or "connecting" for too long when adding the printer (full steps in [windows.md](windows.md)) | Windows asks the gateway whether the job would be accepted (`Validate-Job`) before it has a password, and the "Add device" window can not ask for one. The gateway answers that question without a password, while the real print always asks for the login. Wait 3-4 minutes; if it does not connect: Control Panel → User Accounts → Credential Manager → Windows Credentials → Add a Windows credential; address = the same name or IP as the printer, user name = yours, password = the **print key** (not the account password). |
@@ -118,7 +122,7 @@ The administrators see this notice in the bell:
 | The scan window button is pressed but the scan is refused | The bell says "the window was for X, the request comes from Y". The two addresses differ: IPv4 against IPv6, NAT, or a proxy (see the limits in [scanning.md](scanning.md)). Open the portal from the device that runs the scan app, with the same kind of address the app uses; behind a reverse proxy open it directly on port 8631. The audit has a *denied* row with both addresses. |
 | There is no scan window button | `SPOOLSTEWARD_ESCL_WINDOW=false`, or no scanner is connected. |
 | NAPS2 gets 401 without a prompt | It cannot send credentials. Set `SPOOLSTEWARD_ESCL_ANONYMOUS=true` (trusted networks only) and enter IP and port by hand. |
-| The scan result is gone | Results stay 15 minutes in memory, only for their owner. |
+| The scan result is gone | Results stay in memory for `SPOOLSTEWARD_SCAN_KEEP_MINUTES` (10 by default), only for their owner, and the oldest go first when the scans of all people together pass `SPOOLSTEWARD_SCAN_KEEP_MB` (50). With `SPOOLSTEWARD_SCAN_DELETE_AFTER_DOWNLOAD=true` a scan can be downloaded only once. Scan again and download sooner. |
 
 ## 6. Backups and audit
 
@@ -145,6 +149,7 @@ The administrators see this notice in the bell:
 |---|---|
 | `scripts/update.sh` says `SPOOLSTEWARD_REGISTRY is empty` | The line `SPOOLSTEWARD_REGISTRY=` in `.env` lost its value. Write it back as in `docker/env.example` (`SPOOLSTEWARD_REGISTRY=ghcr.io/deh-aleh`) and run the script again. |
 | `scripts/update.sh` says "This folder is a git clone" | The script updates a folder made from the release package. A git clone is a developer's copy and is not updated this way ([CONTRIBUTING.md](../../CONTRIBUTING.md)). |
+| `refused: the portal only installs a version newer than …` | The portal asked for a version that is not newer than the installed one. The *Update* button never goes back; to go back, run `scripts/update.sh <version>` in a terminal. |
 | `the package does not match its sha256 sum` | The downloaded file is not the one that was published (interrupted download, or a network that alters it). Nothing was changed: try again; if it persists, download it in the browser from the releases page. |
 | `NOT healthy after the update: going back` | The new version did not become healthy within two minutes. The script put the previous files and version back. Look at `docker compose logs --tail 50 gateway` to see why. |
 | After the update neither the new nor the old version starts | The new one already changed the database. `update.sh` offers to restore the backup taken at the start (`YES`); by hand: `scripts/backup.sh restore data/backups/pre-update/<file>`. |

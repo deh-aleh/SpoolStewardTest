@@ -87,6 +87,8 @@ Quotas say *how much*. Permissions say *what*, *where* and *when*. They are set 
 bottom of the group page (*Groups* → edit) and of the user page (*Users* → edit). The block is closed when everything is at the
 default, and open when something differs.
 
+![The edit page of a group: name, job and page limits, period, requestable, and the open Advanced permissions block with colour allowed and one-sided not allowed](../images/en/admin-group-edit.png)
+
 | Permission | If it is not given |
 |---|---|
 | **Colour** | Prints come out in black and white. |

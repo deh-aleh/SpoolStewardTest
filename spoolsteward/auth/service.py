@@ -12,7 +12,7 @@ import logging
 from starlette.concurrency import run_in_threadpool
 
 from spoolsteward.auth import keys
-from spoolsteward.auth.passwords import verify_password
+from spoolsteward.auth.passwords import check_password
 from spoolsteward.auth.users import find_user, resolve_user
 from spoolsteward.config import settings
 from spoolsteward.db.models import PrintKey, User
@@ -44,11 +44,11 @@ async def portal_login(app, username: str, password: str) -> User | None:
     if user is None:
         # unknown name: only a delegated provider can vouch for a first-time user
         if provider is None or not settings.auto_create_users or not await provider.authenticate(username, password):
-            await run_in_threadpool(verify_password, None, password)  # same cost as a real check
+            await check_password(None, password)  # same cost as a real check
             return None
         return await run_in_threadpool(_create_delegated, app, provider.name, name)
     if user.provider == LOCAL:
-        ok = await run_in_threadpool(verify_password, user.password_hash, password)
+        ok = await check_password(user.password_hash, password)
         return user if ok and user.enabled else None
     if provider is None or not await provider.authenticate(username, password):
         return None
@@ -80,6 +80,10 @@ async def print_login_with_key(app, username: str, secret: str, ip: str | None =
     found = await run_in_threadpool(_check_key, app, name, secret, ip, True)
     if found is not None:
         return found
+    if secret.startswith(keys.KEY_TAG):
+        # It is a print key (expired, revoked, switched off, or a guess), never a domain password. It must not go to RADIUS: the
+        # failed attempt would count against the person's domain account, and a few of them can lock it.
+        return None, None
     if settings.ipp_auth != "keys+radius":
         return None, None
     provider = _radius(app)

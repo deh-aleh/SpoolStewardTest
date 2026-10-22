@@ -64,17 +64,17 @@ autorevole è `spoolsteward/config.py`. Riassunto:
 | Gruppo | Variabili |
 |---|---|
 | **Segreto** | `SPOOLSTEWARD_SECRET_KEY` — firma i cookie di sessione e autentica gateway→mdns. È anche la chiave che cifra i nomi dei file nell'audit. `none` = casuale a ogni avvio (sessioni perse al riavvio, canale mdns non protetto) e nomi dei file salvati senza cifratura. **Cambiarla o perderla rende illeggibili i nomi dei file già salvati** (`[encrypted]`) e fa rifare il login a tutti; un backup non cifrato non la contiene. Il gateway avvisa nella campanella (vedi `secretcheck.py`). |
-| **RADIUS** (facoltativo) | `RADIUS_HOST`, `RADIUS_PORT` (1812), `RADIUS_SECRET`, `RADIUS_TIMEOUT` (5), `AUTH_CACHE_SECONDS` (60). Host e secret `none` = solo account locali; uno solo compilato = non parte. |
+| **RADIUS** (facoltativo) | `RADIUS_HOST`, `RADIUS_PORT` (1812), `RADIUS_SECRET`, `RADIUS_TIMEOUT` (5), `AUTH_CACHE_SECONDS` (60), `PASSWORD_CHECKS_AT_ONCE` (3). Host e secret `none` = solo account locali; uno solo compilato = non parte. |
 | **Autenticazione di stampa** | `IPP_AUTH` (`keys` \| `keys+radius`), `KEY_TTL_DAYS_RADIUS` (90, massimo), `KEY_TTL_DAYS_LOCAL` (730, massimo), `KEY_ONCE_HOURS` (24), `KEY_ONCE_GRACE_SECONDS` (120), `KEY_HISTORY_DAYS` (14), `KEY_EXPIRY_WARN_ENABLED` (false), `KEY_EXPIRY_WARN_DAYS` (7), `AUTO_CREATE_USERS` (true), `DEFAULT_GROUP` (default), `CUPS_USER_PREFIX` (`gw:`), `ANONYMOUS_DISCOVERY` (true) |
 | **Primo avvio** | `BOOTSTRAP_ADMIN` (true), `BOOTSTRAP_ADMIN_USERNAME` (`administrator`) |
 | **Richieste** | `MAX_OPEN_REQUESTS` (3), `REQUEST_TTL_DAYS` (14), `REQUEST_REASON_REQUIRED` (false) |
-| **Audit** | `AUDIT_MAX_MB` (50), `AUDIT_ARCHIVE_DIR` (`/data/audit-archive`), `AUDIT_CHECK_INTERVAL` (3600) |
+| **Audit** | `AUDIT_MAX_MB` (50), `AUDIT_ARCHIVE_DIR` (`/data/audit-archive`), `AUDIT_CHECK_INTERVAL` (3600), `DB_SYNC` (`full` \| `normal`) |
 | **Backup** (generale) | `BACKUP_ENABLED` (false), `BACKUP_DIR` (`general`), `BACKUP_HOUR` (3), `BACKUP_KEEP_DAILY/WEEKLY/MONTHLY` (7/4/12), `BACKUP_RECIPIENT` (chiave di recupero; `none` = non cifrato, senza segreti nel file), `BACKUP_ROOT` (`/backups`), `BACKUP_CONFIG_DIR` (`/config`) |
 | **Pagina Stampanti** | `PRINTERS_REFRESH_SECONDS` (15; da 5 a 3600) |
 | **Stampanti USB** | `AUTO_DISCOVER` (true), `DISCOVERY_INTERVAL` (30), `USB_BRIDGE_HOST` (`ipp-usb`), `USB_BRIDGE_PORTS` (`60000-60099`), `USB_DIRECT` (true), `OFFLINE_REMOVE_HOURS` (8; 0 = mai) |
-| **Stampa / scansione** | `WEB_UPLOAD_MB` (25), `WEB_MAX_COPIES` (20), `MAX_REQUEST_MB` (200), `RECONCILE_INTERVAL` (30), `SCAN_URL`, `SCAN_TIMEOUT` (180), `ESCL_ANONYMOUS` (false), `ESCL_WINDOW` (true), `ESCL_WINDOW_SECONDS` (180) |
+| **Stampa / scansione** | `WEB_UPLOAD_MB` (25), `WEB_MAX_COPIES` (20), `MAX_REQUEST_MB` (200), `RECONCILE_INTERVAL` (30), `SCAN_URL`, `SCAN_TIMEOUT` (180), `SCAN_KEEP_MB` (50), `SCAN_KEEP_MINUTES` (10), `SCAN_DELETE_AFTER_DOWNLOAD` (false), `ESCL_ANONYMOUS` (false), `ESCL_WINDOW` (true), `ESCL_WINDOW_SECONDS` (180) |
 | **Rete / mDNS** | `PORTAL_URL`, `MDNS_HOSTNAME`, `MDNS_ADDRESSES`, `MDNS_PORT`, `MDNS_INTERVAL` (30), `PUBLIC_SCHEME` |
-| **Varie** | `TIMEZONE` (UTC), `LANGUAGE` (en), `LOG_LEVEL` (INFO), `NOTICE_INTERVAL` (0 = secondo il livello di log), `HEALTHZ_INFO` (`none` = solo lo stato), `UPDATE_CHECK` (true) |
+| **Varie** | `TIMEZONE` (UTC), `LANGUAGE` (en), `LOG_LEVEL` (INFO), `NOTICE_INTERVAL` (0 = secondo il livello di log), `HEALTHZ_INFO` (`none` = solo lo stato), `HSTS_SECONDS` (0 = spento), `UPDATE_CHECK` (true) |
 | **Decise da immagine/compose, non impostare** | `TLS_CERTFILE`, `TLS_KEYFILE`, `DATABASE_URL`, `CUPS_URL`, `ALLOW_INSECURE_AUTH` (mai in produzione), `HOST`, `PORT` |
 
 ## 3. Il pacchetto Python, file per file
@@ -149,7 +149,7 @@ autorevole è `spoolsteward/config.py`. Riassunto:
 | `audit_view.py` | Come si mostra una riga di audit (testi accorciati, dispositivo, specifiche di stampa). |
 | `me.py` | Area dell'utente: consumo, chiavi, password, impostazioni (tema, lingua, aggiornamento), richieste (`/me`). |
 | `printing.py` | Stampa dal browser (`/me/print`): controlli, quota, opzioni, orientamento orizzontale, permessi (lo stesso `decide()` del gateway), Print-Job a CUPS. |
-| `../secheaders.py` (in `spoolsteward/`) | La Content-Security-Policy aggiunta a ogni pagina HTML (`SPOOLSTEWARD_CONTENT_SECURITY_POLICY`). Vieta script e stili in linea: le pagine devono tenere CSS e JavaScript in `static/`. |
+| `../secheaders.py` (in `spoolsteward/`) | Le intestazioni di sicurezza. La Content-Security-Policy aggiunta a ogni pagina HTML (`SPOOLSTEWARD_CONTENT_SECURITY_POLICY`) vieta script e stili in linea: le pagine devono tenere CSS e JavaScript in `static/`. Le pagine hanno anche `Referrer-Policy`, `Permissions-Policy` e `X-Frame-Options`; ogni risposta ha `nosniff`, e su HTTPS `Strict-Transport-Security` (`SPOOLSTEWARD_HSTS_SECONDS`). |
 | `common.py` | Parti condivise: template, dipendenze di sessione e CSRF, messaggi, reindirizzamenti, funzioni di supporto. |
 | `templates/*.html` | Pagine Jinja: `base.html` (struttura, menu, tema), `macros.html`, un template per pagina (`docs.html` mostra la documentazione). |
 
@@ -186,6 +186,7 @@ Un'installazione ha gli script per il server e per i computer degli utenti. `mak
 | `scripts/backup.sh backup\|restore` | Backup completo **lato host** (database, configurazione, archivio audit, code CUPS, `.env`); serve a spostare la macchina. |
 | `scripts/add-printer-linux.sh` | Aggiunge una stampante del gateway a un computer Linux con la chiave di stampa nell'indirizzo della coda. |
 | `scripts/print-test.sh` | Invia una pagina di testo come utente (consuma un foglio). |
+| `scripts/resources.sh` | CPU e RAM usate adesso dai container di SpoolSteward e da Docker stesso, sommate (`docker stats` non dà il totale). Con `watch -n 5` si segue nel tempo. |
 | `scripts/gen_dev_cert.sh` | Certificato autofirmato solo per lo sviluppo. |
 | `scripts/cert-sync.sh [--dry-run]` | Da cron: copia il certificato TLS dalla macchina che lo rinnova (`rsync` su `ssh`), lo controlla, lo installa in `config/tls/` e riavvia il gateway se è cambiato. Scrive `config/tls/sync-status.json`, che il portale legge (`spoolsteward/certwatch.py`). Vedi [certificati.md](certificati.md). |
 | `scripts/make-release-package.sh VERSIONE CARTELLA` | Costruisce il pacchetto della release (`spoolsteward-<versione>.tar.gz` + `SHA256SUMS`): compose, script, `docker/env.example`, documentazione. Lo usa il workflow di rilascio; non contiene mai `.env`, `config/`, `data/`. |

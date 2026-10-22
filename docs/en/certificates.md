@@ -17,6 +17,23 @@ The announcer (mDNS) publishes the IP address of the default route, or `SPOOLSTE
 (default: the host part of `SPOOLSTEWARD_PORTAL_URL`, otherwise the machine name). Clients that discover the printer through mDNS connect to that
 address, so it must be in the SAN. If the address changes (DHCP), the certificate no longer matches: give the server a fixed address.
 
+**Browsers and HTTPS only (HSTS).** On every HTTPS answer the portal sends `Strict-Transport-Security: max-age=<seconds>`
+(`SPOOLSTEWARD_HSTS_SECONDS`; **off by default**, `0` = never). To turn it on set for example `2592000` (30 days) and run `docker compose up -d`. It tells the browser to use only HTTPS with this **host name**. How it plays out:
+
+- **A certificate the browser does not trust** (the self-signed one of `scripts/docker-init.sh`, with a warning you click through): the browser
+  **ignores** the header, as the standard requires. Nothing changes.
+- **A certificate the browser trusts** (a real authority, or the company CA installed on the computer, §3): the browser remembers it. From then on
+  an address typed or linked as `http://print.lan` becomes `https://print.lan` by itself, and **a certificate error can no longer be clicked
+  through**. Example: Mario trusts the company CA. He opens the portal; the certificate expires 20 days later and nobody renews it; his browser
+  shows "your connection is not private" **without** the "Advanced – continue" link, so he can not even reach the portal to see the notice. As soon as the
+  certificate is renewed it works again at once: what the browser remembers is "no click-through", not the error.
+- **It is per host name, not per port.** If the same name serves something else only in plain `http` (a second web page of the same Raspberry on
+  another port), that browser also forces it to `https` and it stops opening.
+
+If you turned it on and want it off, set `SPOOLSTEWARD_HSTS_SECONDS=0` and run `docker compose up -d`: browsers that already remember it keep the rule until its time is
+over (30 days at most), or until they receive the header with `0` over a valid HTTPS connection, or until the site's data is cleared in the browser.
+With a certificate from a real authority that is renewed by itself you can later raise it to `31536000` (one year).
+
 ## 2. Notices in the portal (the bell)
 
 The gateway never replaces the certificate. It reads `SPOOLSTEWARD_TLS_CERTFILE` and `config/tls/sync-status.json` every 6 hours and

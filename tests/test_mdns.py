@@ -1,4 +1,6 @@
-from spoolsteward.mdns import SERVICE, UNIVERSAL, build_services, txt_for
+import pytest
+
+from spoolsteward.mdns import MAX_NAME_BYTES, SERVICE, UNIVERSAL, build_services, instance_name, txt_for
 
 Q = {"name": "HP7305", "info": "Office printer", "model": "HP Smart Tank", "urf": ["CP1", "W8"],
      "formats": ["application/pdf", "image/urf", "application/postscript"], "color": True, "duplex": True,
@@ -29,3 +31,38 @@ def test_each_queue_is_published_under_plain_and_airprint_type():
 def test_srv_target_is_a_dot_local_name_so_android_can_resolve_it():
     (infos,) = build_services([Q], "printers.lan", ["192.168.1.5"], 8631, "https://x/me").values()
     assert all(i.server == "printers.local." for i in infos)
+
+
+LONG_INFO = "HP Smart Tank 7300 series [A7E76E] ufficio amministrazione piano terra"
+
+
+def test_a_long_description_still_fits_in_one_dns_label():
+    """The name of a service is one DNS label (63 bytes). A longer one made zeroconf refuse it, which stopped the announcer."""
+    out = build_services([{**Q, "info": LONG_INFO}], "raspberrypi-printserver.example.lan", ["192.168.1.5"], 8631, "https://x/me")
+    (name, infos), = out.items()
+    assert len(name.encode()) <= MAX_NAME_BYTES and name.endswith(" @ raspberrypi-printser")
+    assert [i.type for i in infos] == [SERVICE, UNIVERSAL]
+
+
+@pytest.mark.parametrize("label", ["x" * 100, "è" * 100, "日本語" * 40, "😀" * 30])
+def test_the_limit_counts_bytes_not_characters(label):
+    name = instance_name(label, "gateway.lan")
+    assert len(name.encode()) <= MAX_NAME_BYTES and name.endswith(" @ gateway")
+    name.encode().decode()       # never cut in the middle of a character
+
+
+def test_two_queues_with_the_same_long_start_get_two_names():
+    qs = [{**Q, "name": "a", "info": LONG_INFO + " A"}, {**Q, "name": "b", "info": LONG_INFO + " B"}]
+    out = build_services(qs, "gw.lan", ["192.168.1.5"], 8631, "https://x/me")
+    assert len(out) == 2 and all(len(n.encode()) <= MAX_NAME_BYTES for n in out)
+
+
+def test_a_queue_that_can_not_be_announced_does_not_take_the_others_down(caplog):
+    out = build_services([{"info": "no name"}, Q], "gw.lan", ["192.168.1.5"], 8631, "https://x/me")
+    assert list(out) == ["Office printer @ gw"]
+    assert "is not announced" in caplog.text
+
+
+def test_short_names_are_unchanged():
+    assert instance_name("Office printer", "printers.lan") == "Office printer @ printers"
+    assert instance_name("Scan 1", "gw.example.org", " (scanner)") == "Scan 1 (scanner) @ gw"

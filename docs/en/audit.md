@@ -16,6 +16,8 @@ Ids are never reused. **No portal function deletes a row.** Audit is kept foreve
 Each row has: sequential number (N.), time, user, device (printer queue or scanner), file name, type (print / scan), outcome,
 pages, rejection reason, and options (paper, colour, duplex, source, copies, page range, comment, `via` web / IPP…).
 
+![The audit page: automatic refresh switch, filters by user, file name and state, CSV export and report, and one completed scan](../images/en/admin-audit.png)
+
 **The file name is encrypted** in the database and you can stop saving it with the green/red button at the top right of the page; with retention (`.env`) it disappears
 after a number of days you choose. The row always stays, with everything else. Details in [data-protection.md](data-protection.md).
 
@@ -34,7 +36,7 @@ Scans without credentials (anonymous eSCL) show the caller's IP and host name in
 
 ### Usage report
 
-*Report* (button next to *Export CSV* in `/admin/jobs`, page `/admin/report`) ranks the users by pages printed in a period. You choose the dates (default: the last 30 days),
+*Report* (button next to *Export CSV* in `/admin/jobs`, page `/admin/report`) ranks the users by pages printed in a period. You choose the period with a button (*Today*, *Last 7 days*, *This month*, *Last month*, *Last 30 days*, *This year*) or by typing the two dates as `2026-10-31` (year-month-day; there is no calendar pop-up, whose look and language would depend on the browser; default: the last 30 days),
 how many users to list, the groups to **leave out** (by the group each user has now; a deleted account has none and is always counted), and **Detailed report**, which adds the prints per
 printer for each user. It can be shown in the page or downloaded as **CSV** or **PDF**. Only prints count (completed, waiting or running); failed and cancelled ones and scans do not.
 Rows already moved to a compressed archive are not read: the page warns when the period reaches back that far. The PDF is in English and uses the standard fonts, so names with

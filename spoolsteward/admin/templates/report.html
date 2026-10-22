@@ -6,9 +6,20 @@
   <h1>{{ _("Usage report") }}</h1>
   <p class="muted">{{ _("Who printed most in a period. It counts the prints that used paper (completed, waiting or running); scans are not included. Prints that were already moved to the compressed archive are not in the report.") }}</p>
   <form method="get" action="/admin/report">
+    <button hidden tabindex="-1" aria-hidden="true"></button>{# Enter in a box presses this one, not the first period button #}
+    <fieldset class="rp-set">
+      <legend>{{ _("Period") }}</legend>
+      <div class="rp-presets">
+        {% set names = {"today": _("Today"), "last7": _("Last 7 days"), "month": _("This month"), "last-month": _("Last month"), "last30": _("Last 30 days"), "year": _("This year")} %}
+        {% for key, on in periods %}<button class="sec{% if on %} on{% endif %}" name="period" value="{{ key }}" aria-pressed="{{ 'true' if on else 'false' }}">{{ names[key] }}</button>{% endfor %}
+      </div>
+      <div class="row">
+        <label>{{ _("From") }} <input type="text" name="start" value="{{ f.start }}" class="rp-date" inputmode="numeric" maxlength="10" placeholder="2026-10-01" pattern="\d{4}-\d{2}-\d{2}" autocomplete="off"></label>
+        <label>{{ _("To (included)") }} <input type="text" name="end" value="{{ f.end }}" class="rp-date" inputmode="numeric" maxlength="10" placeholder="2026-10-31" pattern="\d{4}-\d{2}-\d{2}" autocomplete="off"></label>
+      </div>
+      <p class="muted rp-hint">{{ _("Dates are written year-month-day, for example 2026-10-31.") }}</p>
+    </fieldset>
     <div class="row">
-      <label>{{ _("From") }} <input type="date" name="start" value="{{ f.start }}"></label>
-      <label>{{ _("To (included)") }} <input type="date" name="end" value="{{ f.end }}"></label>
       <label>{{ _("Show the first … users") }} <input type="number" name="top" min="1" max="{{ max_top }}" value="{{ f.top }}" placeholder="{{ _('all') }}" class="rp-top"></label>
     </div>
     <p><label><input type="checkbox" name="detail" value="1" {% if detail %}checked{% endif %}> {{ _("Detailed report: also how many prints each user made on each printer") }}</label></p>

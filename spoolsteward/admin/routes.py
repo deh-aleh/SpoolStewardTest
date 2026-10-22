@@ -1,7 +1,6 @@
 """Portal: login, first-run setup, audit of print jobs. Server-rendered pages, POST-redirect-GET, no JS needed."""
 
 import csv
-import hmac
 import io
 import logging
 import secrets
@@ -20,6 +19,7 @@ from spoolsteward.admin.common import (
 from spoolsteward.admin.audit_view import audit_row
 from spoolsteward.audit.adminlog import record
 from spoolsteward.auth import service
+from spoolsteward.auth.compare import same_text
 from spoolsteward.auth.passwords import hash_password, validate_new_password
 from spoolsteward.auth.throttle import IP_FAILS, USER_FAILS, register_failure
 from spoolsteward.config import settings
@@ -111,7 +111,7 @@ async def setup(request: Request, code: str = Form(""), password: str = Form("")
     if throttle.blocked(key, USER_FAILS):
         flash(request, _("Too many wrong codes, retry later"), "err")
         return back("/setup")
-    if not hmac.compare_digest(code.strip(), request.app.state.setup_code):
+    if not same_text(code.strip(), request.app.state.setup_code):
         throttle.fail(key)
         log.warning("first-run setup: wrong code from %s", ip)
         flash(request, _("Wrong code. It is in the portal log (docker compose logs gateway)"), "err")

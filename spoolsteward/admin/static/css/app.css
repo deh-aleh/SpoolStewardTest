@@ -78,11 +78,21 @@ main.authmain { max-width:none; min-height:100vh; display:grid; place-items:cent
 .authbox button.primary { width:100%; min-height:54px; font-size:17px; display:flex; align-items:center; justify-content:center; gap:10px }
 .authbox button.primary svg { width:20px; height:20px }
 .authbox .muted { text-align:center; margin:16px 0 0 }
-.pwrow { position:relative } .pwrow input { padding-right:50px }
-.pwcell .pwrow input { width:100% }
-.pwtoggle { position:absolute; right:4px; top:50%; transform:translateY(-50%); width:40px; height:40px; min-height:0; padding:0; background:transparent; border:0; color:var(--muted); display:flex; align-items:center; justify-content:center }
-.pwtoggle:hover { color:var(--orange) } .pwtoggle svg { width:22px; height:22px }
+/* password box (_pwfield.html): the box and the eye button form one control: no gap, one shared border (the button
+   overlaps the box's right edge by 1px), rounded only at the outer corners. The button takes the box's height.
+   Without scripts the button stays hidden and the box takes the whole row. */
+.pwrow { display:flex; align-items:stretch }
+.pwrow input { flex:1 1 0; min-width:0; width:auto; margin:0 }
+.pwrow input:has(+ button.pwtoggle:not([hidden])) { border-top-right-radius:0; border-bottom-right-radius:0 }
+.pwrow input:focus { position:relative; z-index:1 }
+.pwrow button.pwtoggle { flex:none; width:34px; min-height:0; padding:0; margin:0 0 0 -1px; background:var(--bg); border:1px solid var(--line); border-radius:0 6px 6px 0; color:var(--muted); display:flex; align-items:center; justify-content:center }
+.pwrow button.pwtoggle[hidden] { display:none }
+.pwrow button.pwtoggle svg { width:20px; height:20px }
+/* lit like the menu: orange on hover and while the password is visible (then the eye is crossed out) */
+.pwrow button.pwtoggle:hover, .pwrow button.pwtoggle.shown { color:var(--orange) }
+.pwrow button.pwtoggle:focus-visible { outline:2px solid var(--orange); outline-offset:1px }
 .pwtoggle .off { display:none } .pwtoggle.shown .on { display:none } .pwtoggle.shown .off { display:block }
+.authbox .pwrow { margin-bottom:14px } .authbox .pwrow button.pwtoggle { width:54px } .authbox .pwrow button.pwtoggle svg { width:22px; height:22px }
 .bar { height:10px; border-radius:99px; background:var(--line); overflow:hidden; min-width:80px } .bar i { display:block; height:100% }
 button.maint { background:#b42318; border-color:#b42318; color:#fff; box-shadow:0 1px 0 rgba(0,0,0,.2) }
 button.maint.on { background:#12805c; border-color:#12805c }
@@ -194,9 +204,10 @@ button.ico svg, .btn.ico svg { width:17px; height:17px; flex:none; stroke:curren
 .stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0 }
 .stepper input::placeholder { font-weight:400 }
 .seg.compact { gap:1px; background:var(--line) } .seg.compact label { background:var(--card) } .seg.compact label + label { border-left:0 }
-/* password form (settings): one box per line, big text, eye button */
+/* password form (settings): one box per line, big text, eye button beside it */
 .pwform .pwrow { margin-bottom:12px }
-.pwform .pwrow input { width:100%; font-size:17px; min-height:50px; padding:10px 52px 10px 14px }
+.pwform .pwrow input { font-size:17px; min-height:50px; padding:10px 14px }
+.pwform .pwrow button.pwtoggle { width:50px } .pwform .pwrow button.pwtoggle svg { width:22px; height:22px }
 .pwform button.ico { min-height:46px; padding:8px 20px; font-size:15px }
 /* a progress bar that only says "working" */
 .bar.indet { position:relative } .bar.indet i { position:absolute; width:35%; background:var(--accent); animation:indet 1.3s ease-in-out infinite }
@@ -260,6 +271,7 @@ a.badge2:hover { filter:brightness(1.12) }
   .sg { display:block; width:100% }
   button.dots { min-height:30px; padding:0 9px } .copybox > .copy { min-height:0; width:36px; height:36px; padding:0 } .iconbtn { width:42px; height:42px; min-height:42px }
   input[type=text], input[type=password], input[type=number], select { width:100%; min-width:0 }
+  .pwrow button.pwtoggle { width:42px }  /* square next to the 42px boxes */
   .row { gap:12px } .row > * { flex:1 1 auto } .row form { flex:1 1 auto } .row button { width:100% }
   .actions { gap:12px } .actions > *, .actions form { flex:1 1 100% } .actions button, .actions .btn { width:100%; text-align:center } dialog { padding:16px 16px }
   table.stack, table.stack tbody, table.stack tr, table.stack td { display:block; width:100% }

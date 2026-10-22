@@ -11,6 +11,7 @@ import json
 import logging
 import re
 import socket
+import time
 from urllib.parse import urlparse
 
 import httpx
@@ -85,17 +86,35 @@ def scanner_txt(info: dict, portal: str) -> dict[str, str]:
     return txt
 
 
+REFUSED = "refused"   # key of the answer of `fetch_policy` when the gateway will not talk to the announcer
+HINT_EVERY = 600.0    # seconds between two repeats of the explanation in the log
+
+HINTS = {
+    "no_key": "mDNS is OFF: SPOOLSTEWARD_SECRET_KEY is not set, so the announcer can not prove to the gateway who it is, and "
+              "without that proof nothing is announced (the gateway would list the hidden printers to anybody on the network). "
+              "To turn it on: put a long random value in .env (openssl rand -hex 32 gives one), as SPOOLSTEWARD_SECRET_KEY=<value>, "
+              "then run: docker compose up -d",
+    "token": "mDNS is OFF: the gateway did not accept the announcer. Both containers must read the same SPOOLSTEWARD_SECRET_KEY "
+             "from .env. If it was changed, recreate them together: docker compose up -d --force-recreate gateway mdns",
+}
+
+
 async def fetch_policy(port: int, announce: dict | None = None) -> dict | None:
     """Which printers the administrators want hidden / whether the gateway is in maintenance, asked to the gateway
-    itself (this container has no database). None = could not ask: the caller keeps what it knew."""
+    itself (this container has no database). None = could not ask: the caller keeps what it knew.
+    {REFUSED: "no_key" | "token"} = the gateway will not answer (no secret key, or not the same one): nothing may be announced."""
     from spoolsteward.policy.control import mdns_token
 
+    if not settings.secret_key:
+        return {REFUSED: "no_key"}
     try:
         async with httpx.AsyncClient(verify=False, timeout=8.0) as c:
             headers = {"X-Mdns-Token": mdns_token()}
             if announce:  # what is announced, so the gateway can warn when the TLS certificate does not cover it
                 headers["X-Mdns-Announce"] = json.dumps(announce)
             r = await c.get(f"https://127.0.0.1:{port}/mdns/policy", headers=headers)
+        if r.status_code in (403, 404):
+            return {REFUSED: "token"}
         if r.status_code != 200:
             return None
         data = r.json()
@@ -126,6 +145,26 @@ def _label(q: dict) -> str:
     return (q.get("info") or q["name"]).replace(".", " ")[:60]
 
 
+MAX_NAME_BYTES = 63   # a DNS label: the instance name of a service cannot be longer, in bytes (not characters)
+
+
+def _cut(text: str, limit: int) -> str:
+    """`text` cut to at most `limit` bytes of UTF-8, never in the middle of a character."""
+    return text.encode()[:max(limit, 0)].decode(errors="ignore").rstrip()
+
+
+def instance_name(label: str, host: str, tag: str = "", taken=()) -> str:
+    """'<label><tag> @ <host>' as one DNS label: the label is shortened (the host name first, to at most 20 bytes) until the
+    whole fits in 63 bytes, and a number is added when the result is already used."""
+    tail = f"{tag} @ {_cut(host.split('.')[0], 20)}"
+    name, n = _cut(label, MAX_NAME_BYTES - len(tail.encode())) + tail, 1
+    while name in taken:
+        n += 1
+        extra = f" {n}"
+        name = _cut(label, MAX_NAME_BYTES - len(tail.encode()) - len(extra)) + extra + tail
+    return name
+
+
 def build_services(queues: list[dict], host: str, addresses: list[str], port: int, portal: str) -> dict[str, list[ServiceInfo]]:
     """service name -> [ServiceInfo for the plain type and the AirPrint subtype]. The SRV target is `<label>.local`:
     Android's system mDNS resolver (used by its built-in print service) only resolves ".local" names by multicast;
@@ -133,11 +172,14 @@ def build_services(queues: list[dict], host: str, addresses: list[str], port: in
     announced address, so the TLS certificate must list the IP (or the .local name)."""
     out = {}
     for q in queues:
-        name = f"{_label(q)} @ {host.split('.')[0]}"
-        props = txt_for(q, host, port, portal)
-        out[name] = [ServiceInfo(t, f"{name}.{SERVICE}", port=port, properties=props, server=f"{host.split('.')[0]}.local.",
-                                 addresses=[socket.inet_aton(a) for a in addresses])
-                     for t in (SERVICE, UNIVERSAL)]
+        try:  # one queue that can not be announced (a name zeroconf refuses...) must not take the others down with it
+            name = instance_name(_label(q), host, taken=out)
+            props = txt_for(q, host, port, portal)
+            out[name] = [ServiceInfo(t, f"{name}.{SERVICE}", port=port, properties=props, server=f"{host.split('.')[0]}.local.",
+                                     addresses=[socket.inet_aton(a) for a in addresses])
+                         for t in (SERVICE, UNIVERSAL)]
+        except Exception:
+            log.exception("queue %r is not announced", q.get("name"))
     return out
 
 
@@ -160,10 +202,12 @@ async def _scanner_services(policy: dict | None, host: str, addresses: list[str]
     for sc in ([] if policy and policy["maintenance"] else (policy["scanners"] if policy else [{"root": "eSCL"}])):
         info = await scanner_info(port, sc["root"])
         if info:
-            label = sc.get("name") or info["model"]
-            name = f"{label} (scanner) @ {host.split('.')[0]}"
-            out[name] = [ServiceInfo(SCAN_SERVICE, f"{name}.{SCAN_SERVICE}", port=port, properties=scanner_txt(info, portal),
-                                     server=f"{host.split('.')[0]}.local.", addresses=[socket.inet_aton(a) for a in addresses])]
+            try:
+                name = instance_name(sc.get("name") or info["model"], host, " (scanner)", taken=out)
+                out[name] = [ServiceInfo(SCAN_SERVICE, f"{name}.{SCAN_SERVICE}", port=port, properties=scanner_txt(info, portal),
+                                         server=f"{host.split('.')[0]}.local.", addresses=[socket.inet_aton(a) for a in addresses])]
+            except Exception:
+                log.exception("scanner %r is not announced", sc.get("root"))
     return out
 
 
@@ -202,16 +246,29 @@ async def main() -> None:
     zcs = [AsyncZeroconf(ip_version=IPVersion.V4Only, interfaces=addresses) for _ in (SERVICE, UNIVERSAL)]
     published: dict[str, list[ServiceInfo]] = {}
     policy: dict | None = None
+    hinted = -HINT_EVERY
     announce = {"names": [host, f"{host.split('.')[0]}.local"], "addresses": addresses}
     log.info("announcing as %s at %s:%s", host, addresses, port)
     try:
         while True:
-            _App.state.queues_cache = None
-            queues = await list_queues(_App, probe=False)  # the gateway tells which devices are unreachable
-            policy = await fetch_policy(port, announce) or policy  # gateway unreachable: keep the last known policy
-            wanted = build_services(apply_policy(queues, policy), host, addresses, port, portal)
-            wanted.update(await _scanner_services(policy, host, addresses, port, portal))
-            await _publish(zcs, published, wanted)
+            try:
+                _App.state.queues_cache = None
+                queues = await list_queues(_App, probe=False)  # the gateway tells which devices are unreachable
+                got = await fetch_policy(port, announce)
+                if got and REFUSED in got:  # no proof of identity: announce nothing, and say what to do about it
+                    if time.monotonic() - hinted >= HINT_EVERY:
+                        hinted = time.monotonic()
+                        log.error(HINTS.get(got[REFUSED], HINTS["token"]))
+                    wanted = {}
+                else:
+                    policy = got or policy  # gateway unreachable: keep the last known policy
+                    wanted = build_services(apply_policy(queues, policy), host, addresses, port, portal)
+                    wanted.update(await _scanner_services(policy, host, addresses, port, portal))
+                await _publish(zcs, published, wanted)
+            except asyncio.CancelledError:
+                raise
+            except Exception:  # a network or zeroconf error ends this pass, not the announcer
+                log.exception("announcement pass failed, trying again in %s s", settings.mdns_interval)
             await asyncio.sleep(settings.mdns_interval)
     finally:
         for zc in zcs:

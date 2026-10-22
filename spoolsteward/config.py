@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="SPOOLSTEWARD_", extra="ignore", validate_default=False)   # the defaults are ours: only what the user writes is checked
 
     database_url: str = "sqlite:///./spoolsteward.db"
+    # How carefully SQLite saves (PRAGMA synchronous): "full" waits for the disk after every save, "normal" does not (faster on an
+    # SD card; a power cut can lose the last few seconds of saves, the database itself stays sound). See docker/env.example.
+    db_sync: Literal["full", "normal"] = "full"
     # CUPS is a private backend; the gateway owns :631. "unix:///run/cups/cups.sock" is the recommended form.
     cups_url: str = "unix:///run/cups/cups.sock"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
@@ -72,6 +75,10 @@ class Settings(BaseSettings):
     # Content-Security-Policy of the portal pages: "enforce" (default), "report-only" (the browser only logs what it would
     # block: for finding out why a page misbehaves behind a proxy that changes the pages), or "off"
     content_security_policy: Literal["enforce", "report-only", "off"] = "enforce"
+    # Strict-Transport-Security: how many seconds a browser must keep using HTTPS only for this server, sent only on HTTPS answers.
+    # 0 = not sent. A browser keeps it only for a certificate it trusts (it ignores it over a certificate error); once kept it forbids
+    # clicking through a certificate error, for every port of the host name. Off by default: it is for someone who has a trusted certificate.
+    hsts_seconds: int = Field(0, ge=0, le=63072000)
     # eSCL scans without credentials (NAPS2 and others cannot send them): attributed to a local account with no password.
     escl_anonymous: bool = False
     # the name of that account. If a real account (with a password, from RADIUS, or an administrator) already has the name,
@@ -92,6 +99,9 @@ class Settings(BaseSettings):
     radius_secret: str = ""
     radius_timeout: int = Field(5, ge=1)
     auth_cache_seconds: int = Field(60, ge=0)
+    # How many password checks (argon2, a few tenths of a second and 32 MiB of memory each) run at the same time; the others wait.
+    # It keeps a flood of login attempts from using all the memory of a small machine.
+    password_checks_at_once: int = Field(3, ge=1, le=16)
 
     # What a print client may present as password: "keys" = only personal print keys (default),
     # "keys+radius" = also the RADIUS password (transition; it encourages saving the domain password on clients)
@@ -148,6 +158,12 @@ class Settings(BaseSettings):
     # A comma-separated list of ADDRESS or NAME=ADDRESS (http:// or https://)
     scan_url: str = ""
     scan_timeout: float = Field(180.0, gt=0, allow_inf_nan=False)  # a flatbed scan can take a while
+    # Scans made in the portal wait in memory until they are downloaded. At most this many MB for all the people together (when it is
+    # exceeded the oldest ones are dropped; the newest is always kept), and each one for at most this many minutes.
+    scan_keep_mb: int = Field(50, ge=1)
+    scan_keep_minutes: int = Field(10, ge=1)
+    # true = a scan leaves the memory and the portal as soon as its download has finished
+    scan_delete_after_download: bool = False
 
     # What /healthz tells besides the status (it needs no login, so anyone who reaches the port can read it).
     # A comma-separated list; none (default) = only the status. Known items: version, printers
@@ -238,9 +254,11 @@ class Settings(BaseSettings):
     @classmethod
     def _database_url(cls, v: str) -> str:
         try:
-            make_url(v)
+            url = make_url(v)
         except Exception:
             raise ValueError("is not a database address, for example sqlite:////data/spoolsteward.db") from None
+        if url.get_backend_name() != "sqlite":
+            raise ValueError("must be an SQLite address like sqlite:////data/spoolsteward.db: SpoolSteward works only with SQLite")
         return v
 
     @field_validator("cups_url")

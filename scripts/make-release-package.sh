@@ -16,7 +16,7 @@ trap 'rm -rf "$stage"' EXIT
 mkdir -p "$stage/$top" "$out"
 {
     echo docker-compose.yml; echo LICENSE; echo NOTICE; echo README.md; echo README.it.md
-    for s in docker-init update backup cert-sync queue-restore add-printer-linux print-test; do echo "scripts/$s.sh"; done
+    for s in docker-init update backup cert-sync queue-restore add-printer-linux print-test resources; do echo "scripts/$s.sh"; done
     echo docker/env.example; echo docker/stack/cups/cupsd.conf; echo docker/radius/clients.conf; echo docker/radius/authorize
     find docs -type f ! -path '*/.*' | sort      # pages and pictures; no hidden file (.DS_Store and the like)
 } > "$stage/list"

@@ -48,7 +48,7 @@ Differenze consapevoli rispetto a uno schema "classico":
 | Linguaggio | **Python 3.12+** | Facile da debuggare, molte librerie; il codec IPP è isolato e sostituibile |
 | Web / proxy | **FastAPI + uvicorn**, **httpx** (asincrono, anche su socket unix) | Inoltra i documenti in streaming, senza caricarli in memoria |
 | Database | **SQLAlchemy 2** + **SQLite** (WAL), migrazioni **Alembic** | Zero configurazione; un file solo, nessun server da gestire |
-| Password locali | **argon2id** (`argon2-cffi`) | Segreti scelti da persone: hash lento |
+| Password locali | **argon2id** (`argon2-cffi`) | Segreti scelti da persone: hash lento (32 MiB per verifica; al massimo `SPOOLSTEWARD_PASSWORD_CHECKS_AT_ONCE` girano insieme, le altre aspettano) |
 | Chiavi di stampa | 192 bit casuali, **sha256** | Alta entropia: un hash veloce basta e non appesantisce ogni richiesta IPP |
 | RADIUS | **pyrad** (PAP + Message-Authenticator) | Il server RADIUS esiste già in ufficio |
 | Portale | Pagine **Jinja2** generate dal server, sessioni firmate (**itsdangerous**) | HTML dal server; JavaScript solo per piccoli aiuti (copia, suggerimenti, popup, aggiornamento automatico) |

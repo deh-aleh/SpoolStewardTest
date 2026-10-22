@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spoolsteward VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-21 16:54+0200\n"
+"POT-Creation-Date: 2026-10-22 16:56+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -70,45 +70,45 @@ msgstr "El escáner no entregó ninguna página"
 msgid "The scanner does not answer"
 msgstr "El escáner no responde"
 
-#: spoolsteward/escl.py:665
+#: spoolsteward/escl.py:666
 msgid "in progress"
 msgstr "en curso"
 
-#: spoolsteward/escl.py:665
+#: spoolsteward/escl.py:666
 msgid "ready"
 msgstr "lista"
 
-#: spoolsteward/escl.py:665
+#: spoolsteward/escl.py:666
 msgid "unsuccessful"
 msgstr "sin éxito"
 
-#: spoolsteward/escl.py:669
+#: spoolsteward/escl.py:670
 #, python-format
 msgid "scan-%(stamp)s"
 msgstr "escaneo-%(stamp)s"
 
-#: spoolsteward/escl.py:690
+#: spoolsteward/escl.py:698
 msgid "Unexpected error during the scan"
 msgstr "Error inesperado durante el escaneo"
 
-#: spoolsteward/escl.py:732
+#: spoolsteward/escl.py:742
 msgid "The server can not tell which address you are connecting from."
 msgstr "El servidor no puede saber desde qué dirección te conectas."
 
-#: spoolsteward/escl.py:735
+#: spoolsteward/escl.py:745
 msgid "Too many scan windows are open: try again in a few minutes."
 msgstr "Hay demasiadas ventanas de escaneo abiertas: inténtalo de nuevo en unos minutos."
 
-#: spoolsteward/escl.py:758
+#: spoolsteward/escl.py:768
 #, python-format
 msgid "The scanner “%(name)s” does not answer: refresh the page."
 msgstr "El escáner «%(name)s» no responde: actualiza la página."
 
-#: spoolsteward/escl.py:758
+#: spoolsteward/escl.py:768
 msgid "No scanner available."
 msgstr "Ningún escáner disponible."
 
-#: spoolsteward/escl.py:765
+#: spoolsteward/escl.py:775
 #, python-format
 msgid "%(name)s is already scanning: wait for it to finish."
 msgstr "%(name)s ya está escaneando: espera a que termine."
@@ -174,7 +174,7 @@ msgstr "terminada"
 msgid "temporary"
 msgstr "temporal"
 
-#: spoolsteward/admin/accounts.py:174 spoolsteward/admin/me.py:37
+#: spoolsteward/admin/accounts.py:175 spoolsteward/admin/me.py:37
 #: spoolsteward/admin/templates/me.html:37
 #: spoolsteward/admin/templates/requests.html:14
 #: spoolsteward/admin/templates/requests.html:24
@@ -184,6 +184,7 @@ msgstr "temporal"
 #: spoolsteward/admin/templates/requests.html:97
 #: spoolsteward/admin/templates/requests.html:128
 #: spoolsteward/admin/templates/user_edit.html:45 spoolsteward/i18n.py:167
+#: spoolsteward/policy/bulk.py:66
 msgid "permanent"
 msgstr "permanente"
 
@@ -235,56 +236,56 @@ msgstr "falta"
 msgid "modified"
 msgstr "modificado"
 
-#: spoolsteward/admin/accounts.py:40
+#: spoolsteward/admin/accounts.py:41 spoolsteward/policy/bulk.py:76
 #, python-format
 msgid "%(used)s/%(limit)s %(metric)s (%(period)s)"
 msgstr "%(used)s/%(limit)s %(metric)s (%(period)s)"
 
-#: spoolsteward/admin/accounts.py:52
+#: spoolsteward/admin/accounts.py:53
 msgid "You cannot disable or demote yourself"
 msgstr "No puedes desactivarte ni degradarte a ti mismo"
 
-#: spoolsteward/admin/accounts.py:54
+#: spoolsteward/admin/accounts.py:55
 #, python-format
 msgid "%(user)s is the emergency administrator: it can not be disabled or demoted"
 msgstr "%(user)s es el administrador de emergencia: no se puede desactivar ni degradar"
 
-#: spoolsteward/admin/accounts.py:56 spoolsteward/admin/accounts.py:459
+#: spoolsteward/admin/accounts.py:57 spoolsteward/admin/accounts.py:462
 msgid "That is the last administrator"
 msgstr "Es el último administrador"
 
-#: spoolsteward/admin/accounts.py:65 spoolsteward/admin/accounts.py:106
-#: spoolsteward/admin/accounts.py:113
+#: spoolsteward/admin/accounts.py:66 spoolsteward/admin/accounts.py:107
+#: spoolsteward/admin/accounts.py:114
 msgid "Invalid permission value"
 msgstr "Valor de permiso no válido"
 
-#: spoolsteward/admin/accounts.py:74
+#: spoolsteward/admin/accounts.py:75
 #, python-format
 msgid "Invalid printer name %(name)s"
 msgstr "Nombre de impresora no válido: %(name)s"
 
-#: spoolsteward/admin/accounts.py:78
+#: spoolsteward/admin/accounts.py:79
 msgid "Choose at least one printer, or choose “all printers”"
 msgstr "Elige al menos una impresora, o elige “todas las impresoras”"
 
-#: spoolsteward/admin/accounts.py:80
+#: spoolsteward/admin/accounts.py:81
 #, python-format
 msgid "Too many printers in the list (at most %(max)s)"
 msgstr "Demasiadas impresoras en la lista (máximo %(max)s)"
 
-#: spoolsteward/admin/accounts.py:86
+#: spoolsteward/admin/accounts.py:87
 msgid "Choose at least one day of the week for the hours"
 msgstr "Elige al menos un día de la semana para el horario"
 
-#: spoolsteward/admin/accounts.py:90
+#: spoolsteward/admin/accounts.py:91
 msgid "Enter the hours as HH:MM, for example 08:00 and 17:30"
 msgstr "Escribe las horas como HH:MM, por ejemplo 08:00 y 17:30"
 
-#: spoolsteward/admin/accounts.py:92
+#: spoolsteward/admin/accounts.py:93
 msgid "The start and the end of the hours must be different"
 msgstr "El inicio y el fin del horario deben ser distintos"
 
-#: spoolsteward/admin/accounts.py:153 spoolsteward/admin/accounts.py:154
+#: spoolsteward/admin/accounts.py:154 spoolsteward/admin/accounts.py:155
 #: spoolsteward/admin/templates/_perm_fields.html:16
 #: spoolsteward/admin/templates/_perm_fields.html:20
 #: spoolsteward/admin/templates/me.html:30
@@ -292,228 +293,228 @@ msgstr "El inicio y el fin del horario deben ser distintos"
 msgid "allowed"
 msgstr "permitido"
 
-#: spoolsteward/admin/accounts.py:153 spoolsteward/admin/accounts.py:154
+#: spoolsteward/admin/accounts.py:154 spoolsteward/admin/accounts.py:155
 #: spoolsteward/admin/templates/_perm_fields.html:16
 #: spoolsteward/admin/templates/_perm_fields.html:20
 msgid "not allowed"
 msgstr "no permitido"
 
-#: spoolsteward/admin/accounts.py:155
+#: spoolsteward/admin/accounts.py:156
 #: spoolsteward/admin/templates/_perm_fields.html:24
 msgctxt "printers"
 msgid "all"
 msgstr "todas"
 
-#: spoolsteward/admin/accounts.py:155
+#: spoolsteward/admin/accounts.py:156
 #: spoolsteward/admin/templates/backup_edit.html:20
 msgid "none"
 msgstr "ninguno"
 
-#: spoolsteward/admin/accounts.py:156
+#: spoolsteward/admin/accounts.py:157
 #: spoolsteward/admin/templates/_perm_fields.html:35
 #: spoolsteward/admin/templates/me.html:33
 msgid "any time"
 msgstr "a cualquier hora"
 
-#: spoolsteward/admin/accounts.py:173
+#: spoolsteward/admin/accounts.py:174 spoolsteward/policy/bulk.py:65
 msgid "limit inherited from the group"
 msgstr "límite heredado del grupo"
 
-#: spoolsteward/admin/accounts.py:174
+#: spoolsteward/admin/accounts.py:175 spoolsteward/policy/bulk.py:66
 #, python-format
 msgid "temporary, expires on %(date)s"
 msgstr "temporal, caduca el %(date)s"
 
-#: spoolsteward/admin/accounts.py:239 spoolsteward/admin/accounts.py:273
-#: spoolsteward/admin/accounts.py:303
+#: spoolsteward/admin/accounts.py:242 spoolsteward/admin/accounts.py:276
+#: spoolsteward/admin/accounts.py:306
 msgid "Unknown group"
 msgstr "Grupo desconocido"
 
-#: spoolsteward/admin/accounts.py:240
+#: spoolsteward/admin/accounts.py:243
 #, python-format
 msgid "Group \"%(group)s\" is only for administrators: tick the administrator box instead"
 msgstr "El grupo «%(group)s» es solo para administradores: marca en su lugar la casilla de administrador"
 
-#: spoolsteward/admin/accounts.py:241
+#: spoolsteward/admin/accounts.py:244
 msgid "Invalid username (letters, digits, dot, dash, underscore; max 63)"
 msgstr "Nombre de usuario no válido (letras, dígitos, punto, guion, guion bajo; máx. 63)"
 
-#: spoolsteward/admin/accounts.py:242 spoolsteward/admin/accounts.py:279
+#: spoolsteward/admin/accounts.py:245 spoolsteward/admin/accounts.py:282
 #, python-format
 msgid "User %(name)s already exists"
 msgstr "El usuario %(name)s ya existe"
 
-#: spoolsteward/admin/accounts.py:243 spoolsteward/admin/accounts.py:311
+#: spoolsteward/admin/accounts.py:246 spoolsteward/admin/accounts.py:314
 #, python-format
 msgid "The name %(name)s is reserved for the emergency administrator"
 msgstr "El nombre %(name)s está reservado al administrador de emergencia"
 
-#: spoolsteward/admin/accounts.py:259 spoolsteward/admin/accounts.py:287
+#: spoolsteward/admin/accounts.py:262 spoolsteward/admin/accounts.py:290
 #, python-format
 msgid "User %(name)s created"
 msgstr "Usuario %(name)s creado"
 
-#: spoolsteward/admin/accounts.py:259 spoolsteward/admin/accounts.py:413
-#: spoolsteward/admin/accounts.py:498
+#: spoolsteward/admin/accounts.py:262 spoolsteward/admin/accounts.py:416
+#: spoolsteward/admin/accounts.py:501
 msgid "Temporary password"
 msgstr "Contraseña temporal"
 
-#: spoolsteward/admin/accounts.py:260
+#: spoolsteward/admin/accounts.py:263
 msgid "Give it to the user over a safe channel. They must choose their own at first login."
 msgstr "Entrégasela al usuario por un canal seguro. Deberá elegir una propia en el primer acceso."
 
-#: spoolsteward/admin/accounts.py:271
+#: spoolsteward/admin/accounts.py:274
 msgid "RADIUS is not configured: create a local user instead"
 msgstr "RADIUS no está configurado: crea en su lugar un usuario local"
 
-#: spoolsteward/admin/accounts.py:275
+#: spoolsteward/admin/accounts.py:278
 #, python-format
 msgid "Group \"%(group)s\" is only for administrators: make them administrator from their page"
 msgstr "El grupo «%(group)s» es solo para administradores: conviértelo en administrador desde su página"
 
-#: spoolsteward/admin/accounts.py:277
+#: spoolsteward/admin/accounts.py:280
 msgid "Invalid username"
 msgstr "Nombre de usuario no válido"
 
-#: spoolsteward/admin/accounts.py:305
+#: spoolsteward/admin/accounts.py:308
 msgid "Unknown or unavailable login method"
 msgstr "Método de acceso desconocido o no disponible"
 
-#: spoolsteward/admin/accounts.py:313
+#: spoolsteward/admin/accounts.py:316
 #, python-format
 msgid "%(user)s is the emergency administrator: it must stay a local account"
 msgstr "%(user)s es el administrador de emergencia: debe seguir siendo una cuenta local"
 
-#: spoolsteward/admin/accounts.py:332
+#: spoolsteward/admin/accounts.py:335
 #, python-format
 msgid "Group \"%(group)s\" is only for administrators"
 msgstr "El grupo «%(group)s» es solo para administradores"
 
-#: spoolsteward/admin/accounts.py:334
+#: spoolsteward/admin/accounts.py:337
 #, python-format
 msgid "Administrators stay in \"%(group)s\": remove the admin right first"
 msgstr "Los administradores permanecen en «%(group)s»: quita primero el derecho de administrador"
 
-#: spoolsteward/admin/accounts.py:412
+#: spoolsteward/admin/accounts.py:415
 #, python-format
 msgid "%(user)s is now a local account"
 msgstr "%(user)s ahora es una cuenta local"
 
-#: spoolsteward/admin/accounts.py:414
+#: spoolsteward/admin/accounts.py:417
 msgid "The user must choose their own at the next login. Their print keys keep working."
 msgstr "El usuario deberá elegir una propia en el próximo acceso. Sus claves de impresión siguen funcionando."
 
-#: spoolsteward/admin/accounts.py:416 spoolsteward/admin/accounts.py:729
+#: spoolsteward/admin/accounts.py:419 spoolsteward/admin/accounts.py:732
 #, python-format
 msgid "Saved %(name)s"
 msgstr "Guardado %(name)s"
 
-#: spoolsteward/admin/accounts.py:455
+#: spoolsteward/admin/accounts.py:458
 msgid "You cannot delete yourself"
 msgstr "No puedes eliminarte a ti mismo"
 
-#: spoolsteward/admin/accounts.py:457
+#: spoolsteward/admin/accounts.py:460
 #, python-format
 msgid "%(user)s is the emergency administrator: it can not be deleted"
 msgstr "%(user)s es el administrador de emergencia: no se puede eliminar"
 
-#: spoolsteward/admin/accounts.py:471
+#: spoolsteward/admin/accounts.py:474
 msgid "The name you typed does not match: nothing was deleted"
 msgstr "El nombre escrito no coincide: no se ha eliminado nada"
 
-#: spoolsteward/admin/accounts.py:479
+#: spoolsteward/admin/accounts.py:482
 #, python-format
 msgid "Account %(name)s deleted (%(n)s print record(s) kept in the audit)"
 msgstr "Cuenta %(name)s eliminada (%(n)s registros de impresión conservados en la auditoría)"
 
-#: spoolsteward/admin/accounts.py:490
+#: spoolsteward/admin/accounts.py:493
 msgid "That account signs in through RADIUS: its password is managed there"
 msgstr "Esa cuenta inicia sesión mediante RADIUS: su contraseña se gestiona allí"
 
-#: spoolsteward/admin/accounts.py:497
+#: spoolsteward/admin/accounts.py:500
 #, python-format
 msgid "New password for %(user)s"
 msgstr "Nueva contraseña para %(user)s"
 
-#: spoolsteward/admin/accounts.py:499
+#: spoolsteward/admin/accounts.py:502
 msgid "The user must choose a new one at the next login. Their print keys keep working."
 msgstr "El usuario deberá elegir una nueva en el próximo acceso. Sus claves de impresión siguen funcionando."
 
-#: spoolsteward/admin/accounts.py:514
+#: spoolsteward/admin/accounts.py:517
 #, python-format
 msgid "%(n)s key(s) of %(user)s revoked"
 msgstr "%(n)s clave(s) de %(user)s revocada(s)"
 
-#: spoolsteward/admin/accounts.py:539 spoolsteward/admin/me.py:138
+#: spoolsteward/admin/accounts.py:542 spoolsteward/admin/me.py:138
 #, python-format
 msgid "Key %(label)s revoked"
 msgstr "Clave %(label)s revocada"
 
-#: spoolsteward/admin/accounts.py:566
+#: spoolsteward/admin/accounts.py:569
 #, python-format
 msgid "Key %(label)s switched off: its expiry date keeps running"
 msgstr "Clave %(label)s desactivada: su fecha de caducidad sigue corriendo"
 
-#: spoolsteward/admin/accounts.py:578
+#: spoolsteward/admin/accounts.py:581
 #, python-format
 msgid "Key %(label)s switched on"
 msgstr "Clave %(label)s activada de nuevo"
 
-#: spoolsteward/admin/accounts.py:590 spoolsteward/auth/keys.py:179
+#: spoolsteward/admin/accounts.py:593 spoolsteward/auth/keys.py:179
 msgid "choose one of the validity periods in the list"
 msgstr "elige uno de los periodos de validez de la lista"
 
-#: spoolsteward/admin/accounts.py:598
+#: spoolsteward/admin/accounts.py:601
 #, python-format
 msgid "Key %(label)s now expires on %(date)s"
 msgstr "La clave %(label)s ahora caduca el %(date)s"
 
-#: spoolsteward/admin/accounts.py:600
+#: spoolsteward/admin/accounts.py:603
 msgid "This key can not be extended"
 msgstr "Esta clave no se puede ampliar"
 
-#: spoolsteward/admin/accounts.py:608
+#: spoolsteward/admin/accounts.py:611
 #, python-format
 msgid "The group “%(name)s” has %(n)s user: it will be moved to the default group “%(group)s” (with that group's limits). Delete the group?"
 msgid_plural "The group “%(name)s” has %(n)s users: they will be moved to the default group “%(group)s” (with that group's limits). Delete the group?"
 msgstr[0] "El grupo «%(name)s» tiene %(n)s usuario: se moverá al grupo predeterminado «%(group)s» (con los límites de ese grupo). ¿Eliminar el grupo?"
 msgstr[1] "El grupo «%(name)s» tiene %(n)s usuarios: se moverán al grupo predeterminado «%(group)s» (con los límites de ese grupo). ¿Eliminar el grupo?"
 
-#: spoolsteward/admin/accounts.py:611
+#: spoolsteward/admin/accounts.py:614
 #, python-format
 msgid "Delete the group “%(name)s”? It has no users."
 msgstr "¿Eliminar el grupo «%(name)s»? No tiene usuarios."
 
-#: spoolsteward/admin/accounts.py:666 spoolsteward/admin/accounts.py:711
+#: spoolsteward/admin/accounts.py:669 spoolsteward/admin/accounts.py:714
 msgid "Invalid group name"
 msgstr "Nombre de grupo no válido"
 
-#: spoolsteward/admin/accounts.py:668 spoolsteward/admin/accounts.py:714
+#: spoolsteward/admin/accounts.py:671 spoolsteward/admin/accounts.py:717
 #, python-format
 msgid "Group %(name)s already exists"
 msgstr "El grupo %(name)s ya existe"
 
-#: spoolsteward/admin/accounts.py:682
+#: spoolsteward/admin/accounts.py:685
 #, python-format
 msgid "Group %(name)s created"
 msgstr "Grupo %(name)s creado"
 
-#: spoolsteward/admin/accounts.py:708
+#: spoolsteward/admin/accounts.py:711
 #, python-format
 msgid "\"%(name)s\" is a system group: it can not be renamed"
 msgstr "«%(name)s» es un grupo del sistema: no se puede cambiar de nombre"
 
-#: spoolsteward/admin/accounts.py:740
+#: spoolsteward/admin/accounts.py:743
 #, python-format
 msgid "\"%(name)s\" is a system group: it can not be deleted"
 msgstr "«%(name)s» es un grupo del sistema: no se puede eliminar"
 
-#: spoolsteward/admin/accounts.py:758
+#: spoolsteward/admin/accounts.py:761
 #, python-format
 msgid "Group %(name)s deleted"
 msgstr "Grupo %(name)s eliminado"
 
-#: spoolsteward/admin/accounts.py:758
+#: spoolsteward/admin/accounts.py:761
 #, python-format
 msgid "; %(n)s user(s) moved to %(group)s"
 msgstr "; %(n)s usuario(s) movido(s) a %(group)s"
@@ -725,12 +726,12 @@ msgstr "La copia de seguridad ha FALLADO: %(message)s"
 msgid "Backup “%(name)s” deleted. The files already written in the folder stay where they are"
 msgstr "Copia de seguridad «%(name)s» eliminada. Los archivos ya escritos en la carpeta se quedan donde están"
 
-#: spoolsteward/admin/common.py:150
+#: spoolsteward/admin/common.py:151
 #, python-format
 msgid "invalid limit %(value)s"
 msgstr "límite no válido %(value)s"
 
-#: spoolsteward/admin/common.py:153
+#: spoolsteward/admin/common.py:154
 #, python-format
 msgid "limit too large (max %(max)s)"
 msgstr "límite demasiado grande (máx. %(max)s)"
@@ -1324,15 +1325,15 @@ msgstr " — %(n)s página(s)"
 msgid "The print server did not accept the file. Try another format (PDF works best)."
 msgstr "El servidor de impresión no aceptó el archivo. Prueba otro formato (PDF funciona mejor)."
 
-#: spoolsteward/admin/reports.py:142
+#: spoolsteward/admin/reports.py:163
 msgid "The dates must look like 2026-10-31"
 msgstr "Las fechas deben tener la forma 2026-10-31"
 
-#: spoolsteward/admin/reports.py:145
+#: spoolsteward/admin/reports.py:166
 msgid "The end of the period is before its start"
 msgstr "El final del periodo es anterior a su inicio"
 
-#: spoolsteward/admin/reports.py:150
+#: spoolsteward/admin/reports.py:171
 #, python-format
 msgid "The number of users must be between 1 and %(max)s"
 msgstr "El número de usuarios debe estar entre 1 y %(max)s"
@@ -1805,11 +1806,11 @@ msgstr "hasta las"
 msgid "An end earlier than the start goes past midnight (22:00 to 06:00): it belongs to the day it starts. The end time itself is not included."
 msgstr "Un final anterior al inicio pasa la medianoche (de 22:00 a 06:00): pertenece al día en que empieza. La hora final no está incluida."
 
-#: spoolsteward/admin/templates/_pwfield.html:4
+#: spoolsteward/admin/templates/_pwfield.html:5
 msgid "Show password"
 msgstr "Mostrar la contraseña"
 
-#: spoolsteward/admin/templates/_pwfield.html:4
+#: spoolsteward/admin/templates/_pwfield.html:5
 msgid "Hide password"
 msgstr "Ocultar la contraseña"
 
@@ -1921,6 +1922,7 @@ msgstr "Contenido"
 #: spoolsteward/admin/templates/groups.html:16
 #: spoolsteward/admin/templates/me.html:11
 #: spoolsteward/admin/templates/me.html:15
+#: spoolsteward/admin/templates/report.html:11
 #: spoolsteward/admin/templates/user_edit.html:36
 #: spoolsteward/admin/templates/users.html:10
 #: spoolsteward/admin/templates/users.html:20
@@ -2000,7 +2002,7 @@ msgstr "%(n)s resultados"
 #: spoolsteward/admin/templates/jobs.html:36
 #: spoolsteward/admin/templates/jobs.html:41
 #: spoolsteward/admin/templates/login.html:8
-#: spoolsteward/admin/templates/report.html:36
+#: spoolsteward/admin/templates/report.html:47
 #: spoolsteward/admin/templates/requests.html:9
 #: spoolsteward/admin/templates/requests.html:61
 #: spoolsteward/admin/templates/requests.html:76
@@ -2021,7 +2023,7 @@ msgstr "Impresora"
 #: spoolsteward/admin/templates/archive_view.html:12
 #: spoolsteward/admin/templates/print.html:50
 #: spoolsteward/admin/templates/printers.html:181
-#: spoolsteward/admin/templates/report.html:36
+#: spoolsteward/admin/templates/report.html:47
 #: spoolsteward/admin/templates/request_quota.html:15
 #: spoolsteward/admin/templates/users.html:10
 #: spoolsteward/admin/templates/users.html:19
@@ -2765,7 +2767,7 @@ msgstr "Valores de solo lectura: para cambiarlos usa <b>Editar</b>. Límite vac�
 
 #: spoolsteward/admin/templates/groups.html:9
 #: spoolsteward/admin/templates/groups.html:12
-#: spoolsteward/admin/templates/report.html:36
+#: spoolsteward/admin/templates/report.html:47
 #: spoolsteward/admin/templates/user_edit.html:19
 #: spoolsteward/admin/templates/users.html:10
 #: spoolsteward/admin/templates/users.html:15
@@ -3340,7 +3342,7 @@ msgid "not allowed: prints are made double-sided"
 msgstr "no permitido: las impresiones salen a doble cara"
 
 #: spoolsteward/admin/templates/me.html:32
-#: spoolsteward/admin/templates/report.html:12
+#: spoolsteward/admin/templates/report.html:23
 msgid "all"
 msgstr "todos"
 
@@ -3574,8 +3576,8 @@ msgstr "<b>La clave secreta ha cambiado</b> desde el arranque anterior (<span cl
 
 #: spoolsteward/admin/templates/notices.html:49
 #, python-format
-msgid "<b>No secret key is set.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> is missing from <span class=\"mono\">.env</span> or set to <span class=\"mono\">none</span>: the file names in the audit are stored without encryption and everybody has to sign in again after every restart. Write a random value (the output of <span class=\"mono\">openssl rand -hex 32</span>) after <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> in <span class=\"mono\">.env</span>, run <span class=\"mono\">docker compose up -d</span> and save the key in a safe place. <a href=\"%(url)s\">Step by step</a>."
-msgstr "<b>No hay ninguna clave secreta configurada.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> falta en <span class=\"mono\">.env</span> o vale <span class=\"mono\">none</span>: los nombres de archivo de la auditoría se guardan sin cifrar y todos tienen que volver a iniciar sesión después de cada reinicio. Escribe un valor aleatorio (la salida de <span class=\"mono\">openssl rand -hex 32</span>) después de <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> en <span class=\"mono\">.env</span>, ejecuta <span class=\"mono\">docker compose up -d</span> y guarda la clave en un lugar seguro. <a href=\"%(url)s\">Paso a paso</a>."
+msgid "<b>No secret key is set.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> is missing from <span class=\"mono\">.env</span> or set to <span class=\"mono\">none</span>: the file names in the audit are stored without encryption, everybody has to sign in again after every restart and the printers are not announced on the network (mDNS). Write a random value (the output of <span class=\"mono\">openssl rand -hex 32</span>) after <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> in <span class=\"mono\">.env</span>, run <span class=\"mono\">docker compose up -d</span> and save the key in a safe place. <a href=\"%(url)s\">Step by step</a>."
+msgstr "<b>No hay ninguna clave secreta configurada.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> falta en <span class=\"mono\">.env</span> o vale <span class=\"mono\">none</span>: los nombres de archivo de la auditoría se guardan sin cifrar, todos tienen que volver a iniciar sesión después de cada reinicio y las impresoras no se anuncian en la red (mDNS). Escribe un valor aleatorio (la salida de <span class=\"mono\">openssl rand -hex 32</span>) después de <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> en <span class=\"mono\">.env</span>, ejecuta <span class=\"mono\">docker compose up -d</span> y guarda la clave en un lugar seguro. <a href=\"%(url)s\">Paso a paso</a>."
 
 #: spoolsteward/admin/templates/notices.html:51
 #, python-format
@@ -4118,7 +4120,7 @@ msgid "Queue"
 msgstr "Cola"
 
 #: spoolsteward/admin/templates/printers.html:181
-#: spoolsteward/admin/templates/report.html:36
+#: spoolsteward/admin/templates/report.html:47
 #: spoolsteward/admin/templates/request_quota.html:15
 #: spoolsteward/admin/templates/users.html:10
 #: spoolsteward/admin/templates/users.html:18
@@ -4175,71 +4177,99 @@ msgstr "Informe de uso"
 msgid "Who printed most in a period. It counts the prints that used paper (completed, waiting or running); scans are not included. Prints that were already moved to the compressed archive are not in the report."
 msgstr "Quién imprimió más en un periodo. Cuenta las impresiones que usaron papel (completadas, en espera o en curso); los escaneos no se incluyen. Las impresiones ya movidas al archivo comprimido no están en el informe."
 
-#: spoolsteward/admin/templates/report.html:10
+#: spoolsteward/admin/templates/report.html:13
+msgid "Today"
+msgstr "Hoy"
+
+#: spoolsteward/admin/templates/report.html:13
+msgid "Last 7 days"
+msgstr "Últimos 7 días"
+
+#: spoolsteward/admin/templates/report.html:13
+msgid "This month"
+msgstr "Este mes"
+
+#: spoolsteward/admin/templates/report.html:13
+msgid "Last month"
+msgstr "Mes pasado"
+
+#: spoolsteward/admin/templates/report.html:13
+msgid "Last 30 days"
+msgstr "Últimos 30 días"
+
+#: spoolsteward/admin/templates/report.html:13
+msgid "This year"
+msgstr "Este año"
+
+#: spoolsteward/admin/templates/report.html:17
 #: spoolsteward/admin/templates/requests.html:61
 #: spoolsteward/admin/templates/requests.html:125
 msgid "From"
 msgstr "Desde"
 
-#: spoolsteward/admin/templates/report.html:11
+#: spoolsteward/admin/templates/report.html:18
 msgid "To (included)"
 msgstr "Hasta (incluido)"
 
-#: spoolsteward/admin/templates/report.html:12
+#: spoolsteward/admin/templates/report.html:20
+msgid "Dates are written year-month-day, for example 2026-10-31."
+msgstr "Las fechas se escriben año-mes-día, por ejemplo 2026-10-31."
+
+#: spoolsteward/admin/templates/report.html:23
 msgid "Show the first … users"
 msgstr "Mostrar los primeros … usuarios"
 
-#: spoolsteward/admin/templates/report.html:14
+#: spoolsteward/admin/templates/report.html:25
 msgid "Detailed report: also how many prints each user made on each printer"
 msgstr "Informe detallado: también cuántas impresiones hizo cada usuario en cada impresora"
 
-#: spoolsteward/admin/templates/report.html:17
+#: spoolsteward/admin/templates/report.html:28
 msgid "Leave out these groups"
 msgstr "Excluir estos grupos"
 
-#: spoolsteward/admin/templates/report.html:22
+#: spoolsteward/admin/templates/report.html:33
 msgid "Show"
 msgstr "Mostrar"
 
-#: spoolsteward/admin/templates/report.html:23
+#: spoolsteward/admin/templates/report.html:34
 msgid "Download CSV"
 msgstr "Descargar CSV"
 
-#: spoolsteward/admin/templates/report.html:24
+#: spoolsteward/admin/templates/report.html:35
 msgid "Download PDF"
 msgstr "Descargar PDF"
 
-#: spoolsteward/admin/templates/report.html:26
+#: spoolsteward/admin/templates/report.html:37
 msgid "The PDF is in English and can only show Western letters (other characters appear as ?): the CSV has every name as it is."
 msgstr "El PDF está en inglés y solo puede mostrar letras occidentales (los demás caracteres aparecen como ?): el CSV tiene cada nombre tal cual."
 
-#: spoolsteward/admin/templates/report.html:31
+#: spoolsteward/admin/templates/report.html:42
 msgid "The period reaches back before the oldest row of the active audit: older prints are in the archive and are not counted here."
 msgstr "El periodo llega antes de la fila más antigua de la auditoría activa: las impresiones anteriores están en el archivo y aquí no se cuentan."
 
-#: spoolsteward/admin/templates/report.html:32
+#: spoolsteward/admin/templates/report.html:43
 #, python-format
 msgid "%(n)s user"
 msgid_plural "%(n)s users"
 msgstr[0] "%(n)s usuario"
 msgstr[1] "%(n)s usuarios"
 
-#: spoolsteward/admin/templates/report.html:32
+#: spoolsteward/admin/templates/report.html:43
 #, python-format
 msgid "%(jobs)s jobs"
 msgstr "%(jobs)s trabajos"
 
-#: spoolsteward/admin/templates/report.html:32
+#: spoolsteward/admin/templates/report.html:43
 #, python-format
 msgid "%(pages)s pages"
 msgstr "%(pages)s páginas"
 
-#: spoolsteward/admin/templates/report.html:33
+#: spoolsteward/admin/templates/report.html:44
 #, python-format
 msgid "only the first %(top)s are listed"
 msgstr "solo se enumeran los primeros %(top)s"
 
-#: spoolsteward/admin/templates/report.html:42
+#: spoolsteward/admin/templates/report.html:53
 msgid "No prints in this period."
 msgstr "Ninguna impresión en este periodo."
 
@@ -4576,8 +4606,11 @@ msgid "Scanning…"
 msgstr "Escaneando…"
 
 #: spoolsteward/admin/templates/scan.html:37
-msgid "Scanning… with several sheets it can take a minute. You can also leave this page: the file stays below for 15 minutes."
-msgstr "Escaneando… con varias hojas puede tardar un minuto. También puedes salir de esta página: el archivo se queda aquí abajo durante 15 minutos."
+#, python-format
+msgid "Scanning… with several sheets it can take a minute. You can also leave this page: the file stays below for %(n)s minute."
+msgid_plural "Scanning… with several sheets it can take a minute. You can also leave this page: the file stays below for %(n)s minutes."
+msgstr[0] "Escaneando… con varias hojas puede tardar un minuto. También puedes salir de esta página: el archivo se queda aquí abajo durante %(n)s minuto."
+msgstr[1] "Escaneando… con varias hojas puede tardar un minuto. También puedes salir de esta página: el archivo se queda aquí abajo durante %(n)s minutos."
 
 #: spoolsteward/admin/templates/scan.html:44
 msgid "Your scan app can scan now, without a password, from the address below. Only that address is accepted; any other is refused."
@@ -5111,57 +5144,61 @@ msgstr "%(n)s días"
 msgid "one print only (void after %(h)s hours if unused)"
 msgstr "una sola impresión (caduca tras %(h)s horas si no se usa)"
 
-#: spoolsteward/auth/passwords.py:31
+#: spoolsteward/auth/passwords.py:60
 #, python-format
 msgid "the password must be at least %(n)s characters long"
 msgstr "la contraseña debe tener al menos %(n)s caracteres"
 
-#: spoolsteward/auth/passwords.py:33
+#: spoolsteward/auth/passwords.py:62
 #, python-format
 msgid "the password must be at most %(n)s characters long"
 msgstr "la contraseña debe tener como máximo %(n)s caracteres"
 
-#: spoolsteward/auth/passwords.py:35
+#: spoolsteward/auth/passwords.py:64
 msgid "the password must not be the username"
 msgstr "la contraseña no debe ser el nombre de usuario"
 
-#: spoolsteward/auth/passwords.py:37
+#: spoolsteward/auth/passwords.py:66
 msgid "the password is too repetitive"
 msgstr "la contraseña es demasiado repetitiva"
 
-#: spoolsteward/backup/core.py:70
+#: spoolsteward/backup/core.py:41
+msgid "General (.env)"
+msgstr "General (.env)"
+
+#: spoolsteward/backup/core.py:81
 msgid "Folder name not valid: letters, digits, space . _ - and / for sub-folders (max 4 levels)"
 msgstr "Nombre de carpeta no válido: letras, dígitos, espacio . _ - y / para subcarpetas (máx. 4 niveles)"
 
-#: spoolsteward/backup/core.py:73
+#: spoolsteward/backup/core.py:84
 #, python-format
 msgid "Backup root %(root)s is not available: mount a folder there (see docker-compose.yml)"
 msgstr "La raíz de copias de seguridad %(root)s no está disponible: monta allí una carpeta (véase docker-compose.yml)"
 
-#: spoolsteward/backup/core.py:77
+#: spoolsteward/backup/core.py:88
 msgid "Folder is outside the backup root"
 msgstr "La carpeta está fuera de la raíz de copias de seguridad"
 
-#: spoolsteward/backup/core.py:84
+#: spoolsteward/backup/core.py:95
 #, python-format
 msgid "Folder %(folder)s is not writable by the gateway: %(error)s"
 msgstr "El gateway no puede escribir en la carpeta %(folder)s: %(error)s"
 
-#: spoolsteward/backup/core.py:100
+#: spoolsteward/backup/core.py:111
 msgid "The backup disk is not answering (earlier requests are still waiting). Check the network disk."
 msgstr "El disco de copias no responde (hay peticiones anteriores esperando). Compruebe el disco de red."
 
-#: spoolsteward/backup/core.py:115
+#: spoolsteward/backup/core.py:126
 #, python-format
 msgid "The backup disk did not answer in %(s)s seconds: is the network disk reachable?"
 msgstr "El disco de copias no respondió en %(s)s segundos: ¿se puede alcanzar el disco de red?"
 
-#: spoolsteward/backup/core.py:130
+#: spoolsteward/backup/core.py:141
 #, python-format
 msgid "Cannot write the marker file in the folder: %(error)s"
 msgstr "No se puede escribir el archivo marcador en la carpeta: %(error)s"
 
-#: spoolsteward/backup/core.py:135
+#: spoolsteward/backup/core.py:146
 msgid "The marker file is missing in this folder: the network disk or USB disk may not be mounted. Nothing was written."
 msgstr "Falta el archivo marcador en esta carpeta: el disco de red o USB puede no estar montado. No se escribió nada."
 
@@ -5178,19 +5215,19 @@ msgstr "La frase de contraseña necesita al menos %(n)s caracteres"
 msgid "recovery key is not valid (expected cpgbk1.<public>.<wrapped>)"
 msgstr "la clave de recuperación no es válida (se esperaba cpgbk1.<pública>.<envuelta>)"
 
-#: spoolsteward/backup/service.py:87
+#: spoolsteward/backup/service.py:88
 msgid "Another backup is running: try again in a minute"
 msgstr "Hay otra copia de seguridad en curso: inténtalo de nuevo en un minuto"
 
-#: spoolsteward/backup/service.py:92
+#: spoolsteward/backup/service.py:93
 msgid "Backup target not found"
 msgstr "Destino de la copia de seguridad no encontrado"
 
-#: spoolsteward/policy/control.py:22
+#: spoolsteward/policy/control.py:23
 msgid "printer disabled by the administrator (applies to everyone, administrators included)"
 msgstr "impresora desactivada por el administrador (vale para todos, administradores incluidos)"
 
-#: spoolsteward/policy/control.py:23
+#: spoolsteward/policy/control.py:24
 msgid "gateway in maintenance: only administrators can print or scan"
 msgstr "gateway en mantenimiento: solo los administradores pueden imprimir o escanear"
 

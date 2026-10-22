@@ -1,6 +1,7 @@
-{# a password box with a "show" button; the button only appears when scripts run, so the page also works without #}
-<div class="pwrow">
-  <input type="password" name="{{ name }}" placeholder="{{ placeholder }}" autocomplete="{{ autocomplete }}"{% if not optional %} required{% endif %}>
+{# a password box with a "show" button beside it; the button only appears when scripts run, so the page also works without.
+   name, placeholder, autocomplete; optional=true drops "required"; minlength; cls adds a class to the row (layout of the page) -#}
+<div class="pwrow{% if cls %} {{ cls }}{% endif %}">
+  <input type="password" name="{{ name }}"{% if placeholder %} placeholder="{{ placeholder }}"{% endif %} autocomplete="{{ autocomplete }}"{% if minlength %} minlength="{{ minlength }}"{% endif %}{% if not optional %} required{% endif %} data-nokeep>
   <button type="button" class="pwtoggle" hidden aria-pressed="false" aria-label="{{ _t('Show password') }}" title="{{ _t('Show password') }}" data-show="{{ _t('Show password') }}" data-hide="{{ _t('Hide password') }}">
     <svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
     <svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/></svg>

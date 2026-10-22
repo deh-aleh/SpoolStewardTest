@@ -12,6 +12,8 @@ credentials if the installation uses RADIUS. A temporary password must be change
 
 ## 2. My profile (`/me`)
 
+![The profile page: jobs and pages used this week against the limit, the buttons to print, scan and ask for more quota, and the permissions of the account](../images/en/me-profile.png)
+
 - **Consumption**: jobs and pages used in the current week or month, your limit (including any extra quota granted to you),
   and when it resets.
 - **Documentation**: the **?** icon in the top bar (`/docs`) opens this guide and the step-by-step guide for [Windows](windows.md). Administrators find the whole documentation there, with the same icon.
@@ -49,11 +51,19 @@ range (`1,5` or `2-4`), copies and an optional comment (50 characters, visible t
 quota and audit as every other print. Works from a phone with nothing installed. See [printing.md](printing.md) for connecting a
 computer.
 
+![The print page: the file box, the list of printers and the print options (comment, paper size, orientation, colour, sides, pages)](../images/en/print-form.png)
+
 ## 4. Scan (`/me/scan`)
 
 Choose the scanner (if more than one), the source (automatic, glass, or feeder for all sheets), colour mode, quality, paper size,
-format (PDF or JPEG) and a file name. You can leave the page while it scans and come back to download the file within 15 minutes.
+format (PDF or JPEG) and a file name. You can leave the page while it scans and come back to download the file soon: it is kept for 10 minutes unless the administrator changed it, and sooner if the server's memory for scans is full.
 See [scanning.md](scanning.md).
+
+![The scan page: scanner, file name, format, where the sheets are, colour and quality, then the Scan button](../images/en/scan-form.png)
+
+When the scan is finished the file appears under *Your recent scans*, with its *Download* button:
+
+![A finished scan under Your recent scans, with one page and the Download button](../images/en/scan-done.png)
 
 ### Scanning from an app that cannot sign in
 

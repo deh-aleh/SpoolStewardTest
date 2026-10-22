@@ -346,3 +346,111 @@ def test_mfp_badge_follows_what_the_device_reports():
 
     assert ">MFP<" in render({"state": "Idle"})
     assert ">MFP<" not in render(None)
+
+
+# ---------------------------------------------------------------- how long and how much of the finished scans of the portal stay in memory
+
+def _held(app, **records):
+    """Put finished scans in the memory of the portal: name -> (bytes, seconds ago it finished)."""
+    import time
+    app.state.web_scans = {n: {"user_id": 1, "state": "done", "name": n, "ts": time.monotonic() - ago, "data": b"x" * size,
+                               "ctype": "application/pdf", "ext": "pdf", "pages": 1} for n, (size, ago) in records.items()}
+    return app.state.web_scans
+
+
+def test_the_defaults_are_50_mb_10_minutes_and_keep_after_download():
+    from spoolsteward.config import Settings
+
+    s = Settings(_env_file=None)
+    assert (s.scan_keep_mb, s.scan_keep_minutes, s.scan_delete_after_download) == (50, 10, False)
+
+
+async def test_a_finished_scan_is_forgotten_after_the_minutes_in_the_settings(portal, monkeypatch):
+    from spoolsteward import escl
+
+    monkeypatch.setattr(settings, "scan_keep_minutes", 10)
+    d = _held(portal.app, young=(10, 9 * 60), old=(10, 11 * 60))
+    d["busy"] = {"user_id": 1, "state": "running", "name": "b", "ts": 0.0}                     # a running scan has no age limit
+    d["failed"] = {"user_id": 1, "state": "error", "name": "f", "ts": 0.0, "error": "x"}       # a failed one is forgotten like the others
+    assert sorted(escl._scans(portal.app)) == ["busy", "young"]
+    monkeypatch.setattr(settings, "scan_keep_minutes", 5)
+    assert sorted(escl._scans(portal.app)) == ["busy"]
+
+
+async def test_when_the_scans_take_more_than_the_megabytes_allowed_the_oldest_go_first(portal, monkeypatch):
+    from spoolsteward import escl
+
+    monkeypatch.setattr(settings, "scan_keep_mb", 1)
+    mb = 1 << 20
+    _held(portal.app, a=(600_000, 300), b=(600_000, 200), c=(600_000, 100))                     # 1.8 MB, the limit is 1 MB
+    assert list(escl._scans(portal.app)) == ["c"]                                              # a and b (the oldest) are dropped
+    _held(portal.app, a=(300_000, 300), b=(300_000, 200), c=(300_000, 100))                     # 0.9 MB: fits
+    assert sorted(escl._scans(portal.app)) == ["a", "b", "c"]
+    _held(portal.app, a=(500_000, 300), b=(500_000, 200), c=(500_000, 100))                     # 1.5 MB: only the oldest has to go
+    assert sorted(escl._scans(portal.app)) == ["b", "c"]
+    _held(portal.app, big=(3 * mb, 10))                                                         # alone and over the limit: kept, it is the newest
+    assert list(escl._scans(portal.app)) == ["big"]
+    d = _held(portal.app, old=(600_000, 300), new=(3 * mb, 10))
+    d["running"] = {"user_id": 1, "state": "running", "name": "r", "ts": 0.0}                   # running scans and failed ones hold no data
+    d["failed"] = {"user_id": 1, "state": "error", "name": "f", "ts": 0.0, "error": "x"}
+    monkeypatch.setattr(settings, "scan_keep_minutes", 99999)
+    assert sorted(escl._scans(portal.app)) == ["failed", "new", "running"]
+
+
+async def test_a_scan_that_has_just_finished_pushes_out_the_oldest_at_once(portal, monkeypatch):
+    from spoolsteward import escl
+
+    monkeypatch.setattr(settings, "scan_keep_mb", 1)
+    _held(portal.app, first=(700_000, 60))
+
+    async def big(app, user, scanner, source, color, dpi, fmt):
+        return b"y" * 700_000, "application/pdf", 1, "pdf"
+    monkeypatch.setattr(escl, "scan_once", big)
+    rec = {"user_id": 1, "state": "running", "name": "second", "ts": 0.0}
+    portal.app.state.web_scans["second"] = rec
+    await escl._run_scan(portal.app, rec, None, None, "platen", "color", 300, "pdf")
+    assert rec["state"] == "done" and list(portal.app.state.web_scans) == ["second"]            # no page was opened: it happened by itself
+
+
+async def test_with_delete_after_download_the_scan_is_gone_once_it_was_downloaded(scanner, monkeypatch):
+    monkeypatch.setattr(settings, "scan_delete_after_download", True)
+    scanner.app.state.web_scans = {}                    # the app is shared by the tests of this file
+    await portal_login(scanner, "rita", GOOD)
+    tok = await csrf_of_page(scanner, "/me/scan")
+    st, r = await do_scan(scanner, tok, source="platen", color="color", dpi="300", fmt="pdf")
+    assert st["state"] == "done" and r.status_code == 200 and r.content == b"%PDF-fake"
+    assert r.headers["content-length"] == str(len(b"%PDF-fake")) and "attachment" in r.headers["content-disposition"]
+    assert scanner.app.state.web_scans == {}                                                    # out of the memory
+    page = (await scanner.get("/me/scan")).text                                                 # and out of the page
+    assert f"/me/scan/{st['id']}" not in page                                                   # no link to it any more
+    assert (await scanner.get(f"/me/scan/{st['id']}/file")).status_code == 404
+
+
+async def test_without_it_the_scan_can_be_downloaded_again_until_its_time_is_over(scanner, monkeypatch):
+    monkeypatch.setattr(settings, "scan_delete_after_download", False)
+    scanner.app.state.web_scans = {}
+    await portal_login(scanner, "rita", GOOD)
+    tok = await csrf_of_page(scanner, "/me/scan")
+    st, first = await do_scan(scanner, tok, source="platen", color="color", dpi="300", fmt="pdf")
+    again = await scanner.get(f"/me/scan/{st['id']}/file")
+    assert first.content == again.content == b"%PDF-fake" and len(scanner.app.state.web_scans) == 1
+
+
+async def test_the_page_says_how_many_minutes_the_scan_stays(scanner, monkeypatch):
+    await portal_login(scanner, "rita", GOOD)
+    for minutes, said in ((1, "for 1 minute."), (10, "for 10 minutes.")):
+        monkeypatch.setattr(settings, "scan_keep_minutes", minutes)
+        assert said in (await scanner.get("/me/scan")).text
+
+
+def test_the_waiting_note_is_translated_with_the_right_form_of_minute():
+    from spoolsteward import i18n
+
+    base = "Scanning… with several sheets it can take a minute. You can also leave this page: the file stays below for %(n)s "
+    ask = lambda n: i18n.ngettext(base + "minute.", base + "minutes.", n, n=n)       # noqa: E731
+    expected = {"it": {1: "per 1 minuto.", 10: "per 10 minuti."}, "es": {1: "durante 1 minuto.", 10: "durante 10 minutos."},
+                "ru": {1: "на 1 минуту.", 2: "на 2 минуты.", 5: "на 5 минут.", 21: "на 21 минуту."}, "zh": {1: "保留 1 分钟。", 10: "保留 10 分钟。"}}
+    for lang, cases in expected.items():
+        with i18n.using(lang):
+            for n, tail in cases.items():
+                assert str(ask(n)).endswith(tail), (lang, n, str(ask(n)))

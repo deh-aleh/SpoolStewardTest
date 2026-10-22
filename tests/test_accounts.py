@@ -89,6 +89,15 @@ async def test_setup_flow_sets_the_password_once(portal):
     assert (await portal_login(portal, ORCH, GOOD)).headers["location"] == "/admin/"
 
 
+async def test_a_setup_code_with_other_characters_than_ascii_is_a_wrong_code_and_counts(portal):
+    portal.app.state.setup_code = "right-code-1234567890"
+    for i in range(5):
+        r = await portal.post("/setup", data={"code": f"caf\u00e9-\u65e5\u672c-{i}", "password": GOOD, "confirm": GOOD})
+        assert r.status_code == 303 and r.headers["location"] == "/setup"            # was a 500 before
+    r = await portal.post("/setup", data={"code": "right-code-1234567890", "password": GOOD, "confirm": GOOD})
+    assert r.status_code == 303 and r.headers["location"] == "/setup"                # the five wrong ones were counted: locked out
+
+
 async def test_setup_code_guessing_is_throttled(portal):
     portal.app.state.setup_code = "right-code-1234567890"
     for i in range(5):

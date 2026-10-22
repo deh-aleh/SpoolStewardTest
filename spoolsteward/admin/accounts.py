@@ -26,6 +26,7 @@ from spoolsteward.i18n import _, ngettext
 from spoolsteward.i18n import html_pgettext as pgettext
 from spoolsteward.db.models import AdminAudit, Group, JobLog, Metric, Period, PrintKey, Resource, SubjectType, User
 from spoolsteward.policy import grants, permissions
+from spoolsteward.policy.bulk import limit_views
 from spoolsteward.policy.engine import active_grant_list, effective_limit, effective_rules, usage
 from spoolsteward.policy.ordering import key as queue_key
 from spoolsteward.policy.rules import get_limits, set_limit
@@ -189,9 +190,11 @@ def users(request: Request, admin: User = Depends(current_admin), db: Session = 
         PrintKey.revoked_at.is_(None), PrintKey.disabled_at.is_(None), PrintKey.used_at.is_(None),
         (PrintKey.expires_at.is_(None)) | (PrintKey.expires_at > now))
         .group_by(PrintKey.user_id)).all())
+    all_users = db.scalars(select(User).order_by(User.username)).all()
+    views = limit_views(db, all_users, now, local_tz(), localtime)  # a fixed number of queries, not a dozen per user
     rows = [{"u": u, "group": group_names.get(u.group_id, "—"), "key_count": key_counts.get(u.id, 0),
-             "view": _limit_view(db, u, now), "protected": is_emergency(u)}
-            for u in db.scalars(select(User).order_by(User.username))]
+             "view": views[u.id], "protected": is_emergency(u)}
+            for u in all_users]
     groups = db.scalars(select(Group).where(Group.name != ADMIN_GROUP).order_by(Group.name)).all()  # administrators are made with the checkbox
     return render(request, "users.html", admin, rows=rows, groups=groups, default_group=settings.default_group)
 

@@ -7,6 +7,8 @@ recorded. Everything is read live and best effort: a printer that does not offer
 
 ## 1. What a printer card shows
 
+![The Printers page: test printers, the search for USB printers and the card of a multifunction printer with ink levels, the printer's own counters and the jobs counted by the gateway](../images/en/admin-printers.png)
+
 - State and queue of every CUPS queue; for a device that does not answer, **NOT REACHABLE** (and it disappears from the
   print form and from the mDNS announcement). Detection can lag by ~30 s. For network queues it is a TCP probe (it can
   not know that paper ran out); queues on `usb:` / `file:` are assumed present.
@@ -140,7 +142,7 @@ English ([languages.md](languages.md)).
 - **Gateway maintenance** (red traffic-cone button at the top) — stops printing **and scanning** for everybody except administrators and
   withdraws every mDNS announcement. A red banner shows the state on every page. The confirmation window has a tick, on by default, to **tell all users in their notices** (administrators too, except the one who acts) that printing is suspended, or that it works again; leaving maintenance closes the earlier "in maintenance" notice.
 
-The mDNS announcer asks the gateway (`/mdns/policy`, authenticated by a code derived from `SPOOLSTEWARD_SECRET_KEY`).
+The mDNS announcer asks the gateway (`/mdns/policy`, authenticated by a code derived from `SPOOLSTEWARD_SECRET_KEY`). **Without that key the gateway refuses to answer and nothing is announced**: the answer lists the printers an administrator hid, and it must not be given to anybody on the network. `docker compose logs mdns` then says *"mDNS is OFF"* and what to do: put a long random value in `.env` as `SPOOLSTEWARD_SECRET_KEY=` (`openssl rand -hex 32` makes one) and run `docker compose up -d`. If the key is set but the log says the gateway did not accept the announcer, the two containers read different keys: `docker compose up -d --force-recreate gateway mdns`.
 
 ## 7. Test printers
 

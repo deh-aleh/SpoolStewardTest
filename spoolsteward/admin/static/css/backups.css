@@ -7,3 +7,10 @@ form.card.bk-new { max-width:760px }
 dl.kv.bk-center { align-items:center }
 input.bk-w5.bk-w5 { width:5em }
 input.bk-full.bk-full { width:100% }
+/* name, folder and the two passphrase rows (box + eye) start and end on the same lines: the form has two lists
+   (the passphrase one shows only for that choice), so they share one label column, wide enough for the
+   translated labels ("Frase de contraseña") */
+@media (min-width:701px) { form.bk-new dl.kv { grid-template-columns:minmax(10.5em, max-content) 1fr } }
+form.bk-new dl.kv.bk-center dd > input[type=text], .pwrow.bk-pw { width:min(100%, 320px) }
+.pwrow.bk-pw { display:inline-flex; vertical-align:middle }
+@media (max-width:700px) { .pwrow.bk-pw { display:flex; margin-bottom:4px } }  /* the hint goes under the row, not beside the eye */

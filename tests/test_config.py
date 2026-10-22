@@ -89,6 +89,10 @@ RANGES = {   # field: (accepted, refused)
     "offline_remove_hours": (["0", "8", "0.5"], ["-1", "inf"]),
     "radius_timeout": (["1", "5"], ["0"]),
     "auth_cache_seconds": (["0", "60"], ["-1"]),
+    "hsts_seconds": (["0", "2592000", "63072000"], ["-1", "63072001", "1.5"]),
+    "password_checks_at_once": (["1", "3", "16"], ["0", "17", "-1"]),
+    "scan_keep_mb": (["1", "50", "500"], ["0", "-1"]),
+    "scan_keep_minutes": (["1", "10", "120"], ["0", "-1"]),
 }
 
 
@@ -106,6 +110,7 @@ WORDS = {   # field: (accepted, refused)
     "log_level": (["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], ["info", "Info", "TRACE", "WARN"]),
     "language": (["en", "it", "es", "ru", "zh"], ["EN", "fr", "english"]),
     "ipp_auth": (["keys", "keys+radius"], ["radius", "Keys", "basic"]),
+    "db_sync": (["full", "normal"], ["off", "Full", "extra", ""]),
     "permission_mode": (["adjust", "refuse"], ["Adjust", "allow"]),
     "public_scheme": (["http", "https", "ipp", "ipps", "none"], ["ftp", "IPPS"]),
     "timezone": (["UTC", "Europe/Rome", "America/New_York"], ["Mars/Base", "rome", "+01:00"]),
@@ -117,7 +122,8 @@ WORDS = {   # field: (accepted, refused)
     "usb_bridge_ports": (["60000-60099", "1-65535", "5-5"], ["60099-60000", "0-5", "1-65536", "60000", "a-b"]),
     "mdns_addresses": (["10.0.0.5", "10.0.0.5, 192.168.1.2", "none"], ["10.0.0.256", "::1", "host.lan"]),
     "mdns_hostname": (["print.lan", "print", "none"], ["-x", "a b", "a_b", "x."]),
-    "database_url": (["sqlite:///./x.db", "sqlite:////data/x.db", "postgresql://u:p@h/db"], ["not a url", "x"]),
+    "database_url": (["sqlite:///./x.db", "sqlite:////data/x.db", "sqlite://"],
+                     ["postgresql://u:p@h/db", "postgresql+psycopg://u:p@h/db", "mysql://u:p@h/db", "not a url", "x"]),
     "backup_dir": (["general", "pc/aula 3", "a.b-c_d"], ["../x", "/abs", "a//b", "a/b/c/d/e"]),
     "bootstrap_admin_username": (["administrator", "root.admin"], ["Admin", "-x", "a b"]),
     "usb_bridge_host": (["ipp-usb", "none"], []),
@@ -217,3 +223,9 @@ def test_the_template_of_env_is_valid_as_written(monkeypatch):
 def test_the_template_has_no_empty_active_line():
     for line in (ROOT / "docker" / "env.example").read_text().splitlines():
         assert not re.match(r"^[A-Z][A-Z0-9_]*=$", line), f"{line} must be a value or none"
+
+
+def test_a_database_that_is_not_sqlite_is_refused_with_a_message_that_says_so():
+    with pytest.raises(ValidationError) as e:
+        Settings(database_url="postgresql://u:p@h/db")
+    assert "works only with SQLite" in "\n".join(problems(e.value))

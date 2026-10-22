@@ -64,12 +64,13 @@ server must list this machine as a client, with the same secret. If RADIUS does 
 | `SPOOLSTEWARD_RADIUS_SECRET` | `none` | Secret shared with the server (not a user password). Quote it if it has `$` or `#`. |
 | `SPOOLSTEWARD_RADIUS_TIMEOUT` | `5` | Seconds to wait for an answer. Raise it for a slow or distant server. |
 | `SPOOLSTEWARD_AUTH_CACHE_SECONDS` | `60` | A good login is remembered this long, so the server is not asked at every request. |
+| `SPOOLSTEWARD_PASSWORD_CHECKS_AT_ONCE` | `3` | How many password checks of local accounts run at the same time (1–16); the others wait. Each uses 32 MiB for a few tenths of a second (more on a Raspberry Pi), so a burst of login attempts slows down instead of using all the memory of a small machine. Raise it on a big machine. |
 
 ### Print authentication and keys
 
 | Variable | Default | What it does |
 |---|---|---|
-| `SPOOLSTEWARD_IPP_AUTH` | `keys` | What a **print client** (computer, phone) may present as password. `keys` = only personal print keys (recommended: the office password never gets saved on a device and a lost key can be revoked). `keys+radius` = also the RADIUS password, only for a transition period. The web portal always needs the password. |
+| `SPOOLSTEWARD_IPP_AUTH` | `keys` | What a **print client** (computer, phone) may present as password. `keys` = only personal print keys (recommended: the office password never gets saved on a device and a lost key can be revoked). `keys+radius` = also the RADIUS password, only for a transition period (RADIUS accounts only; anything starting with `cpk-` is treated as a print key and never sent to RADIUS). The web portal always needs the password. |
 | `SPOOLSTEWARD_KEY_TTL_DAYS_RADIUS` | `90` | The **longest** life a RADIUS user can choose for a print key, in days (the menu shows only the choices that fit). Short on purpose: to renew a key they must log in to RADIUS again, so someone who left the company stops printing when the key ends. |
 | `SPOOLSTEWARD_KEY_TTL_DAYS_LOCAL` | `730` | The same, for local accounts. |
 | `SPOOLSTEWARD_KEY_ONCE_HOURS` | `24` | A "one print only" key that nobody used stops working after this many hours. |
@@ -82,6 +83,7 @@ server must list this machine as a client, with the same secret. If RADIUS does 
 | `SPOOLSTEWARD_CUPS_USER_PREFIX` | `gw:` | Put before the user name CUPS sees (`gw:mario`). It cannot equal a local account of the server, so a RADIUS user called `root` does not become a CUPS administrator. Do not change it without a reason. |
 | `SPOOLSTEWARD_ANONYMOUS_DISCOVERY` | `true` | Answers "what printer are you?" without a login. IPP Everywhere clients (Linux, Android, macOS) ask the printer before they have credentials. It does not allow printing and does not show names or documents. Set `false` only if you know your clients do not need it. |
 | `SPOOLSTEWARD_CONTENT_SECURITY_POLICY` | `enforce` | The browser rule that forbids inline scripts and styles in the portal pages, so a script slipped into a name or a message is not run. `report-only`: the browser only writes what it would block in its console (for finding out why a page misbehaves behind a proxy that rewrites pages). `off`: no rule. |
+| `SPOOLSTEWARD_HSTS_SECONDS` | `0` | Seconds a browser must use only HTTPS with this **host name** (header `Strict-Transport-Security`, sent only on HTTPS answers; `0` = never sent, the default). A browser keeps it only if it **trusts the certificate**: with the self-signed one you click through, it is ignored. Once kept, `http://` addresses become `https://` and a certificate error can not be clicked through while the certificate is wrong; it applies to every port of that name. Off by default; with a trusted certificate try `2592000` (30 days), later `31536000` (one year). See [certificates.md](certificates.md). |
 
 ### First start
 
@@ -124,6 +126,7 @@ compressed files, checked, and only then removed from the database ([audit.md](a
 | `SPOOLSTEWARD_AUDIT_ARCHIVE_DIR` | `/data/audit-archive` | Folder of the compressed files **inside the container**. The compose file maps it to `./data/audit-archive` on the host: change that mapping, not this. |
 | `SPOOLSTEWARD_AUDIT_ARCHIVE_HOST_PATH` | set by init | Only **shown** in the portal, so people know where the files are on this machine. It is filled from `AUDIT_ARCHIVE_HOST_PATH` of part A. |
 | `SPOOLSTEWARD_AUDIT_CHECK_INTERVAL` | `3600` | Seconds between the checks "is archiving needed?" |
+| `SPOOLSTEWARD_DB_SYNC` | `full` | How carefully the database saves. `full` = after every save the program waits for the disk: a power cut loses nothing. `normal` = it does not wait: faster on a slow disk (the SD card of a Raspberry Pi), but after a power cut (or a crash of the whole machine, not of the program) the last few seconds of saves can be missing, for example a print just accepted. The database is not damaged either way. Change it only if printing or the portal feel slow on a small machine. |
 | `SPOOLSTEWARD_JOB_TITLE_RETENTION_ENABLED` | `false` | `true` erases the names of printed files after the days below. The row (who, when, pages, state) stays, because quotas need it. Names already inside archive files are not touched. |
 | `SPOOLSTEWARD_JOB_TITLE_RETENTION_DAYS` | `90` | After how many days the name is erased (only when the line above is on). |
 
@@ -171,6 +174,9 @@ How to update: [installation.md](installation.md).
 | `SPOOLSTEWARD_RECONCILE_INTERVAL` | `30` | Seconds between the comparisons of the gateway's jobs with CUPS (this is how quotas and real page counts are corrected). If CUPS cannot be reached, `reconcile:` appears in the log. |
 | `SPOOLSTEWARD_SCAN_URL` | the image sets `http://ipp-usb:60000` | eSCL scanners. Scanners are found by themselves; write this only to **add** some that are not (a network printer with eSCL on an unusual port), as `name=address` separated by commas: `http://ipp-usb:60000,office=https://192.168.1.50:443`. `none` = scanning is off. |
 | `SPOOLSTEWARD_SCAN_TIMEOUT` | `180` | Seconds for one scan (a page from the glass can be slow). |
+| `SPOOLSTEWARD_SCAN_KEEP_MB` | `50` | Megabytes of finished portal scans kept in memory, **all people together**. When a new scan does not fit, the oldest finished ones are dropped first; the newest is always kept, even if it alone is bigger. |
+| `SPOOLSTEWARD_SCAN_KEEP_MINUTES` | `10` | Minutes a finished portal scan stays in memory. After that it is gone and must be scanned again. |
+| `SPOOLSTEWARD_SCAN_DELETE_AFTER_DOWNLOAD` | `false` | `true` = a scan leaves the memory and the portal as soon as its download has finished (it can be downloaded once). |
 | `SPOOLSTEWARD_ESCL_ANONYMOUS` | `false` | `true` accepts scans from apps that cannot send credentials (for example NAPS2). They are credited to the guest account (next line) with the sender's IP. Leave `false` unless your network is trusted ([scanning.md](scanning.md)). |
 | `SPOOLSTEWARD_ESCL_GUEST_USERNAME` | `unknown-guest` | The name of that guest account: local, no password, created by itself. If an account with this name already exists and is a real one (a password, RADIUS, or an administrator), it is never used: scans without login are refused, the administrators get a notice in the bell and the log says why. Choose another name then. Lower-case letters, digits, dot, dash, underscore, up to 63; the name of the emergency administrator is refused at start. |
 | `SPOOLSTEWARD_ESCL_WINDOW` | `true` | `true` shows a button on *Scan* that opens a **scan window**: for a few minutes, scan requests without credentials from the IP address of the person who pressed it are accepted as that person. A last resort: NAT and reverse proxies defeat it (limits in [scanning.md](scanning.md)). `false` removes the button. Works with `SPOOLSTEWARD_ESCL_ANONYMOUS` on or off ([scanning.md](scanning.md)). |
@@ -278,7 +284,7 @@ from starting or open a security hole.
 | Variable | Value in the container | Why |
 |---|---|---|
 | `SPOOLSTEWARD_TLS_CERTFILE`, `SPOOLSTEWARD_TLS_KEYFILE` | `/tls/fullchain.pem`, `/tls/privkey.pem` | The folder `config/tls`. Without TLS the gateway refuses to start. |
-| `SPOOLSTEWARD_DATABASE_URL` | `sqlite:////data/spoolsteward.db` | The SQLite file in the `portal-data` volume. |
+| `SPOOLSTEWARD_DATABASE_URL` | `sqlite:////data/spoolsteward.db` | The SQLite file in the `portal-data` volume. Only SQLite is supported: any other kind of database (PostgreSQL, MySQL…) is refused at start. |
 | `SPOOLSTEWARD_CUPS_URL` | `unix:///run/cups/cups.sock` | The private socket shared with CUPS. CUPS is never reachable from the network. |
 | `SPOOLSTEWARD_ALLOW_INSECURE_AUTH` | `false` | `true` would accept passwords over plain HTTP. Only for tests in a closed lab. Never in production. |
 | `SPOOLSTEWARD_HOST`, `SPOOLSTEWARD_PORT` | `0.0.0.0`, `8631` | Where the program listens **inside** the container. To change the port people use, change `PORTAL_PORT` (part A). |

@@ -30,9 +30,17 @@ sparisce entro ~30 s. Il servizio `mdns` annuncia ogni scanner come `_uscans._tc
 - Uscita: **PDF** (più fogli uniti con pypdf) o **JPEG** (più fogli: ZIP); campo **nome del file**.
 - Dove salvare: i browser Chromium aprono la scelta della cartella (File System Access API); gli altri salvano nella cartella dei
   download (un sito web non può scrivere in un percorso digitato a mano).
-- La scansione gira come **attività di fondo del server**: puoi lasciare la pagina e scaricare dopo (il risultato resta **15 minuti in
+- La scansione gira come **attività di fondo del server**: puoi lasciare la pagina e scaricare dopo (il risultato resta **10 minuti in
   memoria**, visibile solo al proprietario; una scansione web alla volta). Se lo scanner risponde 409/503 (si sta svegliando) il
   gateway riprova 3 volte.
+- Le scansioni finite aspettano **nella memoria del server** (una pagina a colori a 300 dpi pesa circa 1 MB; un caricatore da 100 pagine
+  può arrivare a 100 MB). Tre impostazioni in `.env` la tengono sotto controllo: `SPOOLSTEWARD_SCAN_KEEP_MINUTES` (predefinito 10) è
+  quanto resta una scansione finita; `SPOOLSTEWARD_SCAN_KEEP_MB` (predefinito 50) è quanto possono tenere tutte le persone insieme:
+  quando una nuova scansione non ci sta, **le più vecchie già finite vengono tolte per prime** (la più recente resta sempre, anche se da
+  sola è più grande); e `SPOOLSTEWARD_SCAN_DELETE_AFTER_DOWNLOAD` (predefinito `false`): con `true` una scansione esce dalla memoria e
+  dalla pagina appena il suo download è finito, quindi si scarica una volta sola. Una scansione tolta va rifatta: scaricala presto.
+
+![Una scansione dal vetro in corso: il pulsante Scansiona è grigio e la barra sotto dice che la scansione è in corso](../images/it/scan-running.png)
 
 ## 3. Scansione con client eSCL
 

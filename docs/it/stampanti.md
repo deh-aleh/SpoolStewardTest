@@ -7,6 +7,8 @@ ha registrato. Tutto si legge dal vivo e al meglio: una stampante che non offre 
 
 ## 1. Cosa mostra la scheda di una stampante
 
+![La pagina Stampanti: stampanti di prova, la ricerca delle stampanti USB e la scheda di una multifunzione con livelli d'inchiostro, contatori della stampante e job contati dal gateway](../images/it/admin-printers.png)
+
 - Stato e coda di ogni coda CUPS; per un dispositivo che non risponde, **NON RAGGIUNGIBILE** (e sparisce dal modulo di stampa e
   dall'annuncio mDNS). Il rilevamento può ritardare di ~30 s. Per le code di rete è una prova TCP (non può sapere che la carta è
   finita); le code `usb:` / `file:` si assumono presenti.
@@ -143,7 +145,7 @@ sempre in inglese ([lingue.md](lingue.md)).
 - **Manutenzione del gateway** (pulsante rosso con il cono stradale, in alto) — ferma stampa **e scansione** per tutti tranne gli amministratori e ritira ogni
   annuncio mDNS. Un banner rosso mostra lo stato su ogni pagina. La finestra di conferma ha una spunta, attiva di default, per **avvisare tutti gli utenti nelle loro notifiche** (amministratori compresi, tranne chi agisce) che la stampa è sospesa o che funziona di nuovo; uscendo dalla manutenzione l'avviso «in manutenzione» precedente viene chiuso.
 
-L'annunciatore mDNS interroga il gateway (`/mdns/policy`, autenticato da un codice derivato da `SPOOLSTEWARD_SECRET_KEY`).
+L'annunciatore mDNS interroga il gateway (`/mdns/policy`, autenticato da un codice derivato da `SPOOLSTEWARD_SECRET_KEY`). **Senza quella chiave il gateway rifiuta di rispondere e non viene annunciato nulla**: la risposta elenca le stampanti che un amministratore ha nascosto e non deve essere data a chiunque sulla rete. `docker compose logs mdns` dice allora *"mDNS is OFF"* e cosa fare: metti in `.env` un valore casuale lungo come `SPOOLSTEWARD_SECRET_KEY=` (`openssl rand -hex 32` ne fa uno) ed esegui `docker compose up -d`. Se la chiave c'è ma il log dice che il gateway non ha accettato l'annunciatore, i due container leggono chiavi diverse: `docker compose up -d --force-recreate gateway mdns`.
 
 ## 7. Stampanti di prova
 

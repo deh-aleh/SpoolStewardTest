@@ -2,6 +2,7 @@
 
 import io
 import os
+import re
 import sqlite3
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -205,6 +206,16 @@ async def test_a_restore_that_cannot_work_leaves_the_current_database_alone(port
 
 
 # ------------------------------------------------------------------------------------------------ portal
+
+async def test_the_passphrase_boxes_have_a_show_button_and_are_never_kept(portal, dirs):
+    make_user(portal.sm, "ada", password=GOOD, admin=True)
+    await portal_login(portal, "ada", GOOD)
+    page = (await portal.get("/admin/backups")).text
+    assert page.count('class="pwtoggle"') == 2
+    for name in ("passphrase", "passphrase2"):   # data-keep must not save it even while it is shown as text
+        box = re.search(rf'<input type="password" name="{name}"[^>]*>', page).group(0)
+        assert "data-nokeep" in box and "required" not in box
+
 
 async def test_admins_have_their_own_backups(portal, dirs):
     make_user(portal.sm, "ada", password=GOOD, admin=True)
@@ -467,6 +478,11 @@ def test_update_request_refuses_other_majors_and_junk(tmp_path, monkeypatch):
             updates.write_request(bad, "ada", "b.tar.gz")
     updates.write_request("1.5.0", "ada", "b.tar.gz")
     assert (tmp_path / "request.json").exists()
+    (tmp_path / "request.json").unlink()
+    for older in ("1.4.0", "1.3.9", "1.0.0", "1.4.0-beta.1"):                   # the portal never goes back (a terminal does)
+        with pytest.raises(ValueError):
+            updates.write_request(older, "ada", "b.tar.gz")
+    assert not (tmp_path / "request.json").exists()
     (tmp_path / "status.json").write_text('{"state":"ok","version":"1.5.0","backup":"/etc/passwd"}')
     assert updates.read_status()["backup"] == "passwd"        # only a file name is ever shown
     (tmp_path / "status.json").write_text('{"state":"<script>","version":"1.5.0"}')
@@ -515,3 +531,63 @@ async def test_a_backup_that_fails_while_writing_leaves_no_file_behind(portal, d
         core.create_backup(portal.sm, f, "spoolsteward-aaaaaaaa-t1", recipient=crypto.make_recipient(PASS), target_name="e",
                            instance="aaaaaaaa")
     assert [p.name for p in f.iterdir()] == []
+
+
+# ---------------------------------------------------------------------------------- the name of the general backup
+
+def _general(portal, monkeypatch, **env):
+    monkeypatch.setattr(settings, "backup_enabled", True)
+    monkeypatch.setattr(settings, "backup_dir", "general")
+    for k, v in env.items():
+        monkeypatch.setattr(settings, k, v)
+    with portal.sm() as s:
+        service.sync_global(s)
+        return s.scalars(select(BackupTarget).where(BackupTarget.is_global)).one().id
+
+
+def test_the_general_backup_is_stored_with_an_english_name(portal, dirs, monkeypatch):
+    tid = _general(portal, monkeypatch)
+    with portal.sm() as s:
+        assert s.get(BackupTarget, tid).name == "General (.env)" == service.GLOBAL_NAME
+
+
+def test_a_row_written_with_the_old_italian_name_is_put_right_and_its_backups_are_still_its_own(portal, dirs, monkeypatch):
+    """Nothing finds the backup by its name: the row is the one with is_global, the files carry the instance and the number."""
+    tid = _general(portal, monkeypatch)
+    ok, msg = service.run_target(portal.sm, tid)
+    assert ok, msg
+    with portal.sm() as s:
+        s.get(BackupTarget, tid).name = "Generale (.env)"                      # what an older version wrote
+        s.commit()
+        instance = service.instance_id(s)
+    before = [b["name"] for b in core.list_backups(dirs / "general", instance, tid)]
+    with portal.sm() as s:
+        service.sync_global(s)
+        row = s.scalars(select(BackupTarget).where(BackupTarget.is_global)).one()
+        assert row.id == tid and row.name == "General (.env)"                  # the same row, renamed
+    assert [b["name"] for b in core.list_backups(dirs / "general", instance, tid)] == before and before
+
+
+def test_the_name_is_shown_in_the_language_of_the_reader_and_other_names_are_left_alone():
+    from spoolsteward import i18n
+
+    shown = {}
+    for lang in ("en", "it", "es", "ru", "zh"):
+        with i18n.using(lang):
+            shown[lang] = core.display_name(core.GLOBAL_NAME)
+            assert core.display_name("Office NAS") == "Office NAS" and core.display_name("Generale (.env)") == "Generale (.env)"
+    assert shown == {"en": "General (.env)", "it": "Generale (.env)", "es": "General (.env)", "ru": "Общая (.env)", "zh": "通用 (.env)"}
+
+
+async def test_the_backup_page_and_the_failure_notices_show_the_translated_name(portal, dirs, monkeypatch):
+    from spoolsteward import notices
+    from spoolsteward.admin import common
+
+    _general(portal, monkeypatch)
+    make_user(portal.sm, "ada", password=GOOD, admin=True)
+    await portal_login(portal, "ada", GOOD)
+    assert "General (.env)" in (await portal.get("/admin/backups")).text
+    assert common.templates.env.globals["backup_name"]("General (.env)") == "General (.env)"
+    notices.report(portal.sm, "backup_failed", "9101", {"name": service.GLOBAL_NAME, "error": "disk full", "last_ok": None})
+    page = (await portal.get("/admin/notices")).text
+    assert "General (.env)" in page and "disk full" in page
