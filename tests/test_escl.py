@@ -369,9 +369,11 @@ async def test_a_finished_scan_is_forgotten_after_the_minutes_in_the_settings(po
     from spoolsteward import escl
 
     monkeypatch.setattr(settings, "scan_keep_minutes", 10)
+    import time
+    long_ago = time.monotonic() - 3600     # not 0.0: the monotonic clock starts at boot, and a fresh CI machine is younger than the limit
     d = _held(portal.app, young=(10, 9 * 60), old=(10, 11 * 60))
-    d["busy"] = {"user_id": 1, "state": "running", "name": "b", "ts": 0.0}                     # a running scan has no age limit
-    d["failed"] = {"user_id": 1, "state": "error", "name": "f", "ts": 0.0, "error": "x"}       # a failed one is forgotten like the others
+    d["busy"] = {"user_id": 1, "state": "running", "name": "b", "ts": long_ago}                 # a running scan has no age limit
+    d["failed"] = {"user_id": 1, "state": "error", "name": "f", "ts": long_ago, "error": "x"}  # a failed one is forgotten like the others
     assert sorted(escl._scans(portal.app)) == ["busy", "young"]
     monkeypatch.setattr(settings, "scan_keep_minutes", 5)
     assert sorted(escl._scans(portal.app)) == ["busy"]
