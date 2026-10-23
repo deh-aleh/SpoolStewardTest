@@ -11,7 +11,7 @@ What SpoolSteward does **not** do (yet) or does with caveats. The short version 
   Desktop for Windows/macOS: there only network printers work and nothing is announced).
 - One gateway per USB printer (`ipp-usb` needs exclusive use). Its container can see every USB device of the host (needed for hot-plug).
 - The database is SQLite (one file): one gateway, no high availability, no external database.
-- Published images exist for amd64 and arm64 only (no 32-bit ARM).
+- Published images exist for amd64 and arm64 only.
 - `scripts/update.sh` downloads the release package and replaces `docker-compose.yml` and the scripts, never `.env`, `config/` or `data/`. It does not work in a folder
   cloned with git (there you use `git pull`). The new options of a version are not written into your `.env`: they work with their default value; to see them,
   compare `.env` with `docker/env.example`.
@@ -20,13 +20,11 @@ What SpoolSteward does **not** do (yet) or does with caveats. The short version 
 - Backups on a network share: file permissions are decided by the mount (use encryption). An unmounted share receives no backup: the option
   "write only if mounted" is on by default for backups made in the portal, and the portal gives a notice when a backup is skipped. The *General* backup of `.env` has the option off
   by default (it must be turned on and prepared by hand, see [backup.md](backup.md)).
-- Going back to an older version after a database migration requires restoring a backup: `scripts/update.sh` offers it by itself when the old version does not start.
-  New migrations may only add (the old version can still read the database), but that is not a guarantee in every case.
+- Going back to an older version after a database migration requires restoring a backup: `scripts/update.sh`.
 - The **names of printed files are encrypted** in the database and in the audit archive (key derived from `SPOOLSTEWARD_SECRET_KEY`: if you change it they can no longer be read). The rest of the
   database is not encrypted (user names, groups, printer names, admin log): to protect everything, encrypt the disk, see [data-protection.md](data-protection.md).
   CUPS also keeps the names of its latest jobs (up to 2,000) in its own volume: the button and the retention of names do not touch them.
 - Certificates: devices must trust the company CA; the announcement uses the IP, so the certificate must list it (the portal gives a notice if it does not).
-  `scripts/cert-sync.sh` **copies** the certificate from whoever renews it but does not renew it: to notice a failed renewal you need the expiry notice, which is off by default.
   Details in [certificates.md](certificates.md).
 
 ## 2. Quota
@@ -41,9 +39,6 @@ What SpoolSteward does **not** do (yet) or does with caveats. The short version 
   - **Forced black and white may not work** with some printers and drivers, above all with images a phone has already turned into colour pixels (iPhone / AirPrint). For a guarantee use `SPOOLSTEWARD_PERMISSION_MODE=refuse`. Double-sided uses the standard `sides` attribute and is more reliable, as long as the queue declares its duplex unit.
   - With `refuse`, Windows and Android often refuse many jobs, because they send one-sided or colour in every job. The default `adjust` avoids it.
   - The network announcement (mDNS) is the same for everybody: printers a person may not use are still visible to them, and the job is refused. The printer list the gateway gives after the login hides them.
-  - The hours are checked when the job is sent, not while it prints. There is one window (days + two times) per group or user.
-  - Scanning is not limited. The emergency administrator is exempt from the permissions and from the quotas.
-  - A permission asked for is granted for good or until a date, not for a number of prints or hours of use.
 
 ## 3. Clients
 
@@ -60,7 +55,6 @@ What SpoolSteward does **not** do (yet) or does with caveats. The short version 
 
 - Automatic USB discovery: a printer served by `ipp-usb` is never taken through CUPS' usb backend. Printers without IPP-over-USB need a driver present in the `cups` image (brlaser, gutenprint, splix, foo2zjs are included). Whether CUPS' usb backend and `ipp-usb` coexist on the same USB bus with several printers has been tested with one device at a time only. Printers tested so far: HP Smart Tank 7300 (through ipp-usb) and Brother DCP-7055 (CUPS usb backend, brlaser).
 - USB queues unreachable for 8 h (configurable) are removed by themselves; network queues never are.
-- Disconnected-device detection lags by up to ~30 s; for network queues it is a TCP probe (no paper information).
 - Scanners are found automatically only if they answer eSCL on the queue's IPP port or on port 80; otherwise `SPOOLSTEWARD_SCAN_URL`.
 - Lifetime counters come from HP's web service only; other brands show IPP data.
 - A scan delivered to the client counts as completed even if the user does not save the file.
@@ -75,7 +69,6 @@ What SpoolSteward does **not** do (yet) or does with caveats. The short version 
 
 - Built-in backups: SQLite only; CUPS queues not included (they are in `scripts/backup.sh`); configuration files are restored by hand;
   no direct remote destinations; the passphrase can not be recovered. `scripts/backup.sh restore` is tested by hand only.
-- The login lock-out survives a restart: failed logins of the last 5 minutes are kept in `/data/login-lockout.json` (in the gateway volume; user names and addresses with the times, no passwords). If the file can not be written the lock-out works in memory only and the log says so.
 - The audit and the database are not encrypted, except the file names (see §1 and [data-protection.md](data-protection.md)).
 
 ## 6. Languages
@@ -85,5 +78,4 @@ What SpoolSteward does **not** do (yet) or does with caveats. The short version 
 - The audit's stored text and the server logs stay English.
 
 ## 7. Feature status
-
 What has been tested and what is missing is in the [README](../../README.md#status).

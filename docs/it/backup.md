@@ -128,8 +128,3 @@ di CUPS (le code). Non include le immagini né lo spool dei job in corso. L'arch
 `scripts/backup.sh` non ha bisogno di Internet: usa l'immagine che lo stack sta già eseguendo, e il ripristino controlla tutto prima e ferma l'applicazione solo quando è sicuro di poter proseguire.
 `restore` è provato solo a mano.
 
-## 4. Limiti
-
-Solo SQLite (con un altro database usa il suo strumento di dump); i backup integrati non includono le code CUPS (si ricreano da
-`CUPS_QUEUES`, oppure si usa `scripts/backup.sh`); i file di configurazione non si ripristinano da soli (il contenitore li ha in sola
-lettura); nessuna destinazione remota diretta (SSH/S3): si monta sul server; la passphrase non è recuperabile.

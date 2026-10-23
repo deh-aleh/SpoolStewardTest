@@ -127,8 +127,3 @@ Not included: images and the spool of jobs in progress. The archive holds secret
 `scripts/backup.sh` needs no Internet: it uses the image the stack already runs, and a restore checks everything first and stops the application only when it is sure it can go on.
 `restore` has only been tested by hand.
 
-## 4. Limits
-
-SQLite only (with another database use its own dump tool); the built-in backups do not include CUPS queues (recreate them from
-`CUPS_QUEUES`, or use `scripts/backup.sh`); configuration files are not restored automatically (the container has them read-only);
-no direct remote destination (SSH/S3): mount it on the server; the passphrase is not recoverable.

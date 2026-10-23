@@ -11,28 +11,16 @@
 > **Beta (0.x):** gli aggiornamenti possono contenere modifiche incompatibili. Leggi l'[avviso prima di installare](#installazione-docker).
 
 Su una rete condivisa, una stampante lascia stampare chiunque quanto vuole e poi nessuno sa chi ha stampato cosa. SpoolSteward si mette tra le persone e la stampante: ognuno accede con il proprio account, ogni persona o gruppo ha un limite (pagine, colore, solo fronte) e ogni stampa e scansione viene registrata. Serve a case, uffici e scuole che condividono una stampante e vogliono decidere chi stampa quanto e vedere cosa è stato stampato.
-
-In termini tecnici è un gateway davanti a CUPS (IPP) con un portale web. Fa accedere le persone (account locali e/o RADIUS), decide il
-nome utente che CUPS vede, applica i limiti, registra chi ha stampato e scansionato cosa e inoltra il job a CUPS. CUPS e ipp-usb restano
-non modificati e il gateway è l'unica via d'ingresso.
-
-```
-client IPP ──ipps (TLS + Basic)──▶ gateway ──socket unix──▶ CUPS ──rete interna──▶ ipp-usb ──USB──▶ stampante
-browser ───────https───────────▶     │  └─▶ DB (SQLite): utenti, gruppi, regole, audit
-                                     └────▶ RADIUS (facoltativo)        portale: /login, /admin (admin), /me (utenti)
-```
+Per saperne di più: [docs/it/architettura.md](docs/it/architettura.md)
 
 ## Cosa fa
 
 - **Account**: locali (argon2id) e/o RADIUS; **chiavi di stampa** personali e revocabili, così la password di dominio non resta mai su un PC o un telefono.
-- **Quote**: job e pagine per settimana o mese, per gruppo con override per utente; gli utenti chiedono di più, gli amministratori approvano.
-- **Permessi**: colore, stampa solo fronte, quali stampanti e in quali orari, per gruppo con override per utente; gli utenti chiedono ciò che manca, per sempre o fino a una data.
-- **Stampa**: IPP/IPPS per i computer, **stampa dal browser** per qualunque telefono, annuncio sulla LAN (AirPrint/Mopria).
-- **Scansione**: eSCL attraverso il gateway e dal portale, insieme alla stampa sullo stesso dispositivo USB.
-- **Audit**: chi ha stampato/scansionato cosa (pagine reali), registro separato delle azioni amministrative, conservato per sempre con archivi compressi verificati.
+- **Quote e permessi**: job e pagine per settimana o mese, colore, stampa solo fronte, quali stampanti e in quali orari, per gruppo con override per utente; gli utenti chiedono di più, gli amministratori approvano.
+- **Stampa e scansione**: IPP/IPPS per i computer, stampa dal browser per qualunque telefono, annuncio sulla LAN (AirPrint/Mopria), eSCL attraverso il gateway e dal portale.
+- **Audit e backup**: chi ha stampato/scansionato cosa (pagine reali), conservato per sempre con archivi compressi. Backup programmati per amministratore, cifrati con una chiave di recupero, ripristinabili da riga di comando.
 - **Stampanti**: stato, inchiostro e contatori, blocco/nascondimento, stampanti di prova, stampa periodica di manutenzione e stampa di prova per le fisiche.
-- **Backup**: programmati per amministratore, cifrati con una chiave di recupero, ripristinabili da riga di comando.
-- **Portale in 5 lingue**: inglese, italiano, spagnolo, russo, cinese semplificato; scelta per utente. La documentazione (inglese e italiano) si legge dentro il portale, per gli amministratori.
+- **Portale in 5 lingue**: inglese, italiano, spagnolo, russo, cinese semplificato; scelta per utente. La documentazione (inglese e italiano) si legge dentro il portale.
 
 ## Stato
 
@@ -59,7 +47,6 @@ L'elenco completo è in [docs/it/limiti.md](docs/it/limiti.md). Quelli da conosc
 - **Un gateway per ogni stampante USB** e **uno per ogni database SQLite** (nessuna alta disponibilità).
 - **Il TLS è obbligatorio**: installa il certificato autofirmato sui client o usa quello della tua CA.
 - I **nomi dei file** stampati sono cifrati nel database (chiave da `SPOOLSTEWARD_SECRET_KEY`: non cambiarla); il resto no. Vedi [protezione-dati.md](docs/it/protezione-dati.md).
-- Le traduzioni in spagnolo, russo e cinese non sono riviste da madrelingua.
 
 ## Installazione (Docker)
 

@@ -30,14 +30,13 @@ after a number of days you choose. The row always stays, with everything else. D
 | `failed` | Accepted but the printer or scanner could not carry it out. Does not count |
 | `canceled` | Stopped before printing, by the user, an administrator or the scanning program. Quota is freed |
 
-The page shows 30 rows at a time and is readable on a phone. It has an **Automatic refresh** switch (the interval is set in *Settings*, default 30 s; with 0 the switch starts off and uses 30 s when turned on; the browser remembers the choice). Long texts are shortened with «…» and open in full in a popup. Filters and **CSV export** are available (formula injection is neutralised). The *Cancel* button stops a queued job (the owner's identity is used).
+It has an **Automatic refresh** switch (the interval is set in *Settings*, default 30 s; with 0 the switch starts off and uses 30 s when turned on; the browser remembers the choice). Long texts are shortened with «…» and open in full in a popup. Filters and **CSV export** are available. The *Cancel* button stops a queued job (the owner's identity is used).
 
 Scans without credentials (anonymous eSCL) show the caller's IP and host name in the information column. A scan made through a scan window shows the same icon with the address it came from. A request refused because it came from another address than the one the window was opened for is a *denied* row under the window's owner; the icon shows the two addresses.
 
 ### Usage report
 
-*Report* (button next to *Export CSV* in `/admin/jobs`, page `/admin/report`) ranks the users by pages printed in a period. You choose the period with a button (*Today*, *Last 7 days*, *This month*, *Last month*, *Last 30 days*, *This year*) or by typing the two dates as `2026-10-31` (year-month-day; there is no calendar pop-up, whose look and language would depend on the browser; default: the last 30 days),
-how many users to list, the groups to **leave out** (by the group each user has now; a deleted account has none and is always counted), and **Detailed report**, which adds the prints per
+*Report* (button next to *Export CSV* in `/admin/jobs`, page `/admin/report`) ranks the users by pages printed in a period. You choose the period with a button (*Today*, *Last 7 days*, *This month*, *Last month*, *Last 30 days*, *This year*) or by typing the two dates as `2026-10-31` (year-month-day), how many users to list, the groups to **leave out** and **Detailed report**, which adds the prints per
 printer for each user. It can be shown in the page or downloaded as **CSV** or **PDF**. Only prints count (completed, waiting or running); failed and cancelled ones and scans do not.
 Rows already moved to a compressed archive are not read: the page warns when the period reaches back that far. The PDF is in English and uses the standard fonts, so names with
 Cyrillic or Chinese letters show as `?` there; the CSV keeps them.
@@ -83,5 +82,4 @@ copied by hand. It is included in the backups ([backup.md](backup.md)).
 
 ## 5. Privacy
 
-The database and the archives are **not encrypted** and contain the names of printed files, which are personal data:
-protect `data/` and the volume like personal data.
+The archives are **not encrypted** and the database only partly: protect `data/` and the volume like personal data.

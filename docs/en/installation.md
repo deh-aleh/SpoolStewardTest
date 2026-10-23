@@ -30,7 +30,6 @@ tar xzf spoolsteward-$VERSION.tar.gz && cd spoolsteward-$VERSION
 
 # 1. names / IPs by which clients will reach the server (they go into the TLS certificate)
 scripts/docker-init.sh print.lan 192.168.1.50
-#    it must print "created .env": if it prints "kept the existing .env", this folder already had one (§3.1)
 
 # 2. settings (RADIUS is optional: write none in host and secret to use local accounts only)
 $EDITOR .env

@@ -30,14 +30,13 @@ dopo un numero di giorni a scelta. La riga resta sempre, con tutto il resto. Det
 | `failed` | Accettato ma la stampante o lo scanner non ha potuto eseguirlo. Non conta |
 | `canceled` | Fermato prima di stampare, dall'utente, da un amministratore o dal programma di scansione. La quota si libera |
 
-La pagina mostra 30 righe alla volta e si legge bene da telefono. Ha un interruttore **Aggiornamento automatico** (l'intervallo si imposta nelle *Impostazioni*, predefinito 30 s; con 0 l'interruttore parte spento e usa 30 s quando lo accendi; la scelta la ricorda il browser). I testi lunghi sono accorciati con «…» e si leggono per intero in un popup. Sono disponibili filtri ed **esportazione CSV** (l'iniezione di formule è neutralizzata). Il pulsante *Annulla* ferma un job in coda (si usa l'identità del proprietario).
+Ha un interruttore **Aggiornamento automatico** (l'intervallo si imposta nelle *Impostazioni*, predefinito 30 s; con 0 l'interruttore parte spento e usa 30 s quando lo accendi; la scelta la ricorda il browser). I testi lunghi sono accorciati con «…» e si leggono per intero in un popup. Sono disponibili filtri ed **esportazione CSV**. Il pulsante *Annulla* ferma un job in coda (si usa l'identità del proprietario).
 
 Le scansioni senza credenziali (eSCL anonimo) mostrano IP e nome host di chi chiama nella colonna delle informazioni. Una scansione fatta con una finestra di scansione mostra la stessa icona con l'indirizzo da cui è arrivata. Una richiesta rifiutata perché arrivava da un indirizzo diverso da quello per cui è stata aperta la finestra è una riga *negata* a nome del proprietario della finestra; l'icona mostra i due indirizzi.
 
 ### Report di utilizzo
 
-*Report* (pulsante accanto a *Esporta CSV* in `/admin/jobs`, pagina `/admin/report`) ordina gli utenti per pagine stampate in un periodo. Scegli il periodo con un pulsante (*Oggi*, *Ultimi 7 giorni*, *Questo mese*, *Mese scorso*, *Ultimi 30 giorni*, *Quest'anno*) oppure scrivendo le due date come `2026-10-31` (anno-mese-giorno; non c'è il calendario a comparsa, perché il suo aspetto e la sua lingua dipenderebbero dal browser; predefinito: ultimi 30 giorni),
-quanti utenti elencare, i gruppi da **escludere** (secondo il gruppo che ogni utente ha adesso; un account eliminato non ne ha e viene sempre contato) e **Report dettagliato**, che aggiunge
+*Report* (pulsante accanto a *Esporta CSV* in `/admin/jobs`, pagina `/admin/report`) ordina gli utenti per pagine stampate in un periodo. Scegli il periodo con un pulsante (*Oggi*, *Ultimi 7 giorni*, *Questo mese*, *Mese scorso*, *Ultimi 30 giorni*, *Quest'anno*) oppure scrivendo le due date come `2026-10-31` , quanti utenti elencare, i gruppi da **escludere** e **Report dettagliato**, che aggiunge
 per ogni utente le stampe per stampante. Si può vedere nella pagina o scaricare in **CSV** o **PDF**. Contano solo le stampe (completate, in attesa o in corso); quelle fallite o annullate e le scansioni no.
 Le righe già spostate in un archivio compresso non vengono lette: la pagina avvisa quando il periodo arriva fin lì. Il PDF è in inglese e usa i font standard, quindi i nomi con
 lettere cirilliche o cinesi vi compaiono come `?`; il CSV li conserva.
@@ -84,5 +83,4 @@ La cartella deve essere scrivibile dall'utente del contenitore; sta sull'host, f
 
 ## 5. Privacy
 
-Il database e gli archivi **non sono cifrati** e contengono i nomi dei file stampati, che sono dati personali: proteggi `data/` e il
-volume come dati personali.
+Gli archivi **non sono cifrati** e il database lo è solo parzialmente: proteggi `data/` e il volume come dati personali.

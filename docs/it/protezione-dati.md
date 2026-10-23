@@ -45,8 +45,8 @@ contengono restano, cifrati. Da quando accendi la retention, i file nuovi dell'a
 
 I nomi sono cifrati con una chiave ricavata da `SPOOLSTEWARD_SECRET_KEY` (in `.env`, creata da `scripts/docker-init.sh`).
 
-> **Se cambi o perdi `SPOOLSTEWARD_SECRET_KEY`, i nomi già salvati non si leggono più**: al loro posto il portale mostra `[encrypted]`. Il resto continua a funzionare
-> (le sessioni si azzerano e tutti rifanno il login). Ripristinando la vecchia chiave i nomi tornano leggibili.
+> **Se cambi o perdi `SPOOLSTEWARD_SECRET_KEY`, i nomi dei file salvati non si leggono più**: al loro posto il portale mostra `[encrypted]`. Il resto continua a funzionare
+> (le sessioni si azzerano e tutti rifanno il login).
 
 - I backup **cifrati** includono `.env`, quindi anche la chiave; quelli non cifrati no (e senza la chiave i nomi che contengono non si leggono: è voluto).
 - Se la chiave è `none` il gateway non cifra niente (e avvisa nel log e nella campanella), perché una chiave diversa a ogni avvio renderebbe i nomi illeggibili al riavvio dopo.

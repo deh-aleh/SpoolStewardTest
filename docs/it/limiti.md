@@ -11,7 +11,7 @@ Ciò che SpoolSteward **non** fa (ancora) o fa con delle riserve. La versione br
   Windows/macOS: lì funzionano solo le stampanti di rete e non si annuncia nulla).
 - Un gateway per stampante USB (`ipp-usb` la vuole in esclusiva). Il suo contenitore vede tutti i dispositivi USB dell'host (necessario per il collegamento a caldo).
 - Il database è SQLite (un file): un solo gateway, nessuna alta disponibilità, nessun database esterno.
-- Le immagini pubblicate esistono solo per amd64 e arm64 (niente ARM a 32 bit).
+- Le immagini pubblicate esistono solo per amd64 e arm64.
 - `scripts/update.sh` scarica il pacchetto della release e sostituisce `docker-compose.yml` e gli script, mai `.env`, `config/` e `data/`. Non funziona in una cartella
   clonata con git (lì si usa `git pull`). Le opzioni nuove di una versione non vengono scritte nel tuo `.env`: funzionano con il valore predefinito; per vederle
   confronta `.env` con `docker/env.example`.
@@ -20,13 +20,11 @@ Ciò che SpoolSteward **non** fa (ancora) o fa con delle riserve. La versione br
 - Backup su una condivisione di rete: i permessi dei file li decide il montaggio (usa la cifratura). Una condivisione smontata non riceve backup: l'opzione
   «scrivi solo se montato» è attiva di default per i backup creati dal portale e il portale avvisa quando un backup salta. Il backup *Generale* di `.env` ha l'opzione spenta
   di default (va attivata e preparata a mano, vedi [backup.md](backup.md)).
-- Tornare a una versione precedente dopo una migrazione del database richiede il ripristino di un backup: `scripts/update.sh` lo propone da solo quando la versione
-  vecchia non parte. Le migrazioni nuove devono solo aggiungere (la versione vecchia continua a poter leggere il database), ma non è una garanzia per ogni caso.
+- Tornare a una versione precedente dopo una migrazione del database richiede il ripristino di un backup: `scripts/update.sh`.
 - I **nomi dei file stampati sono cifrati** nel database e nell'archivio audit (chiave derivata da `SPOOLSTEWARD_SECRET_KEY`: se la cambi non si leggono più). Il resto del
   database non è cifrato (nomi utente, gruppi, nomi delle stampanti, registro admin): per proteggere tutto cifra il disco, vedi [protezione-dati.md](protezione-dati.md).
   Anche CUPS tiene i nomi dei suoi ultimi job (fino a 2.000) nel proprio volume: il pulsante e la retention dei nomi non li toccano.
 - Certificati: i dispositivi devono fidarsi della CA aziendale; l'annuncio usa l'IP, quindi il certificato deve elencarlo (il portale avvisa se non è così).
-  `scripts/cert-sync.sh` **copia** il certificato da chi lo rinnova ma non lo rinnova: per accorgersi di un rinnovo fallito serve l'avviso di scadenza, spento di default.
   Dettagli in [certificati.md](certificati.md).
 
 ## 2. Quota
@@ -41,9 +39,6 @@ Ciò che SpoolSteward **non** fa (ancora) o fa con delle riserve. La versione br
   - **Il bianco e nero forzato può non funzionare** con alcune stampanti e alcuni driver, soprattutto con le immagini che il telefono ha già trasformato in pixel a colori (iPhone / AirPrint). Per una garanzia usa `SPOOLSTEWARD_PERMISSION_MODE=refuse`. Il fronte-retro usa l'attributo standard `sides` ed è più affidabile, purché la coda dichiari la sua unità fronte-retro.
   - Con `refuse`, Windows e Android spesso rifiutano molti lavori, perché mandano solo fronte o colore in ogni lavoro. Il predefinito `adjust` lo evita.
   - L'annuncio in rete (mDNS) è uguale per tutti: le stampanti che una persona non può usare si vedono comunque, e il lavoro viene rifiutato. L'elenco delle stampanti che il gateway dà dopo l'accesso le nasconde.
-  - Gli orari si controllano quando il lavoro viene inviato, non mentre stampa. C'è una sola fascia (giorni + due ore) per gruppo o utente.
-  - La scansione non è limitata. L'amministratore di emergenza è esente dai permessi e dalle quote.
-  - Un permesso chiesto viene concesso per sempre o fino a una data, non per un numero di stampe o di ore d'uso.
 
 ## 3. Client
 
@@ -61,7 +56,6 @@ Ciò che SpoolSteward **non** fa (ancora) o fa con delle riserve. La versione br
 - Rilevamento USB automatico: una stampante servita da `ipp-usb` non viene mai presa dal backend usb di CUPS. Le stampanti senza IPP-su-USB richiedono un driver presente nell'immagine `cups` (inclusi brlaser, gutenprint, splix, foo2zjs). La convivenza fra backend usb di CUPS e `ipp-usb` sullo stesso bus con più stampanti è provata solo con un dispositivo alla volta. Stampanti provate finora: HP Smart Tank 7300 (tramite ipp-usb) e Brother DCP-7055 (backend usb di CUPS, brlaser).
 - Le code USB irraggiungibili da 8 h (configurabile) vengono tolte da sole; quelle di rete mai.
 
-- Il rilevamento di un dispositivo scollegato ritarda fino a ~30 s; per le code di rete è una prova TCP (nessuna informazione sulla carta).
 - Gli scanner si trovano da soli solo se rispondono a eSCL sulla porta IPP della coda o sulla 80; altrimenti `SPOOLSTEWARD_SCAN_URL`.
 - I contatori a vita vengono solo dal servizio web HP; le altre marche mostrano i dati IPP.
 - Una scansione consegnata sul client conta come completata anche se l'utente non salva il file.
@@ -77,7 +71,6 @@ Ciò che SpoolSteward **non** fa (ancora) o fa con delle riserve. La versione br
 
 - Backup integrati: solo SQLite; code CUPS non incluse (sono in `scripts/backup.sh`); i file di configurazione si ripristinano a mano;
   nessuna destinazione remota diretta; la passphrase non è recuperabile. `scripts/backup.sh restore` è provato solo a mano.
-- Il blocco dei login sopravvive al riavvio: i login falliti degli ultimi 5 minuti sono tenuti in `/data/login-lockout.json` (nel volume del gateway; nomi utente e indirizzi con gli orari, nessuna password). Se il file non si può scrivere il blocco resta solo in memoria e il log lo dice.
 - L'audit e il database non sono cifrati, salvo i nomi dei file (vedi §1 e [protezione-dati.md](protezione-dati.md)).
 
 ## 6. Lingue
@@ -87,5 +80,4 @@ Ciò che SpoolSteward **non** fa (ancora) o fa con delle riserve. La versione br
 - Il testo dell'audit conservato e i log del server restano in inglese.
 
 ## 7. Stato delle funzionalità
-
 Cosa è stato provato e cosa manca è nel [README](../../README.it.md#stato).

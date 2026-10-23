@@ -45,8 +45,8 @@ contain stay, encrypted. From the moment you turn retention on, the new archive 
 
 Names are encrypted with a key derived from `SPOOLSTEWARD_SECRET_KEY` (in `.env`, created by `scripts/docker-init.sh`).
 
-> **If you change or lose `SPOOLSTEWARD_SECRET_KEY`, the names already saved can no longer be read**: the portal shows `[encrypted]` in their place. Everything else keeps working
-> (sessions are reset and everybody logs in again). Putting the old key back makes the names readable again.
+> **If you change or lose `SPOOLSTEWARD_SECRET_KEY`, the file names already saved can no longer be read**: the portal shows `[encrypted]` in their place. Everything else keeps working
+> (sessions are reset and everybody logs in again).
 
 - **Encrypted** backups include `.env`, so the key too; unencrypted ones do not (and without the key the names they contain cannot be read: that is intended).
 - If the key is `none` the gateway encrypts nothing (and warns in the log and in the bell), because a different key at every start would make names unreadable after the next restart.

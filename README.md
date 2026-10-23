@@ -12,27 +12,16 @@
 
 A printer on a shared network lets anyone print as much as they like, and nobody can tell afterwards who printed what. SpoolSteward sits between people and the printer: everyone signs in, each person or group gets a limit (pages, colour, one-sided), and every print and scan is written down. It is for homes, offices and schools that share a printer and want to decide who prints how much, and to see what was printed.
 
-Technically it is a gateway in front of CUPS (IPP) with a web portal. It signs people in (local accounts and/or RADIUS), decides the
-user name CUPS sees, applies the limits, records who printed and scanned what, and forwards the job to CUPS. CUPS and ipp-usb are used
-unmodified, and the gateway is the only way in.
-
-```
-IPP client ──ipps (TLS + Basic)──▶ gateway ──unix socket──▶ CUPS ──internal net──▶ ipp-usb ──USB──▶ printer
-browser ───────https───────────▶     │  └─▶ DB (SQLite): users, groups, rules, audit
-                                     └────▶ RADIUS (optional)           portal: /login, /admin (admins), /me (users)
-```
+For more: [docs/en/architecture.md](docs/en/architecture.md)
 
 ## What it does
 
 - **Accounts**: local (argon2id) and/or RADIUS; personal, revocable **print keys** so a domain password is never stored on a PC or phone.
-- **Quotas**: jobs and pages per week or month, per group with per-user overrides; users ask for more, administrators approve.
-- **Permissions**: colour, one-sided printing, which printers and at what hours, per group with per-user overrides; users ask for what they lack, for good or until a date.
-- **Printing**: IPP/IPPS for computers, **print from the browser** for any phone, LAN announcement (AirPrint/Mopria).
-- **Scanning**: eSCL through the gateway and from the portal, together with printing on the same USB device.
-- **Audit**: who printed/scanned what (real pages), a separate log of administrative actions, kept forever with verified compressed archives.
+- **Quotas and permissions**: jobs and pages per week or month, colour, one-sided printing, which printers and at what hours, per group with per-user overrides; users ask for more, administrators approve.
+- **Printing and scanning**: IPP/IPPS for computers, print from the browser for any phone, LAN announcement (AirPrint/Mopria), eSCL through the gateway and from the portal.
+- **Audit and backups**: who printed/scanned what (real pages), kept forever with compressed archives. Backups scheduled per administrator, encrypted with a recovery key, restorable from the command line.
 - **Printers**: status, ink and counters, block/hide, test printers, periodic maintenance print and test print for physical printers.
-- **Backups**: scheduled per administrator, encrypted with a recovery key, restorable from the command line.
-- **Portal in 5 languages**: English, Italian, Spanish, Russian, Simplified Chinese; chosen per user. The documentation (English and Italian) is readable inside the portal by administrators.
+- **Portal in 5 languages**: English, Italian, Spanish, Russian, Simplified Chinese; chosen per user. The documentation (English and Italian) is readable inside the portal.
 
 ## Status
 
@@ -59,7 +48,6 @@ The full list is in [docs/en/limitations.md](docs/en/limitations.md). The ones t
 - **One gateway per USB printer** and **one per SQLite database** (no high availability).
 - **TLS is mandatory**: install the self-signed certificate on clients or use your CA's.
 - Printed **file names are encrypted** in the database (key from `SPOOLSTEWARD_SECRET_KEY`: do not change it); the rest is not. See [data-protection.md](docs/en/data-protection.md).
-- Spanish, Russian and Chinese translations are not reviewed by native speakers.
 
 ## Install (Docker)
 
