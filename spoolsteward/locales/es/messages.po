@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spoolsteward VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-22 16:56+0200\n"
+"POT-Creation-Date: 2026-10-23 21:20+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: es\n"
@@ -1687,27 +1687,32 @@ msgstr "La pasarela está en mantenimiento: la impresión y el escaneo están su
 msgid "The maintenance is over: printing and scanning work again."
 msgstr "El mantenimiento ha terminado: la impresión y el escaneo funcionan de nuevo."
 
-#: spoolsteward/admin/templates/_own_notices.html:72
-#: spoolsteward/admin/templates/notices.html:45
+#: spoolsteward/admin/templates/_own_notices.html:73
+#: spoolsteward/admin/templates/notices.html:46
 msgid "<b>Save the secret key in a safe place.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in the <span class=\"mono\">.env</span> file encrypts the file names kept in the audit and signs the portal sessions. A backup without encryption does not contain it: if the server breaks and you restore the backup with a new key, the names stay unreadable (<span class=\"mono\">[encrypted]</span>) for good. Copy the line from <span class=\"mono\">.env</span> into a password manager, or make encrypted backups (they include <span class=\"mono\">.env</span>)."
 msgstr "<b>Guarda la clave secreta en un lugar seguro.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> en el archivo <span class=\"mono\">.env</span> cifra los nombres de archivo guardados en la auditoría y firma las sesiones del portal. Una copia de seguridad sin cifrado no la contiene: si el servidor se estropea y restauras la copia con una clave nueva, los nombres quedan ilegibles (<span class=\"mono\">[encrypted]</span>) para siempre. Copia la línea de <span class=\"mono\">.env</span> en un gestor de contraseñas, o haz copias cifradas (incluyen <span class=\"mono\">.env</span>)."
 
-#: spoolsteward/admin/templates/_own_notices.html:76
+#: spoolsteward/admin/templates/_own_notices.html:75
+#: spoolsteward/admin/templates/notices.html:48
+msgid "<b>Save the secret key in a safe place.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in the <span class=\"mono\">.env</span> file signs the portal sessions and proves to the gateway who the network announcer is. Whoever knows it can forge a login session, so keep it private. If it is lost, everybody has to sign in again and the network announcement stays off until a new key is set. A backup without encryption does not contain it: copy the line from <span class=\"mono\">.env</span> into a password manager, or make encrypted backups (they include <span class=\"mono\">.env</span>)."
+msgstr "<b>Guarda la clave secreta en un lugar seguro.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> en el archivo <span class=\"mono\">.env</span> firma las sesiones del portal y demuestra al gateway quién es el anunciador de red. Quien la conozca puede falsificar una sesión de acceso, así que mantenla privada. Si se pierde, todos deben volver a iniciar sesión y el anuncio en la red queda apagado hasta que se ponga una clave nueva. Una copia de seguridad sin cifrado no la contiene: copia la línea de <span class=\"mono\">.env</span> en un gestor de contraseñas, o haz copias cifradas (incluyen <span class=\"mono\">.env</span>)."
+
+#: spoolsteward/admin/templates/_own_notices.html:80
 msgid "dismissed"
 msgstr "descartado"
 
-#: spoolsteward/admin/templates/_own_notices.html:77
-#: spoolsteward/admin/templates/notices.html:56
+#: spoolsteward/admin/templates/_own_notices.html:81
+#: spoolsteward/admin/templates/notices.html:60
 msgid "Dismiss"
 msgstr "Descartar"
 
-#: spoolsteward/admin/templates/_own_notices.html:81
-#: spoolsteward/admin/templates/notices.html:60
+#: spoolsteward/admin/templates/_own_notices.html:85
+#: spoolsteward/admin/templates/notices.html:64
 msgid "No notices."
 msgstr "Sin avisos."
 
-#: spoolsteward/admin/templates/_own_notices.html:84
-#: spoolsteward/admin/templates/notices.html:63
+#: spoolsteward/admin/templates/_own_notices.html:88
+#: spoolsteward/admin/templates/notices.html:67
 msgid "Dismiss all"
 msgstr "Descartar todos"
 
@@ -3462,12 +3467,12 @@ msgid "What concerns you: what the administrators did with your account (keys, g
 msgstr "Lo que te concierne: lo que hicieron los administradores con tu cuenta (claves, grupo, cuota, solicitudes) y los problemas de la impresora donde espera tu impresión."
 
 #: spoolsteward/admin/templates/me_notices.html:10
-#: spoolsteward/admin/templates/notices.html:65
+#: spoolsteward/admin/templates/notices.html:69
 msgid "Hide dismissed"
 msgstr "Ocultar descartados"
 
 #: spoolsteward/admin/templates/me_notices.html:10
-#: spoolsteward/admin/templates/notices.html:65
+#: spoolsteward/admin/templates/notices.html:69
 msgid "Show dismissed too"
 msgstr "Mostrar también los descartados"
 
@@ -3490,7 +3495,7 @@ msgid "Last time"
 msgstr "Última vez"
 
 #: spoolsteward/admin/templates/notices.html:17
-#: spoolsteward/admin/templates/notices.html:54
+#: spoolsteward/admin/templates/notices.html:58
 msgid "Times"
 msgstr "Veces"
 
@@ -3569,22 +3574,22 @@ msgstr "<b>Tinta o tóner a punto de agotarse</b> en la impresora “%(printer)s
 msgid "<b>Problem</b> on the printer “%(printer)s”: %(what)s."
 msgstr "<b>Problema</b> en la impresora “%(printer)s”: %(what)s."
 
-#: spoolsteward/admin/templates/notices.html:47
+#: spoolsteward/admin/templates/notices.html:51
 #, python-format
 msgid "<b>The secret key has changed</b> since the previous start (<span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in <span class=\"mono\">.env</span>). %(count)s file names in the audit were encrypted with the old key and now show as <span class=\"mono\">[encrypted]</span>. If the change was not wanted (for example a restore with a new <span class=\"mono\">.env</span>), put the old key back and restart: the names become readable again."
 msgstr "<b>La clave secreta ha cambiado</b> desde el arranque anterior (<span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> en <span class=\"mono\">.env</span>). %(count)s nombres de archivo de la auditoría se cifraron con la clave antigua y ahora aparecen como <span class=\"mono\">[encrypted]</span>. Si el cambio no era deseado (por ejemplo, una restauración con un <span class=\"mono\">.env</span> nuevo), vuelve a poner la clave antigua y reinicia: los nombres vuelven a ser legibles."
 
-#: spoolsteward/admin/templates/notices.html:49
+#: spoolsteward/admin/templates/notices.html:53
 #, python-format
-msgid "<b>No secret key is set.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> is missing from <span class=\"mono\">.env</span> or set to <span class=\"mono\">none</span>: the file names in the audit are stored without encryption, everybody has to sign in again after every restart and the printers are not announced on the network (mDNS). Write a random value (the output of <span class=\"mono\">openssl rand -hex 32</span>) after <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> in <span class=\"mono\">.env</span>, run <span class=\"mono\">docker compose up -d</span> and save the key in a safe place. <a href=\"%(url)s\">Step by step</a>."
-msgstr "<b>No hay ninguna clave secreta configurada.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> falta en <span class=\"mono\">.env</span> o vale <span class=\"mono\">none</span>: los nombres de archivo de la auditoría se guardan sin cifrar, todos tienen que volver a iniciar sesión después de cada reinicio y las impresoras no se anuncian en la red (mDNS). Escribe un valor aleatorio (la salida de <span class=\"mono\">openssl rand -hex 32</span>) después de <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> en <span class=\"mono\">.env</span>, ejecuta <span class=\"mono\">docker compose up -d</span> y guarda la clave en un lugar seguro. <a href=\"%(url)s\">Paso a paso</a>."
+msgid "<b>No secret key is set.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> is missing from <span class=\"mono\">.env</span> or set to <span class=\"mono\">none</span>: everybody has to sign in again after every restart and the printers are not announced on the network (mDNS). Write a random value (the output of <span class=\"mono\">openssl rand -hex 32</span>) after <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> in <span class=\"mono\">.env</span>, run <span class=\"mono\">docker compose up -d</span> and save the key in a safe place. <a href=\"%(url)s\">Step by step</a>."
+msgstr "<b>No hay ninguna clave secreta configurada.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> falta en <span class=\"mono\">.env</span> o vale <span class=\"mono\">none</span>: todos tienen que volver a iniciar sesión después de cada reinicio y las impresoras no se anuncian en la red (mDNS). Escribe un valor aleatorio (la salida de <span class=\"mono\">openssl rand -hex 32</span>) después de <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> en <span class=\"mono\">.env</span>, ejecuta <span class=\"mono\">docker compose up -d</span> y guarda la clave en un lugar seguro. <a href=\"%(url)s\">Paso a paso</a>."
 
-#: spoolsteward/admin/templates/notices.html:51
+#: spoolsteward/admin/templates/notices.html:55
 #, python-format
 msgid "<b>Scans without login are refused: the guest name is already taken.</b> A scan app sent no user name and password, and the account “%(name)s” that would receive its scans already exists as a real account (with a password, from RADIUS, or an administrator), so it is not used. Set a name nobody uses in <span class=\"mono\">SPOOLSTEWARD_ESCL_GUEST_USERNAME</span> in <span class=\"mono\">.env</span> and restart the portal."
 msgstr "<b>Se rechazan los escaneos sin inicio de sesión: el nombre de invitado ya está ocupado.</b> Una aplicación de escaneo no envió usuario ni contraseña, y la cuenta “%(name)s” que recibiría sus escaneos ya existe como cuenta real (con contraseña, de RADIUS o un administrador), por lo que no se usa. Indica un nombre que nadie use en <span class=\"mono\">SPOOLSTEWARD_ESCL_GUEST_USERNAME</span> del archivo <span class=\"mono\">.env</span> y reinicia el portal."
 
-#: spoolsteward/admin/templates/notices.html:55
+#: spoolsteward/admin/templates/notices.html:59
 #, python-format
 msgid "dismissed by %(who)s"
 msgstr "descartado por %(who)s"

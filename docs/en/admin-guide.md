@@ -118,8 +118,8 @@ The kinds of notice:
 | **Paper jam** / **Out of paper** | A physical printer reports it (checked once a minute, reported after two consecutive checks) | the printer stops reporting it |
 | **Ink or toner is out** / **running low** | Out: level 0, or the printer's state reason says so. Low: the printer's own low mark. Both name the supplies | the printer stops reporting it |
 | **Save the secret key in a safe place** | Once, after the first start: copy `SPOOLSTEWARD_SECRET_KEY` from `.env`. Goes to the first-run administrator (`SPOOLSTEWARD_BOOTSTRAP_ADMIN_USERNAME`) in their own bell, or to all administrators if that account does not exist or `SPOOLSTEWARD_BOOTSTRAP_ADMIN=false`. Not repeated at a restart; repeated once if the key changes | never (dismiss it) |
-| **The secret key has changed** | `SPOOLSTEWARD_SECRET_KEY` differs from the previous start; says how many file names can no longer be read | never (dismiss it) |
-| **No secret key is set** | `SPOOLSTEWARD_SECRET_KEY` is `none` or missing: file names are not encrypted and sessions end at every restart | a key is set |
+| **The secret key has changed** | `SPOOLSTEWARD_SECRET_KEY` differs from the previous start; says how many encrypted file names can no longer be read | never (dismiss it) |
+| **No secret key is set** | `SPOOLSTEWARD_SECRET_KEY` is `none` or missing: sessions end at every restart and the printers are not announced (mDNS) | a key is set |
 
 **Printer problems and users.** The notices above about printers are always for administrators. With `SPOOLSTEWARD_PRINTER_ALERTS_USERS=true` (default) the people who have a
 print waiting on that printer get a notice in their own bell too (jam, paper and ink out; not "running low"), once per problem and only them, not everybody.
@@ -145,7 +145,7 @@ written to the container log with the same limit:
 
 - Health: `GET /healthz` → 200 or 503, body `{"status":"ok"}`. It needs no login. `SPOOLSTEWARD_HEALTHZ_INFO=version,printers` adds the version and the number of queues (usb / network / virtual / total); the default is the status only. Logs: `docker compose logs gateway`.
 - Migrations run automatically at start. Back up before updating an important database.
-- File names in the audit: the green/red button at the top right of the *Audit* page stops saving them, `.env` can erase them after some days, and they are stored encrypted ([data-protection.md](data-protection.md)). Do not change `SPOOLSTEWARD_SECRET_KEY`.
+- File names in the audit: the green/red button at the top right of the *Audit* page stops saving them, `.env` can erase them after some days or encrypt them ([data-protection.md](data-protection.md)).
 - Updates: a note appears at the top of the portal when a newer release exists. Update with `scripts/update.sh`, or with the *Update* button in the menu *Backup* when the optional updater container runs and a scheduled backup works ([installation.md](installation.md#5-updates)). The updater controls Docker, which is full control of the server: keep it off if you do not need it.
 - Do not leave test accounts or test printers on a real installation.
 - Protect `config/`, `.env`, `data/` and the volume: they hold secrets and personal data.

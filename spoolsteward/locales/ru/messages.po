@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spoolsteward VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-22 16:56+0200\n"
+"POT-Creation-Date: 2026-10-23 21:20+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru\n"
@@ -1693,27 +1693,32 @@ msgstr "Шлюз находится на обслуживании: печать 
 msgid "The maintenance is over: printing and scanning work again."
 msgstr "Обслуживание завершено: печать и сканирование снова работают."
 
-#: spoolsteward/admin/templates/_own_notices.html:72
-#: spoolsteward/admin/templates/notices.html:45
+#: spoolsteward/admin/templates/_own_notices.html:73
+#: spoolsteward/admin/templates/notices.html:46
 msgid "<b>Save the secret key in a safe place.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in the <span class=\"mono\">.env</span> file encrypts the file names kept in the audit and signs the portal sessions. A backup without encryption does not contain it: if the server breaks and you restore the backup with a new key, the names stay unreadable (<span class=\"mono\">[encrypted]</span>) for good. Copy the line from <span class=\"mono\">.env</span> into a password manager, or make encrypted backups (they include <span class=\"mono\">.env</span>)."
 msgstr "<b>Сохраните секретный ключ в надёжном месте.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> в файле <span class=\"mono\">.env</span> шифрует имена файлов в аудите и подписывает сеансы портала. Резервная копия без шифрования его не содержит: если сервер сломается и вы восстановите копию с новым ключом, имена навсегда останутся нечитаемыми (<span class=\"mono\">[encrypted]</span>). Скопируйте строку из <span class=\"mono\">.env</span> в менеджер паролей или делайте зашифрованные копии (они включают <span class=\"mono\">.env</span>)."
 
-#: spoolsteward/admin/templates/_own_notices.html:76
+#: spoolsteward/admin/templates/_own_notices.html:75
+#: spoolsteward/admin/templates/notices.html:48
+msgid "<b>Save the secret key in a safe place.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in the <span class=\"mono\">.env</span> file signs the portal sessions and proves to the gateway who the network announcer is. Whoever knows it can forge a login session, so keep it private. If it is lost, everybody has to sign in again and the network announcement stays off until a new key is set. A backup without encryption does not contain it: copy the line from <span class=\"mono\">.env</span> into a password manager, or make encrypted backups (they include <span class=\"mono\">.env</span>)."
+msgstr "<b>Сохраните секретный ключ в надёжном месте.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> в файле <span class=\"mono\">.env</span> подписывает сеансы портала и подтверждает шлюзу, что сетевой анонсер — это именно он. Тот, кто знает ключ, может подделать сеанс входа, поэтому храните его в тайне. Если ключ потерян, всем придётся войти заново, а сетевой анонс останется выключенным, пока не будет задан новый ключ. Резервная копия без шифрования его не содержит: скопируйте строку из <span class=\"mono\">.env</span> в менеджер паролей или делайте зашифрованные копии (они включают <span class=\"mono\">.env</span>)."
+
+#: spoolsteward/admin/templates/_own_notices.html:80
 msgid "dismissed"
 msgstr "скрыто"
 
-#: spoolsteward/admin/templates/_own_notices.html:77
-#: spoolsteward/admin/templates/notices.html:56
+#: spoolsteward/admin/templates/_own_notices.html:81
+#: spoolsteward/admin/templates/notices.html:60
 msgid "Dismiss"
 msgstr "Закрыть"
 
-#: spoolsteward/admin/templates/_own_notices.html:81
-#: spoolsteward/admin/templates/notices.html:60
+#: spoolsteward/admin/templates/_own_notices.html:85
+#: spoolsteward/admin/templates/notices.html:64
 msgid "No notices."
 msgstr "Уведомлений нет."
 
-#: spoolsteward/admin/templates/_own_notices.html:84
-#: spoolsteward/admin/templates/notices.html:63
+#: spoolsteward/admin/templates/_own_notices.html:88
+#: spoolsteward/admin/templates/notices.html:67
 msgid "Dismiss all"
 msgstr "Закрыть все"
 
@@ -3469,12 +3474,12 @@ msgid "What concerns you: what the administrators did with your account (keys, g
 msgstr "Что касается вас: что администраторы сделали с вашей учётной записью (ключи, группа, квота, запросы) и неполадки принтера, на котором ждёт ваша печать."
 
 #: spoolsteward/admin/templates/me_notices.html:10
-#: spoolsteward/admin/templates/notices.html:65
+#: spoolsteward/admin/templates/notices.html:69
 msgid "Hide dismissed"
 msgstr "Скрыть закрытые"
 
 #: spoolsteward/admin/templates/me_notices.html:10
-#: spoolsteward/admin/templates/notices.html:65
+#: spoolsteward/admin/templates/notices.html:69
 msgid "Show dismissed too"
 msgstr "Показать и закрытые"
 
@@ -3497,7 +3502,7 @@ msgid "Last time"
 msgstr "Последний раз"
 
 #: spoolsteward/admin/templates/notices.html:17
-#: spoolsteward/admin/templates/notices.html:54
+#: spoolsteward/admin/templates/notices.html:58
 msgid "Times"
 msgstr "Раз"
 
@@ -3576,22 +3581,22 @@ msgstr "<b>Чернила или тонер заканчиваются</b> в п
 msgid "<b>Problem</b> on the printer “%(printer)s”: %(what)s."
 msgstr "<b>Неполадка</b> в принтере «%(printer)s»: %(what)s."
 
-#: spoolsteward/admin/templates/notices.html:47
+#: spoolsteward/admin/templates/notices.html:51
 #, python-format
 msgid "<b>The secret key has changed</b> since the previous start (<span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in <span class=\"mono\">.env</span>). %(count)s file names in the audit were encrypted with the old key and now show as <span class=\"mono\">[encrypted]</span>. If the change was not wanted (for example a restore with a new <span class=\"mono\">.env</span>), put the old key back and restart: the names become readable again."
 msgstr "<b>Секретный ключ изменился</b> с прошлого запуска (<span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> в <span class=\"mono\">.env</span>). Имена файлов в аудите (%(count)s) были зашифрованы старым ключом и теперь показаны как <span class=\"mono\">[encrypted]</span>. Если изменение было случайным (например, восстановление с новым <span class=\"mono\">.env</span>), верните старый ключ и перезапустите: имена снова станут читаемыми."
 
-#: spoolsteward/admin/templates/notices.html:49
+#: spoolsteward/admin/templates/notices.html:53
 #, python-format
-msgid "<b>No secret key is set.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> is missing from <span class=\"mono\">.env</span> or set to <span class=\"mono\">none</span>: the file names in the audit are stored without encryption, everybody has to sign in again after every restart and the printers are not announced on the network (mDNS). Write a random value (the output of <span class=\"mono\">openssl rand -hex 32</span>) after <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> in <span class=\"mono\">.env</span>, run <span class=\"mono\">docker compose up -d</span> and save the key in a safe place. <a href=\"%(url)s\">Step by step</a>."
-msgstr "<b>Секретный ключ не задан.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> отсутствует в <span class=\"mono\">.env</span> или равен <span class=\"mono\">none</span>: имена файлов в журнале аудита хранятся без шифрования, после каждого перезапуска всем приходится входить заново, а принтеры не объявляются в сети (mDNS). Запишите случайное значение (вывод <span class=\"mono\">openssl rand -hex 32</span>) после <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> в <span class=\"mono\">.env</span>, выполните <span class=\"mono\">docker compose up -d</span> и сохраните ключ в надёжном месте. <a href=\"%(url)s\">Пошагово</a>."
+msgid "<b>No secret key is set.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> is missing from <span class=\"mono\">.env</span> or set to <span class=\"mono\">none</span>: everybody has to sign in again after every restart and the printers are not announced on the network (mDNS). Write a random value (the output of <span class=\"mono\">openssl rand -hex 32</span>) after <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> in <span class=\"mono\">.env</span>, run <span class=\"mono\">docker compose up -d</span> and save the key in a safe place. <a href=\"%(url)s\">Step by step</a>."
+msgstr "<b>Секретный ключ не задан.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> отсутствует в <span class=\"mono\">.env</span> или равен <span class=\"mono\">none</span>: после каждого перезапуска всем приходится входить заново, а принтеры не объявляются в сети (mDNS). Запишите случайное значение (вывод <span class=\"mono\">openssl rand -hex 32</span>) после <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> в <span class=\"mono\">.env</span>, выполните <span class=\"mono\">docker compose up -d</span> и сохраните ключ в надёжном месте. <a href=\"%(url)s\">Пошагово</a>."
 
-#: spoolsteward/admin/templates/notices.html:51
+#: spoolsteward/admin/templates/notices.html:55
 #, python-format
 msgid "<b>Scans without login are refused: the guest name is already taken.</b> A scan app sent no user name and password, and the account “%(name)s” that would receive its scans already exists as a real account (with a password, from RADIUS, or an administrator), so it is not used. Set a name nobody uses in <span class=\"mono\">SPOOLSTEWARD_ESCL_GUEST_USERNAME</span> in <span class=\"mono\">.env</span> and restart the portal."
 msgstr "<b>Сканирование без входа отклонено: имя гостя уже занято.</b> Приложение для сканирования не передало имя пользователя и пароль, а учётная запись «%(name)s», которая получала бы такие сканы, уже существует как настоящая (с паролем, из RADIUS или администратор), поэтому она не используется. Укажите имя, которое никто не использует, в <span class=\"mono\">SPOOLSTEWARD_ESCL_GUEST_USERNAME</span> в файле <span class=\"mono\">.env</span> и перезапустите портал."
 
-#: spoolsteward/admin/templates/notices.html:55
+#: spoolsteward/admin/templates/notices.html:59
 #, python-format
 msgid "dismissed by %(who)s"
 msgstr "закрыл(а): %(who)s"

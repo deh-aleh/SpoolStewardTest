@@ -2,19 +2,19 @@
 
 [Indice della documentazione](../README.md) · [English](../en/data-protection.md) · Italiano
 
-L'audit ([audit.md](audit.md)) registra chi ha stampato e scansionato cosa. Il **nome del file** è un dato personale, quindi è cifrato a riposo; questa pagina
-elenca cosa è protetto e cosa no, e le impostazioni che riducono ciò che il server conserva.
+L'audit ([audit.md](audit.md)) registra chi ha stampato e scansionato cosa. Il **nome del file** è un dato personale; questa pagina
+elenca cosa è protetto e cosa no, come cifrare i nomi e le impostazioni che riducono ciò che il server conserva.
 
 ## 1. Cosa è protetto e cosa no
 
 | Dato | Come è conservato |
 |---|---|
-| **Nome del file** stampato o scansionato | **Cifrato** nel database, nell'archivio audit (i file `.jsonl.gz`) e quindi anche nei backup |
+| **Nome del file** stampato o scansionato | In chiaro nel database. Con `SPOOLSTEWARD_ENCRYPT_FILE_NAMES=true` è **cifrato** nel database, nell'archivio audit (i file `.jsonl.gz`) e quindi anche nei backup |
 | Password degli account locali | Solo l'impronta (hash argon2): la password non si può ricavare |
 | Chiavi di stampa | Solo l'impronta (sha256) |
 | Nome utente, gruppi, nomi delle stampanti, registro delle azioni degli amministratori, motivi delle richieste (quota, gruppo, permesso) e note delle concessioni, permessi e orari consentiti, indirizzi IP | **In chiaro** nel database |
 | Quantità (pagine, data, stato di ogni stampa) | In chiaro: servono alle quote |
-| Il database come file | Non cifrato: chi copia il file legge tutto tranne i nomi dei file (salvati come `enc1:<base64>`, AES-256-GCM) |
+| Il database come file | Non cifrato: chi copia il file legge tutto, anche i nomi dei file se non li hai cifrati (cifrati sono salvati come `enc1:<base64>`, AES-256-GCM) |
 | I backup | Cifrati solo se scegli la cifratura nel menu *Backup* (consigliata) |
 
 ## 2. Il pulsante «Nomi dei file» (verde / rosso)
@@ -39,21 +39,25 @@ Se vuoi che i nomi spariscano dopo un po', accendi la retention in `.env` (poi `
 Una volta al giorno il gateway cancella il nome dalle righe più vecchie del numero di giorni scelto. **La riga resta** (chi, quando, pagine, stato): servono alle quote e ai conteggi.
 
 **Cosa non viene toccato.** I file dell'archivio audit già scritti sono immutabili (così si può dimostrare che non sono stati cambiati) e restano come sono: i nomi che
-contengono restano, cifrati. Da quando accendi la retention, i file nuovi dell'archivio non contengono più i nomi delle righe oltre il limite.
+contengono restano com'erano. Da quando accendi la retention, i file nuovi dell'archivio non contengono più i nomi delle righe oltre il limite.
 
-## 4. La chiave: non cambiare `SPOOLSTEWARD_SECRET_KEY`
+## 4. Cifrare i nomi dei file e la chiave
 
-I nomi sono cifrati con una chiave ricavata da `SPOOLSTEWARD_SECRET_KEY` (in `.env`, creata da `scripts/docker-init.sh`).
+Di default i nomi sono salvati in chiaro. Per cifrarli scrivi `SPOOLSTEWARD_ENCRYPT_FILE_NAMES=true` in `.env` e riavvia (`docker compose up -d`). La chiave si ricava da
+`SPOOLSTEWARD_SECRET_KEY` (in `.env`, creata da `scripts/docker-init.sh`). Si cifrano **solo i nomi**: il resto del database resta in chiaro, perché quote e filtri lo leggono
+con delle query. Per proteggere tutto, cifra il disco (§5).
 
-> **Se cambi o perdi `SPOOLSTEWARD_SECRET_KEY`, i nomi dei file salvati non si leggono più**: al loro posto il portale mostra `[encrypted]`. Il resto continua a funzionare
+- I nomi già salvati in chiaro si cifrano da soli al primo avvio, a pezzi, senza fermarsi.
+- Rimettendo l'impostazione a `false` i nomi nuovi tornano in chiaro; quelli già cifrati restano cifrati e leggibili finché la chiave non cambia.
+
+> **Se cambi o perdi `SPOOLSTEWARD_SECRET_KEY`, i nomi già cifrati non si leggono più**: al loro posto il portale mostra `[encrypted]`. Il resto continua a funzionare
 > (le sessioni si azzerano e tutti rifanno il login).
 
-- I backup **cifrati** includono `.env`, quindi anche la chiave; quelli non cifrati no (e senza la chiave i nomi che contengono non si leggono: è voluto).
-- Se la chiave è `none` il gateway non cifra niente (e avvisa nel log e nella campanella), perché una chiave diversa a ogni avvio renderebbe i nomi illeggibili al riavvio dopo.
-- **Tieni una copia della chiave fuori dal server** (un password manager): dopo il primo avvio l'amministratore del primo avvio trova un promemoria nella campanella, una volta sola. Se il gateway parte con una chiave diversa da quella dell'avvio precedente, lo dice nella campanella con il numero di nomi che non si leggono più ([backup.md](backup.md#salva-la-chiave-segreta)).
-- Se prima avevi dei nomi in chiaro, al primo avvio con la chiave il gateway li cifra da solo, a pezzi, senza fermarsi.
+- I backup **cifrati** includono `.env`, quindi anche la chiave; quelli non cifrati no (e senza la chiave i nomi cifrati che contengono non si leggono: è voluto).
+- Se la chiave è `none` il gateway non cifra niente, anche con `SPOOLSTEWARD_ENCRYPT_FILE_NAMES=true`, perché una chiave diversa a ogni avvio renderebbe i nomi illeggibili al riavvio dopo.
+- **Tieni una copia della chiave fuori dal server** (un password manager): vedi [backup.md](backup.md#salva-la-chiave-segreta). Se il gateway parte con una chiave diversa, la campanella dice quanti nomi non si leggono più.
 
-**La ricerca per nome file** nell'audit guarda nelle ultime 5.000 azioni che rispettano gli altri filtri (i nomi sono cifrati: per cercare si aprono uno a uno). La
+**La ricerca per nome file** nell'audit, con i nomi cifrati, guarda nelle ultime 5.000 azioni che rispettano gli altri filtri (per cercare si aprono uno a uno). La
 ricerca per utente non ha questo limite.
 
 ## 5. Cifrare il disco (la misura principale)

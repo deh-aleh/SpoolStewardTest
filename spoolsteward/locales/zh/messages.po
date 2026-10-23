@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spoolsteward VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-22 16:56+0200\n"
+"POT-Creation-Date: 2026-10-23 21:20+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: zh\n"
@@ -1681,27 +1681,32 @@ msgstr "网关正在维护：打印和扫描暂时停用。管理员结束维护
 msgid "The maintenance is over: printing and scanning work again."
 msgstr "维护已结束：打印和扫描已恢复。"
 
-#: spoolsteward/admin/templates/_own_notices.html:72
-#: spoolsteward/admin/templates/notices.html:45
+#: spoolsteward/admin/templates/_own_notices.html:73
+#: spoolsteward/admin/templates/notices.html:46
 msgid "<b>Save the secret key in a safe place.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in the <span class=\"mono\">.env</span> file encrypts the file names kept in the audit and signs the portal sessions. A backup without encryption does not contain it: if the server breaks and you restore the backup with a new key, the names stay unreadable (<span class=\"mono\">[encrypted]</span>) for good. Copy the line from <span class=\"mono\">.env</span> into a password manager, or make encrypted backups (they include <span class=\"mono\">.env</span>)."
 msgstr "<b>请把密钥保存在安全的地方。</b><span class=\"mono\">.env</span> 文件中的 <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> 用于加密审计中保存的文件名并签名门户会话。未加密的备份不包含它：如果服务器损坏而你用新密钥恢复备份，文件名将永远无法读取（<span class=\"mono\">[encrypted]</span>）。请把 <span class=\"mono\">.env</span> 中的这一行复制到密码管理器，或使用加密备份（其中包含 <span class=\"mono\">.env</span>）。"
 
-#: spoolsteward/admin/templates/_own_notices.html:76
+#: spoolsteward/admin/templates/_own_notices.html:75
+#: spoolsteward/admin/templates/notices.html:48
+msgid "<b>Save the secret key in a safe place.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in the <span class=\"mono\">.env</span> file signs the portal sessions and proves to the gateway who the network announcer is. Whoever knows it can forge a login session, so keep it private. If it is lost, everybody has to sign in again and the network announcement stays off until a new key is set. A backup without encryption does not contain it: copy the line from <span class=\"mono\">.env</span> into a password manager, or make encrypted backups (they include <span class=\"mono\">.env</span>)."
+msgstr "<b>请把密钥保存在安全的地方。</b><span class=\"mono\">.env</span> 文件中的 <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> 用于签名门户会话，并向网关证明网络公告程序的身份。知道它的人可以伪造登录会话，因此请妥善保密。如果丢失，所有人都需要重新登录，网络公告将保持关闭，直到设置新的密钥。未加密的备份不包含它：请将 <span class=\"mono\">.env</span> 中的这一行复制到密码管理器，或使用加密备份（其中包含 <span class=\"mono\">.env</span>）。"
+
+#: spoolsteward/admin/templates/_own_notices.html:80
 msgid "dismissed"
 msgstr "已忽略"
 
-#: spoolsteward/admin/templates/_own_notices.html:77
-#: spoolsteward/admin/templates/notices.html:56
+#: spoolsteward/admin/templates/_own_notices.html:81
+#: spoolsteward/admin/templates/notices.html:60
 msgid "Dismiss"
 msgstr "忽略"
 
-#: spoolsteward/admin/templates/_own_notices.html:81
-#: spoolsteward/admin/templates/notices.html:60
+#: spoolsteward/admin/templates/_own_notices.html:85
+#: spoolsteward/admin/templates/notices.html:64
 msgid "No notices."
 msgstr "没有通知。"
 
-#: spoolsteward/admin/templates/_own_notices.html:84
-#: spoolsteward/admin/templates/notices.html:63
+#: spoolsteward/admin/templates/_own_notices.html:88
+#: spoolsteward/admin/templates/notices.html:67
 msgid "Dismiss all"
 msgstr "全部忽略"
 
@@ -3455,12 +3460,12 @@ msgid "What concerns you: what the administrators did with your account (keys, g
 msgstr "与您有关的事项：管理员对您账户的操作（密钥、组、配额、申请），以及您的打印所在打印机的问题。"
 
 #: spoolsteward/admin/templates/me_notices.html:10
-#: spoolsteward/admin/templates/notices.html:65
+#: spoolsteward/admin/templates/notices.html:69
 msgid "Hide dismissed"
 msgstr "隐藏已忽略"
 
 #: spoolsteward/admin/templates/me_notices.html:10
-#: spoolsteward/admin/templates/notices.html:65
+#: spoolsteward/admin/templates/notices.html:69
 msgid "Show dismissed too"
 msgstr "同时显示已忽略"
 
@@ -3483,7 +3488,7 @@ msgid "Last time"
 msgstr "最近一次"
 
 #: spoolsteward/admin/templates/notices.html:17
-#: spoolsteward/admin/templates/notices.html:54
+#: spoolsteward/admin/templates/notices.html:58
 msgid "Times"
 msgstr "次数"
 
@@ -3562,22 +3567,22 @@ msgstr "打印机“%(printer)s”<b>墨水或墨粉不足</b>：%(what)s。"
 msgid "<b>Problem</b> on the printer “%(printer)s”: %(what)s."
 msgstr "打印机“%(printer)s”<b>出现问题</b>：%(what)s。"
 
-#: spoolsteward/admin/templates/notices.html:47
+#: spoolsteward/admin/templates/notices.html:51
 #, python-format
 msgid "<b>The secret key has changed</b> since the previous start (<span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in <span class=\"mono\">.env</span>). %(count)s file names in the audit were encrypted with the old key and now show as <span class=\"mono\">[encrypted]</span>. If the change was not wanted (for example a restore with a new <span class=\"mono\">.env</span>), put the old key back and restart: the names become readable again."
 msgstr "<b>密钥自上次启动以来已更改</b>（<span class=\"mono\">.env</span> 中的 <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span>）。审计中有 %(count)s 个文件名是用旧密钥加密的，现在显示为 <span class=\"mono\">[encrypted]</span>。如果这不是有意的更改（例如用新的 <span class=\"mono\">.env</span> 进行了恢复），请恢复旧密钥并重启：文件名将重新可读。"
 
-#: spoolsteward/admin/templates/notices.html:49
+#: spoolsteward/admin/templates/notices.html:53
 #, python-format
-msgid "<b>No secret key is set.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> is missing from <span class=\"mono\">.env</span> or set to <span class=\"mono\">none</span>: the file names in the audit are stored without encryption, everybody has to sign in again after every restart and the printers are not announced on the network (mDNS). Write a random value (the output of <span class=\"mono\">openssl rand -hex 32</span>) after <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> in <span class=\"mono\">.env</span>, run <span class=\"mono\">docker compose up -d</span> and save the key in a safe place. <a href=\"%(url)s\">Step by step</a>."
-msgstr "<b>未设置密钥。</b><span class=\"mono\">.env</span> 中缺少 <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span>，或其值为 <span class=\"mono\">none</span>：审计中的文件名以未加密方式保存，每次重启后所有人都必须重新登录，并且打印机不会在网络上被公布（mDNS）。在 <span class=\"mono\">.env</span> 中的 <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> 后面写入一个随机值（<span class=\"mono\">openssl rand -hex 32</span> 的输出），运行 <span class=\"mono\">docker compose up -d</span>，并将密钥保存在安全的地方。<a href=\"%(url)s\">分步说明</a>。"
+msgid "<b>No secret key is set.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> is missing from <span class=\"mono\">.env</span> or set to <span class=\"mono\">none</span>: everybody has to sign in again after every restart and the printers are not announced on the network (mDNS). Write a random value (the output of <span class=\"mono\">openssl rand -hex 32</span>) after <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> in <span class=\"mono\">.env</span>, run <span class=\"mono\">docker compose up -d</span> and save the key in a safe place. <a href=\"%(url)s\">Step by step</a>."
+msgstr "<b>未设置密钥。</b><span class=\"mono\">.env</span> 中缺少 <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span>，或其值为 <span class=\"mono\">none</span>：每次重启后所有人都必须重新登录，并且打印机不会在网络上被公布（mDNS）。在 <span class=\"mono\">.env</span> 中的 <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> 后面写入一个随机值（<span class=\"mono\">openssl rand -hex 32</span> 的输出），运行 <span class=\"mono\">docker compose up -d</span>，并将密钥保存在安全的地方。<a href=\"%(url)s\">分步说明</a>。"
 
-#: spoolsteward/admin/templates/notices.html:51
+#: spoolsteward/admin/templates/notices.html:55
 #, python-format
 msgid "<b>Scans without login are refused: the guest name is already taken.</b> A scan app sent no user name and password, and the account “%(name)s” that would receive its scans already exists as a real account (with a password, from RADIUS, or an administrator), so it is not used. Set a name nobody uses in <span class=\"mono\">SPOOLSTEWARD_ESCL_GUEST_USERNAME</span> in <span class=\"mono\">.env</span> and restart the portal."
 msgstr "<b>无需登录的扫描被拒绝：访客名称已被占用。</b>某个扫描应用没有发送用户名和密码，而本应接收其扫描的账户“%(name)s”已作为真实账户存在（有密码、来自 RADIUS 或为管理员），因此不会使用它。请在 <span class=\"mono\">.env</span> 文件的 <span class=\"mono\">SPOOLSTEWARD_ESCL_GUEST_USERNAME</span> 中设置一个无人使用的名称，然后重启门户。"
 
-#: spoolsteward/admin/templates/notices.html:55
+#: spoolsteward/admin/templates/notices.html:59
 #, python-format
 msgid "dismissed by %(who)s"
 msgstr "由 %(who)s 忽略"

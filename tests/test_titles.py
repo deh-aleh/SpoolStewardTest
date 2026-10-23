@@ -24,6 +24,7 @@ TZ = ZoneInfo("Europe/Rome")
 @pytest.fixture
 def key(monkeypatch):
     monkeypatch.setattr(settings, "secret_key", "a-test-secret-key")
+    monkeypatch.setattr(settings, "encrypt_file_names", True)
 
 
 @pytest.fixture
@@ -65,6 +66,38 @@ def test_without_a_key_nothing_is_encrypted(monkeypatch):
     assert crypto_fields.seal("a.pdf") == "a.pdf" and crypto_fields.unseal("a.pdf") == "a.pdf"
 
 
+def test_the_switch_is_off_by_default():
+    assert settings.encrypt_file_names is False
+
+
+def test_switch_off_stores_names_in_clear_even_with_a_key(sm, monkeypatch):
+    monkeypatch.setattr(settings, "secret_key", "a-test-secret-key")
+    monkeypatch.setattr(settings, "encrypt_file_names", False)
+    assert crypto_fields.seal("a.pdf") == "a.pdf" and not crypto_fields.enabled()
+    u = user(sm)
+    with sm() as s:
+        audit.reserve(s, u, "p", "plain.pdf", {"document_name": "plain.pdf"}, TZ)
+    assert raw(sm) == ["plain.pdf"] and titles.encrypt_existing(sm) == 0
+
+
+def test_switch_off_still_reads_names_sealed_before(sm, key, monkeypatch):
+    sealed = crypto_fields.seal("kept.pdf")
+    monkeypatch.setattr(settings, "encrypt_file_names", False)
+    assert crypto_fields.unseal(sealed) == "kept.pdf"
+    u = user(sm)
+    with sm() as s:
+        s.add(JobLog(user_id=u.id, kind=JobKind.print, printer="p", title=sealed, pages=1, state=JobState.completed))
+        s.commit()
+    with sm() as s:
+        assert s.query(JobLog).one().title == "kept.pdf"
+
+
+def test_switch_on_without_a_key_encrypts_nothing(monkeypatch):
+    monkeypatch.setattr(settings, "secret_key", None)
+    monkeypatch.setattr(settings, "encrypt_file_names", True)
+    assert crypto_fields.seal("a.pdf") == "a.pdf" and not crypto_fields.enabled()
+
+
 def test_the_database_holds_the_name_encrypted_and_the_program_reads_it_plain(sm, key):
     u = user(sm)
     with sm() as s:
@@ -87,6 +120,7 @@ def test_old_plain_names_are_sealed_once_a_key_exists(sm, monkeypatch):
             audit.reserve(s, u, "p", f"old-{n}.pdf", {"document_name": f"old-{n}.pdf"}, TZ)
     assert raw(sm)[0] == "old-0.pdf"
     monkeypatch.setattr(settings, "secret_key", "a-test-secret-key")
+    monkeypatch.setattr(settings, "encrypt_file_names", True)
     assert titles.encrypt_existing(sm) == 3
     assert all(t.startswith("enc1:") for t in raw(sm))
     assert titles.encrypt_existing(sm) == 0                       # nothing left: safe to repeat

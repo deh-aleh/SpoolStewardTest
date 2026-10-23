@@ -18,7 +18,7 @@ pages, rejection reason, and options (paper, colour, duplex, source, copies, pag
 
 ![The audit page: automatic refresh switch, filters by user, file name and state, CSV export and report, and one completed scan](../images/en/admin-audit.png)
 
-**The file name is encrypted** in the database and you can stop saving it with the green/red button at the top right of the page; with retention (`.env`) it disappears
+**The file name** can stop being saved with the green/red button at the top right of the page; with retention (`.env`) it disappears
 after a number of days you choose. The row always stays, with everything else. Details in [data-protection.md](data-protection.md).
 
 | State | Meaning |
@@ -75,11 +75,11 @@ The **Audit archive** page (`/admin/archive`) lists archives with the path insid
 them and **verifies integrity**. It can not delete them. The Audit page shows a banner when archives exist.
 `spoolsteward-admin audit-archive [--force]` runs the archiver by hand; `spoolsteward-admin jobs` shows the latest rows.
 
-File names in the archive stay **encrypted** (the portal decrypts them when it shows them and when you search); with retention on, rows past the limit are written without the name. Files already written are never modified.
+File names in the archive are encrypted only if you turned on the encryption of names ([data-protection.md](data-protection.md)), and the portal decrypts them when it shows them and when you search; with retention on, rows past the limit are written without the name. Files already written are never modified.
 
 The folder must be writable by the container user; it lives on the host, outside docker volumes, so it can be found and
 copied by hand. It is included in the backups ([backup.md](backup.md)).
 
 ## 5. Privacy
 
-The archives are **not encrypted** and the database only partly: protect `data/` and the volume like personal data.
+The database and the archives hold the names of printed files, which are personal data: protect `data/` and the volume accordingly.

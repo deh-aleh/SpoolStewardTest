@@ -150,6 +150,9 @@ class Settings(BaseSettings):
     cert_expiry_warn_enabled: bool = False
     cert_expiry_warn_days: int = Field(14, ge=1)
     cert_name_check: bool = True
+    # encrypt the names of printed files in the database (needs SPOOLSTEWARD_SECRET_KEY). Off by default: with it off
+    # new names are stored in clear, names already encrypted stay readable while the key is the same.
+    encrypt_file_names: bool = False
     # forget the names of printed files after some days (the rows, pages and states stay: quotas need them). Off by default.
     job_title_retention_enabled: bool = False
     job_title_retention_days: int = Field(90, ge=1)

@@ -60,11 +60,7 @@ shorter than 64 characters, it also prints a warning; what to do: [troubleshooti
 
 Do not copy `docker/env.example` to `.env` by hand: the script fills in your user, this folder, the version and the key.
 
-After the first start the portal reminds the first administrator, once, to copy `SPOOLSTEWARD_SECRET_KEY` to a safe place
-([backup.md](backup.md#save-the-secret-key)). Never share `config/` or `.env`: they hold secrets.
-
-**Never edit `docker-compose.yml`**: everything you may change is in `.env`, so an update can replace the compose file without erasing
-your choices.
+Copy `SPOOLSTEWARD_SECRET_KEY` to a safe place ([backup.md](backup.md#save-the-secret-key)). Never share `config/` or `.env`: they hold secrets.
 
 ### 3.2 Settings
 

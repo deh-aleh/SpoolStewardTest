@@ -47,7 +47,6 @@ The full list is in [docs/en/limitations.md](docs/en/limitations.md). The ones t
 - **Android's system print service cannot authenticate**: use Mopria Print Service or print from the browser. Windows 11 25H2 is tested ([windows.md](docs/en/windows.md)); iPhone and macOS are untested.
 - **One gateway per USB printer** and **one per SQLite database** (no high availability).
 - **TLS is mandatory**: install the self-signed certificate on clients or use your CA's.
-- Printed **file names are encrypted** in the database (key from `SPOOLSTEWARD_SECRET_KEY`: do not change it); the rest is not. See [data-protection.md](docs/en/data-protection.md).
 
 ## Install (Docker)
 

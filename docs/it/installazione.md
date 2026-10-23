@@ -61,11 +61,7 @@ mancante: lo script stampa "kept the existing .env". Se quel file non ha la riga
 
 Non copiare a mano `docker/env.example` in `.env`: lo script inserisce il tuo utente, questa cartella, la versione e la chiave.
 
-Dopo il primo avvio il portale ricorda una volta al primo amministratore di copiare `SPOOLSTEWARD_SECRET_KEY` in un posto sicuro
-([backup.md](backup.md#salva-la-chiave-segreta)). Non condividere `config/` né `.env`: contengono segreti.
-
-**Non modificare mai `docker-compose.yml`**: tutto quello che puoi cambiare sta in `.env`, così un aggiornamento può sostituire il compose
-senza cancellare le tue scelte.
+Copia `SPOOLSTEWARD_SECRET_KEY` in un posto sicuro ([backup.md](backup.md#salva-la-chiave-segreta)). Non condividere `config/` né `.env`: contengono segreti.
 
 ### 3.2 Impostazioni
 

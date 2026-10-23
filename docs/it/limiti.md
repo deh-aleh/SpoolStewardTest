@@ -21,9 +21,7 @@ Ciò che SpoolSteward **non** fa (ancora) o fa con delle riserve. La versione br
   «scrivi solo se montato» è attiva di default per i backup creati dal portale e il portale avvisa quando un backup salta. Il backup *Generale* di `.env` ha l'opzione spenta
   di default (va attivata e preparata a mano, vedi [backup.md](backup.md)).
 - Tornare a una versione precedente dopo una migrazione del database richiede il ripristino di un backup: `scripts/update.sh`.
-- I **nomi dei file stampati sono cifrati** nel database e nell'archivio audit (chiave derivata da `SPOOLSTEWARD_SECRET_KEY`: se la cambi non si leggono più). Il resto del
-  database non è cifrato (nomi utente, gruppi, nomi delle stampanti, registro admin): per proteggere tutto cifra il disco, vedi [protezione-dati.md](protezione-dati.md).
-  Anche CUPS tiene i nomi dei suoi ultimi job (fino a 2.000) nel proprio volume: il pulsante e la retention dei nomi non li toccano.
+- CUPS tiene i nomi dei suoi ultimi job (fino a 2.000) nel proprio volume: il pulsante e la retention dei nomi non li toccano.
 - Certificati: i dispositivi devono fidarsi della CA aziendale; l'annuncio usa l'IP, quindi il certificato deve elencarlo (il portale avvisa se non è così).
   Dettagli in [certificati.md](certificati.md).
 
@@ -71,7 +69,7 @@ Ciò che SpoolSteward **non** fa (ancora) o fa con delle riserve. La versione br
 
 - Backup integrati: solo SQLite; code CUPS non incluse (sono in `scripts/backup.sh`); i file di configurazione si ripristinano a mano;
   nessuna destinazione remota diretta; la passphrase non è recuperabile. `scripts/backup.sh restore` è provato solo a mano.
-- L'audit e il database non sono cifrati, salvo i nomi dei file (vedi §1 e [protezione-dati.md](protezione-dati.md)).
+- L'audit e il database non sono cifrati di default (vedi §1 e [protezione-dati.md](protezione-dati.md)).
 
 ## 6. Lingue
 

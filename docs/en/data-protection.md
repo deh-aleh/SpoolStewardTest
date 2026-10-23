@@ -2,19 +2,19 @@
 
 [Documentation index](../README.md) · English · [Italiano](../it/protezione-dati.md)
 
-The audit ([audit.md](audit.md)) records who printed and scanned what. The **file name** is personal data, so it is encrypted at rest; this page
-lists what is and is not protected and the settings that reduce what the server keeps.
+The audit ([audit.md](audit.md)) records who printed and scanned what. The **file name** is personal data; this page
+lists what is and is not protected, how to encrypt the names and the settings that reduce what the server keeps.
 
 ## 1. What is protected and what is not
 
 | Data | How it is kept |
 |---|---|
-| **Name of the file** printed or scanned | **Encrypted** in the database, in the audit archive (the `.jsonl.gz` files) and therefore also in backups |
+| **Name of the file** printed or scanned | In clear in the database. With `SPOOLSTEWARD_ENCRYPT_FILE_NAMES=true` it is **encrypted** in the database, in the audit archive (the `.jsonl.gz` files) and therefore also in backups |
 | Passwords of local accounts | Only the fingerprint (argon2 hash): the password cannot be recovered |
 | Print keys | Only the fingerprint (sha256) |
 | User name, groups, printer names, the administrators' action log, reasons of requests (quota, group, permission) and notes of grants, permissions and allowed hours, IP addresses | **In clear** in the database |
 | Amounts (pages, date, state of each print) | In clear: quotas need them |
-| The database as a file | Not encrypted: whoever copies the file reads everything except the file names (stored as `enc1:<base64>`, AES-256-GCM) |
+| The database as a file | Not encrypted: whoever copies the file reads everything, the file names too unless you encrypted them (encrypted ones are stored as `enc1:<base64>`, AES-256-GCM) |
 | Backups | Encrypted only if you choose encryption in the *Backup* menu (recommended) |
 
 ## 2. The "File names" button (green / red)
@@ -39,21 +39,25 @@ If you want names to disappear after a while, turn on retention in `.env` (then 
 Once a day the gateway erases the name from the rows older than the chosen number of days. **The row stays** (who, when, pages, state): quotas and counters need it.
 
 **What is not touched.** The audit archive files already written are immutable (so it can be proved they were not changed) and are left as they were: the names they
-contain stay, encrypted. From the moment you turn retention on, the new archive files no longer contain the names of rows past the limit.
+contain stay as they were. From the moment you turn retention on, the new archive files no longer contain the names of rows past the limit.
 
-## 4. The key: do not change `SPOOLSTEWARD_SECRET_KEY`
+## 4. Encrypting the file names and the key
 
-Names are encrypted with a key derived from `SPOOLSTEWARD_SECRET_KEY` (in `.env`, created by `scripts/docker-init.sh`).
+By default names are stored in clear. To encrypt them write `SPOOLSTEWARD_ENCRYPT_FILE_NAMES=true` in `.env` and restart (`docker compose up -d`). The encryption key is derived from
+`SPOOLSTEWARD_SECRET_KEY` (in `.env`, created by `scripts/docker-init.sh`). **Only the names** are encrypted: the rest of the database stays in clear, because quotas and filters read it
+with queries. To protect everything, encrypt the disk (§5).
 
-> **If you change or lose `SPOOLSTEWARD_SECRET_KEY`, the file names already saved can no longer be read**: the portal shows `[encrypted]` in their place. Everything else keeps working
+- Names already saved in clear are encrypted by the gateway at the first start, in chunks, without stopping.
+- Setting it back to `false`, new names are stored in clear again; the ones already encrypted stay encrypted and readable as long as the key does not change.
+
+> **If you change or lose `SPOOLSTEWARD_SECRET_KEY`, the names already encrypted can no longer be read**: the portal shows `[encrypted]` in their place. Everything else keeps working
 > (sessions are reset and everybody logs in again).
 
-- **Encrypted** backups include `.env`, so the key too; unencrypted ones do not (and without the key the names they contain cannot be read: that is intended).
-- If the key is `none` the gateway encrypts nothing (and warns in the log and in the bell), because a different key at every start would make names unreadable after the next restart.
-- **Keep a copy of the key outside the server** (a password manager): after the first start the first-run administrator finds a reminder in the bell, once. If the gateway starts with a key that is not the one of the previous start, it says so in the bell with the number of names that can no longer be read ([backup.md](backup.md#save-the-secret-key)).
-- If you had names in clear before, at the first start with the key the gateway encrypts them by itself, in chunks, without stopping.
+- **Encrypted** backups include `.env`, so the key too; unencrypted ones do not (and without the key the encrypted names they contain cannot be read: that is intended).
+- If the key is `none` the gateway encrypts nothing, even with `SPOOLSTEWARD_ENCRYPT_FILE_NAMES=true`, because a different key at every start would make names unreadable after the next restart.
+- **Keep a copy of the key outside the server** (a password manager): see [backup.md](backup.md#save-the-secret-key). If the gateway starts with a different key, the bell says how many names can no longer be read.
 
-**Searching by file name** in the audit looks in the latest 5,000 actions that match the other filters (names are encrypted: to search, they are opened one by one). Searching by user has no such limit.
+**Searching by file name** in the audit, with encrypted names, looks in the latest 5,000 actions that match the other filters (to search, they are opened one by one). Searching by user has no such limit.
 
 ## 5. Encrypting the disk (the main measure)
 

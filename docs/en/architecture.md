@@ -54,16 +54,12 @@ Deliberate differences from a "classic" design:
 | RADIUS | **pyrad** (PAP + Message-Authenticator) | The office already has a RADIUS server |
 | Portal | **Jinja2** server-rendered pages, signed sessions (**itsdangerous**) | HTML from the server; JavaScript only for small helpers (copy, hints, popups, auto-refresh) |
 | Translations | **Babel** (gettext `.po` catalogs read in memory) | No build step; see [languages.md](languages.md) |
-| Configuration | **pydantic-settings** (`SPOOLSTEWARD_*` variables) | Validation and defaults |
-| Print backend | **CUPS 2.4** | Dependency, unmodified; filters and drivers already exist |
-| USB bridge | **ipp-usb** | Exposes the USB printer as IPP/eSCL |
+| Print backend, USB bridge | **CUPS 2.4**, **ipp-usb** | Unmodified dependencies; filters and drivers already exist; ipp-usb exposes the USB printer as IPP/eSCL |
 | Page counting | **pypdf** (+ image headers, URF, PostScript) | The page limit must hold for a 200-page file too |
-| Documentation in the portal | **markdown-it-py** | Renders the Markdown pages of `docs/` with raw HTML switched off; the files stay readable on GitHub as they are |
-| Usage report PDF | **reportlab** | Tables with page breaks and repeated header, no browser or external program needed |
+| Documentation, report PDF | **markdown-it-py**, **reportlab** | The Markdown pages of `docs/` render with raw HTML off and stay readable on GitHub; PDF tables need no browser |
 | Backups | **cryptography** (X25519, HKDF, AES-256-GCM, scrypt) | Encrypted with a recovery key, passphrase never stored |
 | LAN announcement | **python-zeroconf** (`mdns` service, host network) | Multicast does not cross docker's bridge network |
-| Containers | **Docker Compose** | Nothing installed on the host; reproducible tests |
-| Tests | **pytest** (+ asyncio); real CUPS and FreeRADIUS in docker | Many tests run against real services |
+| Containers, tests | **Docker Compose**, **pytest** | Nothing installed on the host; many tests run against a real CUPS and FreeRADIUS |
 
 ## 3. The containers
 
@@ -78,8 +74,7 @@ start it, each with its own command, so they always have the same version. `spoo
 | `mdns` | Announces the queues and scanners on the LAN. Same image as the portal, host network. Asks the gateway what to announce (authenticated with a code derived from `SPOOLSTEWARD_SECRET_KEY`). | multicast |
 | `radius` | Test RADIUS, only with `--profile radius-test` | internal |
 
-Data: a docker volume for the database (`/data`), a host folder `data/audit-archive` for compressed audit files, a host
-folder `data/backups` for backups, `config/` (read-only) for the TLS certificate, and `.env` (read-only, for encrypted backups).
+Data: a docker volume for the database (`/data`), host folders `data/audit-archive` and `data/backups`, `config/` (read-only) for the TLS certificate, and `.env` (read-only, for encrypted backups).
 
 ## 4. Path of an IPP request
 
@@ -120,7 +115,7 @@ All started by the gateway's lifespan ([`spoolsteward/main.py`](../../spoolstewa
 | Keep-alive scheduler | 60 s | Prints maintenance pages and notes the first time each queue is seen |
 | Printer discovery | `SPOOLSTEWARD_DISCOVERY_INTERVAL` (30 s) | Creates queues for new USB printers (ipp-usb first, CUPS usb backend second) and removes USB queues unreachable for `SPOOLSTEWARD_OFFLINE_REMOVE_HOURS` |
 | mDNS announcer | `SPOOLSTEWARD_MDNS_INTERVAL` (30 s) | Separate container: re-reads the queue list and tells the gateway which address it announces |
-| File names ([`spoolsteward/titles.py`](../../spoolsteward/titles.py)) | at start, then 1 day | Encrypts names written before the key existed; with retention on, erases names older than `SPOOLSTEWARD_JOB_TITLE_RETENTION_DAYS` |
+| File names ([`spoolsteward/titles.py`](../../spoolsteward/titles.py)) | at start, then 1 day | When the encryption of names is on, encrypts the ones written in clear; with retention on, erases names older than `SPOOLSTEWARD_JOB_TITLE_RETENTION_DAYS` |
 | Certificate check ([`spoolsteward/certwatch.py`](../../spoolsteward/certwatch.py)) | 6 h | Reads the TLS certificate and `config/tls/sync-status.json`, and opens or closes the certificate notices |
 | Printer watch ([`spoolsteward/printerwatch.py`](../../spoolsteward/printerwatch.py)) | 1 min | Paper jam, paper out, ink out/low as notices (confirmed by two consecutive checks) |
 | Key housekeeping ([`spoolsteward/keywatch.py`](../../spoolsteward/keywatch.py)) | 1 h | Removes finished print keys, warns about keys about to expire and about temporary permissions that ended |
@@ -140,12 +135,7 @@ Tables (Alembic applies migrations at start; a test fails if a model changes wit
 | `permission_rule`, `permission_grant` | Colour / one-sided / printers / hours of a group or user, and the permissions added to one user after a request (permanent or until a date) |
 | `admin_audit` | Who did what in the portal |
 | `audit_archive` | Registry of compressed audit files (path, range, rows, sha256) |
-| `printer_control` | Per-queue block and mDNS hiding |
-| `printer_keepalive` | Periodic maintenance print settings, one row per queue |
-| `printer_seen` | First time each queue was seen (default list order) |
-| `printer_order` | Where each administrator placed a printer in their own list (up/down arrows) |
-| `printer_offline` | Since when a USB queue does not answer (countdown to automatic removal) |
-| `printer_former` | Former queue names, offered in the rename dialog |
+| `printer_control`, `printer_keepalive`, `printer_seen`, `printer_order`, `printer_offline`, `printer_former` | Per-queue state: block and mDNS hiding, maintenance print settings, first time seen, each administrator's order, since when a USB queue does not answer, former names |
 | `notice` | The bell: notices for administrators and for single users |
 | `gateway_setting` | Maintenance mode, instance id, file-name saving switch, secret-key fingerprint |
 | `backup_target` | Backup destinations, one per administrator or the general one |
@@ -153,8 +143,7 @@ Tables (Alembic applies migrations at start; a test fails if a model changes wit
 ## 7. Design decisions worth knowing
 
 - **User names are unique across all sources.** CUPS and the audit only receive `gw:<name>`; two people with the same
-  name in different sources would share identity and quota. The *row* decides the login method, not whoever answers
-  "yes": a local account can never be opened by RADIUS.
+  name would share identity and quota. The *row* decides the login method: a local account can never be opened by RADIUS.
 - **Print keys, not domain passwords, on client devices.** Operating systems store print credentials in the clear. A key is
   random, per device, revocable and valid only for printing; it never opens the portal.
 - **Grants add, they never rewrite history.** `effective limit = rule + active grants`, computed inside the same locked
@@ -162,8 +151,7 @@ Tables (Alembic applies migrations at start; a test fails if a model changes wit
 - **Audit is append-only and kept forever.** Nothing in the portal deletes rows or archives; only the archiver moves rows,
   and only after the compressed copy has been read back and verified.
 - **Atomic reservation.** The limit check and the insert happen under a lock (thread + `BEGIN IMMEDIATE` on SQLite), so concurrent jobs cannot overshoot the limit.
-- **Nothing is assumed about the hardware.** Printers, colour support, ink, counters, scanners and paper sizes are read
-  from the devices at run time. Vendor counters come from HP's web service when present; other brands show only IPP data.
+- **Nothing is assumed about the hardware.** Printers, colour, ink, counters, scanners and paper sizes are read from the devices at run time.
 - **Fail closed.** RADIUS unreachable ⇒ access denied; no TLS ⇒ the gateway refuses to start; half-configured RADIUS ⇒ refuses to start.
 - **English is the source language** of every visible text; other languages are catalogs ([languages.md](languages.md)).
 
@@ -172,17 +160,13 @@ Tables (Alembic applies migrations at start; a test fails if a model changes wit
 - CUPS is not reachable from the network or from other local users; the CUPS user is `gw:<user>`, so no RADIUS name
   (for example `root`) can become a CUPS administrator. IPP administrative operations are blocked.
 - TLS is mandatory. Credentials never travel in clear over HTTP.
-- Disabling a user in the portal blocks login and keys immediately. A person removed only from the RADIUS server keeps printing with existing keys until they expire.
 - Keys are stored only as hashes, shown once, and never open the portal; local passwords are argon2id (minimum 12 characters).
-- Login lock-out: 5 *different* wrong passwords in 5 minutes per (user, IP), plus a per-IP cap. A repeated identical
-  error counts once (libcups retries), and a stranger cannot lock another user out.
+- Login lock-out: 5 *different* wrong passwords in 5 minutes per (user, IP), plus a per-IP cap; a stranger cannot lock another user out.
 - Portal: signed 8-hour sessions, CSRF token on every POST, `Secure` + `SameSite=strict` cookies, escaped HTML,
   CSV protected against formula injection, secret-bearing pages sent with `Cache-Control: no-store`.
-- The database is **not encrypted** and holds printed file names: protect it as personal data.
+- The database holds printed file names: protect it as personal data.
 
 ## 9. Quality
 
-Automated tests cover the codec (round trip on real responses), policy windows (also across DST), concurrency (16
-independent connections cannot exceed a limit, two admins grant once), authentication against a real RADIUS, the gateway
-against a real CUPS, the portal in every language, migrations (including a pre-Alembic database with data), keys,
-requests and grants, archiving and interruptions.
+Automated tests cover the IPP codec, policy windows (also across DST), concurrency, authentication against a real RADIUS, the gateway against a real CUPS,
+the portal in every language, migrations, keys, requests, grants and archiving.

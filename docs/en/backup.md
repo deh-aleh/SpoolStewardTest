@@ -87,19 +87,17 @@ another administrator. The passphrase is never written to the audit. A new encry
 
 ### Save the secret key
 
-`SPOOLSTEWARD_SECRET_KEY` in `.env` encrypts the file names kept in the audit ([data-protection.md](data-protection.md)). A backup
-**without encryption does not contain it**, on purpose (it holds no secrets). So if the server breaks, you restore an
-unencrypted backup on a new machine and `scripts/docker-init.sh` creates a **new** key, the database comes back whole (users,
-quotas, pages, dates, printers) but the file names stay `[encrypted]` for good.
+`SPOOLSTEWARD_SECRET_KEY` in `.env` signs the portal sessions and protects the link with `mdns`; if you encrypt the file names
+([data-protection.md](data-protection.md)) it opens those too. A backup **without encryption does not contain it**, on purpose (it holds no secrets).
+So if the server breaks, you restore an unencrypted backup on a new machine and `scripts/docker-init.sh` creates a **new** key:
+the database comes back whole (users, quotas, pages, dates, printers), everybody logs in again and the encrypted file names stay `[encrypted]` for good.
 
 - Copy the `SPOOLSTEWARD_SECRET_KEY=...` line of `.env` into a password manager or another safe place, **once**, after installing.
 - Or make encrypted backups: they include `.env`, so the key travels with the database.
 - When you move to another machine, copy `.env` too (`scripts/backup.sh` does).
 
-The gateway helps: after the first start the first-run administrator (`SPOOLSTEWARD_BOOTSTRAP_ADMIN_USERNAME`) finds a reminder in their
-own bell, once (if that account does not exist, every administrator sees it). If the gateway later starts with a different key, the
-bell says so and tells how many names can no longer be read; putting the old key back in `.env` and restarting makes them readable
-again.
+The gateway reminds you once: the first-run administrator (or every administrator, if that account does not exist) finds it in the bell. If it later
+starts with a different key, the bell says how many names can no longer be read; putting the old key back in `.env` and restarting makes them readable again.
 
 ## 2. Restore
 

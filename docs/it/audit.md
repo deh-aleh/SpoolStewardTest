@@ -18,7 +18,7 @@ pagine, motivo del rifiuto e opzioni (carta, colore, fronte-retro, sorgente, cop
 
 ![La pagina dell'audit: interruttore dell'aggiornamento automatico, filtri per utente, nome del file e stato, esportazione CSV e report, e una scansione completata](../images/it/admin-audit.png)
 
-**Il nome del file è cifrato** nel database e si può smettere di salvarlo con il pulsante verde/rosso in alto a destra della pagina; con la retention (`.env`) sparisce
+**Il nome del file** si può smettere di salvare con il pulsante verde/rosso in alto a destra della pagina; con la retention (`.env`) sparisce
 dopo un numero di giorni a scelta. La riga resta sempre, con tutto il resto. Dettagli in [protezione-dati.md](protezione-dati.md).
 
 | Stato | Significato |
@@ -76,11 +76,11 @@ La pagina **Archivio audit** (`/admin/archive`) elenca gli archivi con il percor
 **verifica l'integrità**. Non può eliminarli. La pagina Audit mostra un avviso quando esistono archivi.
 `spoolsteward-admin audit-archive [--force]` lancia l'archiviatore a mano; `spoolsteward-admin jobs` mostra le ultime righe.
 
-I nomi dei file nell'archivio restano **cifrati** (il portale li decifra quando li mostra e quando cerchi); con la retention accesa, le righe oltre il limite vengono scritte senza il nome. I file già scritti non si modificano.
+I nomi dei file nell'archivio sono cifrati solo se hai acceso la cifratura dei nomi ([protezione-dati.md](protezione-dati.md)), e il portale li decifra quando li mostra e quando cerchi; con la retention accesa, le righe oltre il limite vengono scritte senza il nome. I file già scritti non si modificano.
 
 La cartella deve essere scrivibile dall'utente del contenitore; sta sull'host, fuori dai volumi docker, così si trova e si copia a mano.
 È inclusa nei backup ([backup.md](backup.md)).
 
 ## 5. Privacy
 
-Gli archivi **non sono cifrati** e il database lo è solo parzialmente: proteggi `data/` e il volume come dati personali.
+Il database e gli archivi contengono i nomi dei file stampati, che sono dati personali: proteggi `data/` e il volume di conseguenza.

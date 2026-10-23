@@ -1,12 +1,15 @@
 """Checks on SPOOLSTEWARD_SECRET_KEY at every start, told to the administrators through the bell.
 
-The key encrypts the file names kept in the audit (spoolsteward/crypto_fields.py), signs the portal sessions and the channel to the
-mdns announcer. A backup without encryption does not contain it, so whoever loses `.env` loses the names for good.
+The key signs the portal sessions, secures the channel to the mdns announcer and, when SPOOLSTEWARD_ENCRYPT_FILE_NAMES is on,
+encrypts the file names kept in the audit (spoolsteward/crypto_fields.py). A backup without encryption does not contain it,
+so whoever loses `.env` loses the names for good.
 
   * no key set                -> notice "secret_key_missing" (rate-limited like every notice), closed once a key is set;
-  * the key is not the one of the previous start (a fingerprint is kept, never the key)
+  * the key is not the one of the previous start (a fingerprint is kept, never the key) and some names are encrypted
                               -> notice "secret_key_changed" with how many names can no longer be read;
-  * "save the key somewhere safe" -> told ONCE to the first-run administrator (or to all administrators when that
+  * "save the key somewhere safe" -> always; the wording depends on whether file names are encrypted
+                                 (SPOOLSTEWARD_ENCRYPT_FILE_NAMES, or names already sealed): then the key also opens them,
+                                 otherwise it only signs sessions and secures the mDNS link. Told ONCE to the first-run administrator (or to all administrators when that
                                  account does not exist), and again only after the key changes.
 
 What was already told is remembered in `gateway_setting`, not in the notices themselves: closed notices are deleted after
@@ -75,7 +78,8 @@ def run(sm) -> None:
 def _run(sm) -> None:
     secret = settings.secret_key
     if not secret:
-        log.warning("SPOOLSTEWARD_SECRET_KEY is not set: file names are not encrypted and sessions end at every restart")
+        log.warning("SPOOLSTEWARD_SECRET_KEY is not set: sessions end at every restart%s",
+                    " and file names are not encrypted (SPOOLSTEWARD_ENCRYPT_FILE_NAMES needs the key)" if settings.encrypt_file_names else "")
         notices.report(sm, "secret_key_missing", "")
         return
     notices.resolve(sm, "secret_key_missing", "")
@@ -89,7 +93,7 @@ def _run(sm) -> None:
         if old != fp:
             _put(db, CHECK, fp)
         db.commit()
-    if changed is not None:
+    if changed:  # a changed key matters to the administrators only when it locks names (sessions simply end)
         log.warning("SPOOLSTEWARD_SECRET_KEY changed since the previous start: %d encrypted file name(s) can no longer be read", changed)
         notices.report(sm, "secret_key_changed", "", {"count": changed})
     with sm() as db:
@@ -97,9 +101,10 @@ def _run(sm) -> None:
             return
         admin = _first_admin(db)
         admin_id = admin.id if admin is not None else None
+        names = settings.encrypt_file_names or bool(_sealed_names(db))  # picks the wording: is the key also what opens the names?
         _put(db, TOLD, datetime.now(UTC).isoformat())
         db.commit()
     if admin_id is not None:
-        notices.notify_user(sm, admin_id, "secret_key_save", key="secret_key")
+        notices.notify_user(sm, admin_id, "secret_key_save", {"names": names}, key="secret_key")
     else:
-        notices.report(sm, "secret_key_save", "")
+        notices.report(sm, "secret_key_save", "", {"names": names})

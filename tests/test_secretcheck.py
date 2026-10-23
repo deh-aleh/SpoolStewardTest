@@ -17,6 +17,7 @@ def sm(tmp_path, monkeypatch):
     engine = create_engine(f"sqlite:///{tmp_path / 'gw.db'}")
     Base.metadata.create_all(engine)
     monkeypatch.setattr(settings, "secret_key", "first-key-" + "x" * 40)
+    monkeypatch.setattr(settings, "encrypt_file_names", True)
     monkeypatch.setattr(settings, "bootstrap_admin", True)
     monkeypatch.setattr(settings, "bootstrap_admin_username", "administrator")
     monkeypatch.setattr(notices, "_state", {})  # the rate limit lives in memory: every test starts clean
@@ -56,6 +57,24 @@ def test_without_the_first_administrator_every_administrator_is_told(sm, monkeyp
     secretcheck.run(sm)
     restart(sm, monkeypatch)
     assert len(rows(sm, "secret_key_save", own=False)) == 1
+
+
+def test_the_reminder_is_sent_also_when_names_are_not_encrypted_with_its_own_wording(sm, monkeypatch):
+    monkeypatch.setattr(settings, "encrypt_file_names", False)
+    boss = make_user(sm, "administrator", password="correct horse battery", admin=True)
+    secretcheck.run(sm)
+    got = rows(sm, "secret_key_save")
+    assert len(got) == 1 and got[0].user_id == boss and got[0].detail_json == {"names": False}
+
+
+def test_a_changed_key_is_silent_when_no_name_is_encrypted(sm, monkeypatch):
+    monkeypatch.setattr(settings, "encrypt_file_names", False)
+    make_user(sm, "administrator", password="correct horse battery", admin=True)
+    secretcheck.run(sm)
+    monkeypatch.setattr(settings, "secret_key", "second-key-" + "y" * 40)
+    restart(sm, monkeypatch)
+    assert rows(sm, "secret_key_changed") == []              # nothing locked; the new key is still to be saved
+    assert len(rows(sm, "secret_key_save")) == 2
 
 
 def test_the_key_is_never_stored_only_a_fingerprint(sm):
@@ -101,9 +120,24 @@ def test_a_failure_never_stops_the_start(sm, monkeypatch):
 async def test_the_first_administrator_reads_it_in_the_bell(portal, monkeypatch):
     from tests.conftest import portal_login
     monkeypatch.setattr(settings, "secret_key", "first-key-" + "x" * 40)
+    monkeypatch.setattr(settings, "encrypt_file_names", True)
     monkeypatch.setattr(notices, "_state", {})
     make_user(portal.sm, "administrator", password="correct horse battery", admin=True)
     secretcheck.run(portal.sm)
     await portal_login(portal, "administrator", "correct horse battery")
     page = (await portal.get("/admin/notices")).text
     assert "Save the secret key in a safe place" in page and "SPOOLSTEWARD_SECRET_KEY" in page
+    assert "encrypts the file names" in page
+
+
+async def test_the_wording_without_names_does_not_talk_about_file_names(portal, monkeypatch):
+    from tests.conftest import portal_login
+    monkeypatch.setattr(settings, "secret_key", "first-key-" + "x" * 40)
+    monkeypatch.setattr(settings, "encrypt_file_names", False)
+    monkeypatch.setattr(notices, "_state", {})
+    make_user(portal.sm, "administrator", password="correct horse battery", admin=True)
+    secretcheck.run(portal.sm)
+    await portal_login(portal, "administrator", "correct horse battery")
+    page = (await portal.get("/admin/notices")).text
+    assert "Save the secret key in a safe place" in page and "signs the portal sessions" in page
+    assert "encrypts the file names" not in page and "[encrypted]" not in page

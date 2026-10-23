@@ -46,7 +46,6 @@ L'elenco completo è in [docs/it/limiti.md](docs/it/limiti.md). Quelli da conosc
 - **Il servizio di stampa di sistema di Android non sa autenticarsi**: usa Mopria Print Service o stampa dal browser. Windows 11 25H2 è provato ([windows.md](docs/it/windows.md)); iPhone e macOS non sono provati.
 - **Un gateway per ogni stampante USB** e **uno per ogni database SQLite** (nessuna alta disponibilità).
 - **Il TLS è obbligatorio**: installa il certificato autofirmato sui client o usa quello della tua CA.
-- I **nomi dei file** stampati sono cifrati nel database (chiave da `SPOOLSTEWARD_SECRET_KEY`: non cambiarla); il resto no. Vedi [protezione-dati.md](docs/it/protezione-dati.md).
 
 ## Installazione (Docker)
 

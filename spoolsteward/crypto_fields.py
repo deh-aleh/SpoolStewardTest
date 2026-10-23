@@ -4,9 +4,10 @@ The key comes from SPOOLSTEWARD_SECRET_KEY (HKDF-SHA256, a fixed purpose label),
 nonce, and a stored value looks like  enc1:<base64>.  The encryption is transparent: the column types below encrypt on
 the way into the database and decrypt on the way out, so the rest of the program only sees the plain text.
 
-Without a secret key nothing is encrypted (a random key per start would make the names unreadable after a restart).
-A value that was written before the key existed is still read as it is, and `titles.encrypt_existing` seals it at the
-next start. If the key is changed, the names sealed with the old one can not be read any more: they show as LOCKED.
+Names are encrypted only when SPOOLSTEWARD_ENCRYPT_FILE_NAMES is true AND a secret key exists (a random key per start
+would make the names unreadable after a restart). Reading does not depend on the switch: a sealed value is opened whenever
+the key is the right one, so turning the switch off never hides the names already sealed. A value written in clear is
+read as it is, and `titles.encrypt_existing` seals it at the next start once the switch is on. If the key is changed, the names sealed with the old one can not be read any more: they show as LOCKED.
 """
 
 import base64
@@ -39,7 +40,8 @@ def _cipher() -> AESGCM | None:
 
 
 def enabled() -> bool:
-    return _cipher() is not None
+    """New names are sealed (switch on and a key set)."""
+    return settings.encrypt_file_names and _cipher() is not None
 
 
 def is_sealed(value) -> bool:
@@ -47,8 +49,8 @@ def is_sealed(value) -> bool:
 
 
 def seal(text: str | None) -> str | None:
-    """Plain text -> enc1:... (unchanged when there is no key, or no text)."""
-    cipher = _cipher()
+    """Plain text -> enc1:... (unchanged when encryption is off, there is no key, or no text)."""
+    cipher = _cipher() if settings.encrypt_file_names else None
     if text is None or cipher is None:
         return text
     nonce = os.urandom(12)

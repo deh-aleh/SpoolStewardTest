@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: spoolsteward VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-22 16:56+0200\n"
+"POT-Creation-Date: 2026-10-23 21:20+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1686,27 +1686,32 @@ msgstr ""
 msgid "The maintenance is over: printing and scanning work again."
 msgstr ""
 
-#: spoolsteward/admin/templates/_own_notices.html:72
-#: spoolsteward/admin/templates/notices.html:45
+#: spoolsteward/admin/templates/_own_notices.html:73
+#: spoolsteward/admin/templates/notices.html:46
 msgid "<b>Save the secret key in a safe place.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in the <span class=\"mono\">.env</span> file encrypts the file names kept in the audit and signs the portal sessions. A backup without encryption does not contain it: if the server breaks and you restore the backup with a new key, the names stay unreadable (<span class=\"mono\">[encrypted]</span>) for good. Copy the line from <span class=\"mono\">.env</span> into a password manager, or make encrypted backups (they include <span class=\"mono\">.env</span>)."
 msgstr ""
 
-#: spoolsteward/admin/templates/_own_notices.html:76
-msgid "dismissed"
+#: spoolsteward/admin/templates/_own_notices.html:75
+#: spoolsteward/admin/templates/notices.html:48
+msgid "<b>Save the secret key in a safe place.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in the <span class=\"mono\">.env</span> file signs the portal sessions and proves to the gateway who the network announcer is. Whoever knows it can forge a login session, so keep it private. If it is lost, everybody has to sign in again and the network announcement stays off until a new key is set. A backup without encryption does not contain it: copy the line from <span class=\"mono\">.env</span> into a password manager, or make encrypted backups (they include <span class=\"mono\">.env</span>)."
 msgstr ""
 
-#: spoolsteward/admin/templates/_own_notices.html:77
-#: spoolsteward/admin/templates/notices.html:56
-msgid "Dismiss"
+#: spoolsteward/admin/templates/_own_notices.html:80
+msgid "dismissed"
 msgstr ""
 
 #: spoolsteward/admin/templates/_own_notices.html:81
 #: spoolsteward/admin/templates/notices.html:60
+msgid "Dismiss"
+msgstr ""
+
+#: spoolsteward/admin/templates/_own_notices.html:85
+#: spoolsteward/admin/templates/notices.html:64
 msgid "No notices."
 msgstr ""
 
-#: spoolsteward/admin/templates/_own_notices.html:84
-#: spoolsteward/admin/templates/notices.html:63
+#: spoolsteward/admin/templates/_own_notices.html:88
+#: spoolsteward/admin/templates/notices.html:67
 msgid "Dismiss all"
 msgstr ""
 
@@ -3458,12 +3463,12 @@ msgid "What concerns you: what the administrators did with your account (keys, g
 msgstr ""
 
 #: spoolsteward/admin/templates/me_notices.html:10
-#: spoolsteward/admin/templates/notices.html:65
+#: spoolsteward/admin/templates/notices.html:69
 msgid "Hide dismissed"
 msgstr ""
 
 #: spoolsteward/admin/templates/me_notices.html:10
-#: spoolsteward/admin/templates/notices.html:65
+#: spoolsteward/admin/templates/notices.html:69
 msgid "Show dismissed too"
 msgstr ""
 
@@ -3486,7 +3491,7 @@ msgid "Last time"
 msgstr ""
 
 #: spoolsteward/admin/templates/notices.html:17
-#: spoolsteward/admin/templates/notices.html:54
+#: spoolsteward/admin/templates/notices.html:58
 msgid "Times"
 msgstr ""
 
@@ -3565,22 +3570,22 @@ msgstr ""
 msgid "<b>Problem</b> on the printer “%(printer)s”: %(what)s."
 msgstr ""
 
-#: spoolsteward/admin/templates/notices.html:47
+#: spoolsteward/admin/templates/notices.html:51
 #, python-format
 msgid "<b>The secret key has changed</b> since the previous start (<span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> in <span class=\"mono\">.env</span>). %(count)s file names in the audit were encrypted with the old key and now show as <span class=\"mono\">[encrypted]</span>. If the change was not wanted (for example a restore with a new <span class=\"mono\">.env</span>), put the old key back and restart: the names become readable again."
 msgstr ""
 
-#: spoolsteward/admin/templates/notices.html:49
+#: spoolsteward/admin/templates/notices.html:53
 #, python-format
-msgid "<b>No secret key is set.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> is missing from <span class=\"mono\">.env</span> or set to <span class=\"mono\">none</span>: the file names in the audit are stored without encryption, everybody has to sign in again after every restart and the printers are not announced on the network (mDNS). Write a random value (the output of <span class=\"mono\">openssl rand -hex 32</span>) after <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> in <span class=\"mono\">.env</span>, run <span class=\"mono\">docker compose up -d</span> and save the key in a safe place. <a href=\"%(url)s\">Step by step</a>."
+msgid "<b>No secret key is set.</b> <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY</span> is missing from <span class=\"mono\">.env</span> or set to <span class=\"mono\">none</span>: everybody has to sign in again after every restart and the printers are not announced on the network (mDNS). Write a random value (the output of <span class=\"mono\">openssl rand -hex 32</span>) after <span class=\"mono\">SPOOLSTEWARD_SECRET_KEY=</span> in <span class=\"mono\">.env</span>, run <span class=\"mono\">docker compose up -d</span> and save the key in a safe place. <a href=\"%(url)s\">Step by step</a>."
 msgstr ""
 
-#: spoolsteward/admin/templates/notices.html:51
+#: spoolsteward/admin/templates/notices.html:55
 #, python-format
 msgid "<b>Scans without login are refused: the guest name is already taken.</b> A scan app sent no user name and password, and the account “%(name)s” that would receive its scans already exists as a real account (with a password, from RADIUS, or an administrator), so it is not used. Set a name nobody uses in <span class=\"mono\">SPOOLSTEWARD_ESCL_GUEST_USERNAME</span> in <span class=\"mono\">.env</span> and restart the portal."
 msgstr ""
 
-#: spoolsteward/admin/templates/notices.html:55
+#: spoolsteward/admin/templates/notices.html:59
 #, python-format
 msgid "dismissed by %(who)s"
 msgstr ""

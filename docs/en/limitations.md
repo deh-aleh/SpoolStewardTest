@@ -21,9 +21,7 @@ What SpoolSteward does **not** do (yet) or does with caveats. The short version 
   "write only if mounted" is on by default for backups made in the portal, and the portal gives a notice when a backup is skipped. The *General* backup of `.env` has the option off
   by default (it must be turned on and prepared by hand, see [backup.md](backup.md)).
 - Going back to an older version after a database migration requires restoring a backup: `scripts/update.sh`.
-- The **names of printed files are encrypted** in the database and in the audit archive (key derived from `SPOOLSTEWARD_SECRET_KEY`: if you change it they can no longer be read). The rest of the
-  database is not encrypted (user names, groups, printer names, admin log): to protect everything, encrypt the disk, see [data-protection.md](data-protection.md).
-  CUPS also keeps the names of its latest jobs (up to 2,000) in its own volume: the button and the retention of names do not touch them.
+- CUPS keeps the names of its latest jobs (up to 2,000) in its own volume: the button and the retention of names do not touch them.
 - Certificates: devices must trust the company CA; the announcement uses the IP, so the certificate must list it (the portal gives a notice if it does not).
   Details in [certificates.md](certificates.md).
 
@@ -69,7 +67,7 @@ What SpoolSteward does **not** do (yet) or does with caveats. The short version 
 
 - Built-in backups: SQLite only; CUPS queues not included (they are in `scripts/backup.sh`); configuration files are restored by hand;
   no direct remote destinations; the passphrase can not be recovered. `scripts/backup.sh restore` is tested by hand only.
-- The audit and the database are not encrypted, except the file names (see §1 and [data-protection.md](data-protection.md)).
+- The audit and the database are not encrypted by default (see §1 and [data-protection.md](data-protection.md)).
 
 ## 6. Languages
 

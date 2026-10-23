@@ -53,16 +53,12 @@ Differenze consapevoli rispetto a uno schema "classico":
 | RADIUS | **pyrad** (PAP + Message-Authenticator) | Il server RADIUS esiste già in ufficio |
 | Portale | Pagine **Jinja2** generate dal server, sessioni firmate (**itsdangerous**) | HTML dal server; JavaScript solo per piccoli aiuti (copia, suggerimenti, popup, aggiornamento automatico) |
 | Traduzioni | **Babel** (cataloghi gettext `.po` letti in memoria) | Nessuna compilazione; vedi [lingue.md](lingue.md) |
-| Configurazione | **pydantic-settings** (variabili `SPOOLSTEWARD_*`) | Validazione e valori predefiniti |
-| Backend di stampa | **CUPS 2.4** | Dipendenza non modificata; filtri e driver già pronti |
-| Ponte USB | **ipp-usb** | Espone la stampante USB come IPP/eSCL |
+| Backend di stampa, ponte USB | **CUPS 2.4**, **ipp-usb** | Dipendenze non modificate; filtri e driver già pronti; ipp-usb espone la stampante USB come IPP/eSCL |
 | Conteggio pagine | **pypdf** (+ intestazioni di immagini, URF, PostScript) | Il limite pagine deve valere anche per un file da 200 pagine |
-| Documentazione nel portale | **markdown-it-py** | Mostra le pagine Markdown di `docs/` con l'HTML grezzo disattivato; i file restano leggibili su GitHub così come sono |
-| PDF del report di utilizzo | **reportlab** | Tabelle con interruzioni di pagina e intestazione ripetuta, senza browser né programmi esterni |
+| Documentazione, PDF del report | **markdown-it-py**, **reportlab** | Le pagine Markdown di `docs/` si mostrano con l'HTML grezzo disattivato e restano leggibili su GitHub; le tabelle PDF non richiedono un browser |
 | Backup | **cryptography** (X25519, HKDF, AES-256-GCM, scrypt) | Cifrati con una chiave di recupero, passphrase mai conservata |
 | Annuncio sulla rete | **python-zeroconf** (servizio `mdns`, rete host) | Il multicast non attraversa la rete bridge di docker |
-| Contenitori | **Docker Compose** | Nulla installato sull'host; test riproducibili |
-| Test | **pytest** (+ asyncio); CUPS e FreeRADIUS reali in docker | Molti test girano contro servizi veri |
+| Contenitori, test | **Docker Compose**, **pytest** | Nulla installato sull'host; molti test girano contro un CUPS e un FreeRADIUS veri |
 
 ## 3. I contenitori
 
@@ -77,8 +73,7 @@ tutti, ognuno con il suo comando, quindi hanno sempre la stessa versione. `spool
 | `mdns` | Annuncia code e scanner sulla LAN. Stessa immagine del portal, rete host. Chiede al gateway cosa annunciare (autenticato da un codice derivato da `SPOOLSTEWARD_SECRET_KEY`). | multicast |
 | `radius` | RADIUS di prova, solo con `--profile radius-test` | interna |
 
-Dati: un volume docker per il database (`/data`), la cartella `data/audit-archive` sull'host per l'audit compresso, la cartella
-`data/backups` sull'host per i backup, `config/` (in sola lettura) per il certificato TLS, e `.env` (in sola lettura, per i backup cifrati).
+Dati: un volume docker per il database (`/data`), le cartelle `data/audit-archive` e `data/backups` sull'host, `config/` (in sola lettura) per il certificato TLS, e `.env` (in sola lettura, per i backup cifrati).
 
 ## 4. Percorso di una richiesta IPP
 
@@ -118,7 +113,7 @@ Tutte avviate dal ciclo di vita del gateway ([`spoolsteward/main.py`](../../spoo
 | Scheduler della stampa periodica | 60 s | Stampa le pagine di manutenzione e annota la prima volta che ogni coda è stata vista |
 | Scoperta delle stampanti | `SPOOLSTEWARD_DISCOVERY_INTERVAL` (30 s) | Crea le code delle stampanti USB nuove (prima ipp-usb, poi backend usb di CUPS) e toglie le code USB irraggiungibili da `SPOOLSTEWARD_OFFLINE_REMOVE_HOURS` |
 | Annunciatore mDNS | `SPOOLSTEWARD_MDNS_INTERVAL` (30 s) | Contenitore a parte: rilegge l'elenco delle code e dice al gateway quale indirizzo annuncia |
-| Nomi dei file ([`spoolsteward/titles.py`](../../spoolsteward/titles.py)) | all'avvio, poi 1 giorno | Cifra i nomi scritti prima che ci fosse la chiave; con la retention accesa cancella i nomi più vecchi di `SPOOLSTEWARD_JOB_TITLE_RETENTION_DAYS` |
+| Nomi dei file ([`spoolsteward/titles.py`](../../spoolsteward/titles.py)) | all'avvio, poi 1 giorno | Se la cifratura dei nomi è accesa, cifra quelli scritti in chiaro; con la retention accesa cancella i nomi più vecchi di `SPOOLSTEWARD_JOB_TITLE_RETENTION_DAYS` |
 | Controllo del certificato ([`spoolsteward/certwatch.py`](../../spoolsteward/certwatch.py)) | 6 h | Legge il certificato TLS e `config/tls/sync-status.json`, e apre o chiude gli avvisi sul certificato |
 | Controllo stampanti ([`spoolsteward/printerwatch.py`](../../spoolsteward/printerwatch.py)) | 1 min | Inceppamento, carta finita, inchiostro finito/in esaurimento come avvisi (confermati da due controlli consecutivi) |
 | Manutenzione delle chiavi ([`spoolsteward/keywatch.py`](../../spoolsteward/keywatch.py)) | 1 h | Elimina le chiavi di stampa concluse, avvisa di quelle in scadenza e dei permessi temporanei terminati |
@@ -138,21 +133,15 @@ Tabelle (Alembic applica le migrazioni all'avvio; un test fallisce se un modello
 | `permission_rule`, `permission_grant` | Colore / solo fronte / stampanti / orari di un gruppo o utente, e permessi aggiunti a un utente dopo una richiesta (permanenti o fino a una data) |
 | `admin_audit` | Chi ha fatto cosa nel portale |
 | `audit_archive` | Registro dei file di audit compressi (percorso, intervallo, righe, sha256) |
-| `printer_control` | Blocco e nascondimento mDNS per coda |
-| `printer_keepalive` | Impostazioni della stampa periodica, una riga per coda |
-| `printer_seen` | Prima volta che ogni coda è stata vista (ordine predefinito dell'elenco) |
-| `printer_order` | Dove ogni amministratore ha messo una stampante nel proprio elenco (frecce su/giù) |
-| `printer_offline` | Da quando una coda USB non risponde (conto alla rovescia per la rimozione automatica) |
-| `printer_former` | Nomi passati delle code, proposti nella finestra di rinomina |
+| `printer_control`, `printer_keepalive`, `printer_seen`, `printer_order`, `printer_offline`, `printer_former` | Stato per coda: blocco e nascondimento mDNS, stampa periodica, prima volta vista, ordine di ogni amministratore, da quando una coda USB non risponde, nomi passati |
 | `notice` | La campanella: avvisi per gli amministratori e per i singoli utenti |
 | `gateway_setting` | Modalità manutenzione, id dell'istanza, interruttore dei nomi dei file, impronta della chiave segreta |
 | `backup_target` | Destinazioni dei backup, una per amministratore oppure quella generale |
 
 ## 7. Decisioni di progetto da conoscere
 
-- **I nomi utente sono unici fra tutte le origini.** A CUPS e all'audit arriva solo `gw:<nome>`: due persone con lo stesso nome in
-  origini diverse condividerebbero identità e quota. Il metodo di accesso lo decide la *riga*, non chi risponde "sì": un account
-  locale non può mai essere aperto dal RADIUS.
+- **I nomi utente sono unici fra tutte le origini.** A CUPS e all'audit arriva solo `gw:<nome>`: due persone con lo stesso nome
+  condividerebbero identità e quota. Il metodo di accesso lo decide la *riga*: un account locale non può mai essere aperto dal RADIUS.
 - **Chiavi di stampa, non password di dominio, sui dispositivi.** I sistemi operativi salvano le credenziali di stampa in chiaro. Una
   chiave è casuale, per dispositivo, revocabile e valida solo per stampare; non apre mai il portale.
 - **Le concessioni si sommano, non riscrivono lo storico.** `limite effettivo = regola + concessioni attive`, calcolato dentro lo
@@ -160,8 +149,7 @@ Tabelle (Alembic applica le migrazioni all'avvio; un test fallisce se un modello
 - **L'audit si aggiunge soltanto e si conserva per sempre.** Nessuna funzione del portale cancella righe o archivi; solo l'archiviatore
   sposta le righe, e solo dopo aver riletto e verificato la copia compressa.
 - **Riserva atomica.** Il controllo del limite e l'inserimento avvengono sotto lock (thread + `BEGIN IMMEDIATE` su SQLite): job simultanei non possono superare il limite.
-- **Nessuna ipotesi sull'hardware.** Stampanti, colore, inchiostro, contatori, scanner e formati carta si leggono dai dispositivi a
-  runtime. I contatori del costruttore vengono dal servizio web HP quando c'è; le altre marche mostrano solo i dati IPP.
+- **Nessuna ipotesi sull'hardware.** Stampanti, colore, inchiostro, contatori, scanner e formati carta si leggono dai dispositivi a runtime.
 - **Fail closed.** RADIUS irraggiungibile ⇒ accesso negato; niente TLS ⇒ il gateway non parte; RADIUS configurato a metà ⇒ non parte.
 - **L'inglese è la lingua dei sorgenti** di ogni testo visibile; le altre lingue sono cataloghi ([lingue.md](lingue.md)).
 
@@ -170,17 +158,13 @@ Tabelle (Alembic applica le migrazioni all'avvio; un test fallisce se un modello
 - CUPS non è raggiungibile dalla rete né da altri utenti locali; l'utente verso CUPS è `gw:<utente>`, quindi nessun nome RADIUS
   (per esempio `root`) può diventare amministratore CUPS. Le operazioni amministrative IPP sono bloccate.
 - TLS obbligatorio. Credenziali mai in chiaro su HTTP.
-- Disabilitare un utente nel portale blocca subito login e chiavi. Chi è stato tolto solo dal server RADIUS continua a stampare con le chiavi già create finché non scadono.
 - Le chiavi si salvano solo come hash, si mostrano una volta e non aprono il portale; le password locali sono argon2id (minimo 12 caratteri).
-- Blocco dei login: 5 password *diverse* sbagliate in 5 minuti per coppia (utente, IP), più un tetto per IP. Lo stesso errore ripetuto
-  conta una volta (libcups riprova) e un estraneo non può bloccare un altro utente.
+- Blocco dei login: 5 password *diverse* sbagliate in 5 minuti per coppia (utente, IP), più un tetto per IP; un estraneo non può bloccare un altro utente.
 - Portale: sessioni firmate di 8 ore, token CSRF su ogni POST, cookie `Secure` + `SameSite=strict`, HTML sempre escapato, CSV protetto
   da iniezione di formule, pagine con segreti con `Cache-Control: no-store`.
-- Il database **non è cifrato** e contiene i nomi dei file stampati: proteggilo come dato personale.
+- Il database contiene i nomi dei file stampati: proteggilo come dato personale.
 
 ## 9. Qualità
 
-I test automatici coprono il codec (andata e ritorno su risposte reali), le finestre delle policy (anche attraverso l'ora legale),
-la concorrenza (16 connessioni indipendenti non superano un limite, due admin concedono una volta sola), l'autenticazione con un
-RADIUS vero, il gateway contro un CUPS vero, il portale in ogni lingua, le migrazioni (compreso un database pre-Alembic con dati),
-chiavi, richieste e concessioni, archiviazione e interruzioni.
+I test automatici coprono il codec IPP, le finestre delle policy (anche attraverso l'ora legale), la concorrenza, l'autenticazione con un RADIUS vero, il gateway
+contro un CUPS vero, il portale in ogni lingua, le migrazioni, chiavi, richieste, concessioni e archiviazione.

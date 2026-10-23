@@ -29,15 +29,14 @@ if [ ! -e .env ]; then
     chmod 600 .env
     echo "created .env (version $version). Set the time zone and, if you use RADIUS, SPOOLSTEWARD_RADIUS_HOST / SPOOLSTEWARD_RADIUS_SECRET in it."
 else
-    # report, never fix: the file is the user's. Without a key file names are stored in clear and sessions end at every
-    # restart; the placeholder or a short key stops the gateway. The value itself is never printed.
+    # report, never fix: the file is the user's. Without a key sessions end at every restart and mDNS announces nothing; the placeholder or a short key stops the gateway. The value itself is never printed.
     help="See \"No secret key is set\" in docs/en/troubleshooting.md."
     if ! grep -q '^SPOOLSTEWARD_SECRET_KEY=' .env; then
-        echo "WARNING: .env has no SPOOLSTEWARD_SECRET_KEY line (the file was left untouched): the file names in the audit are stored without encryption and everybody signs in again after every restart. Add the line SPOOLSTEWARD_SECRET_KEY= with the output of 'openssl rand -hex 32' after the '=', then run docker compose up -d. $help" >&2
+        echo "WARNING: .env has no SPOOLSTEWARD_SECRET_KEY line (the file was left untouched): everybody signs in again after every restart and the printers are not announced on the network (mDNS). Add the line SPOOLSTEWARD_SECRET_KEY= with the output of 'openssl rand -hex 32' after the '=', then run docker compose up -d. $help" >&2
     else
         key="$(sed -n 's/^SPOOLSTEWARD_SECRET_KEY=//p' .env | tail -n 1 | tr -d "\"' ")"
         case "$key" in
-            [Nn][Oo][Nn][Ee]) echo "WARNING: SPOOLSTEWARD_SECRET_KEY in .env is 'none': file names are not encrypted and everybody signs in again after every restart. Replace it with a long random value (openssl rand -hex 32). $help" >&2 ;;
+            [Nn][Oo][Nn][Ee]) echo "WARNING: SPOOLSTEWARD_SECRET_KEY in .env is 'none': everybody signs in again after every restart and the printers are not announced on the network (mDNS). Replace it with a long random value (openssl rand -hex 32). $help" >&2 ;;
             __*__) echo "WARNING: SPOOLSTEWARD_SECRET_KEY in .env is still the placeholder of docker/env.example: the gateway refuses to start. Replace it with the output of 'openssl rand -hex 32'. $help" >&2 ;;
             *) [ "${#key}" -ge 64 ] || echo "WARNING: SPOOLSTEWARD_SECRET_KEY in .env is shorter than 64 characters: the gateway refuses to start. Replace it with the output of 'openssl rand -hex 32'. $help" >&2 ;;
         esac

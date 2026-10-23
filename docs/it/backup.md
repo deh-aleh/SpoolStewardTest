@@ -88,19 +88,17 @@ chiave appena usata.
 
 ### Salva la chiave segreta
 
-`SPOOLSTEWARD_SECRET_KEY` in `.env` cifra i nomi dei file conservati nell'audit ([protezione-dati.md](protezione-dati.md)). Un backup
-**senza cifratura non la contiene**, apposta (non contiene segreti). Quindi se il server si rompe, ripristini un backup non cifrato
-su una macchina nuova e `scripts/docker-init.sh` crea una chiave **nuova**, il database torna intero (utenti, quote, pagine, date,
-stampanti) ma i nomi dei file restano `[encrypted]` per sempre.
+`SPOOLSTEWARD_SECRET_KEY` in `.env` firma le sessioni del portale e protegge il collegamento con `mdns`; se cifri i nomi dei file
+([protezione-dati.md](protezione-dati.md)) apre anche quelli. Un backup **senza cifratura non la contiene**, apposta (non contiene segreti).
+Quindi se il server si rompe, ripristini un backup non cifrato su una macchina nuova e `scripts/docker-init.sh` crea una chiave **nuova**:
+il database torna intero (utenti, quote, pagine, date, stampanti), tutti rifanno il login e i nomi dei file cifrati restano `[encrypted]` per sempre.
 
 - Copia la riga `SPOOLSTEWARD_SECRET_KEY=...` di `.env` in un password manager o in un altro posto sicuro, **una volta**, dopo l'installazione.
 - Oppure fai backup cifrati: includono `.env`, quindi la chiave viaggia insieme al database.
 - Quando passi a un'altra macchina, copia anche `.env` (`scripts/backup.sh` lo fa).
 
-Il gateway aiuta: dopo il primo avvio l'amministratore del primo avvio (`SPOOLSTEWARD_BOOTSTRAP_ADMIN_USERNAME`) trova un promemoria nella
-propria campanella, una volta sola (se quell'account non esiste, lo vedono tutti gli amministratori). Se poi il gateway parte con una
-chiave diversa, la campanella lo dice e indica quanti nomi non si leggono più; rimettendo la vecchia chiave in `.env` e riavviando
-tornano leggibili.
+Il gateway lo ricorda una volta: lo trova nella campanella l'amministratore del primo avvio (o tutti gli amministratori, se quell'account non esiste). Se poi parte con una
+chiave diversa, la campanella dice quanti nomi non si leggono più; rimettendo la vecchia chiave in `.env` e riavviando tornano leggibili.
 
 ## 2. Ripristino
 
