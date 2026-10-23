@@ -74,6 +74,38 @@ Texts in the code are English inside `_("...")`; `scripts/i18n.py` keeps the cat
 ([docs/en/languages.md](docs/en/languages.md)). The documentation is in `docs/en` and, with the same sections, in `docs/it`: a change to
 one goes into the other. Pictures follow [docs/images/README.md](docs/images/README.md).
 
+### Adding or fixing a translation
+
+Catalogs are gettext files: `spoolsteward/locales/<lang>/messages.po` (`msgid` = English text, `msgstr` = translation). They are read at
+start and compiled in memory with Babel — no `.mo` files, no build step. Keep `%(name)s` placeholders unchanged and write a literal `%` as `%%`.
+
+```sh
+python scripts/i18n.py extract    # refresh the catalogs from the code
+python scripts/i18n.py missing    # what still lacks a translation
+python scripts/i18n.py check      # completeness and placeholders
+pytest tests/test_i18n.py         # fails if a catalog is incomplete or has wrong placeholders
+```
+
+New language: add it to `LANGUAGES` in `spoolsteward/i18n.py` and to `LANGS` in `scripts/i18n.py`, then run `extract`.
+
+### Rules for people writing code
+
+- Every visible text is English inside `_("...")` (Python: `from spoolsteward.i18n import _`; templates: `{{ _("...") }}`).
+- Menu labels are short on purpose and may differ from the page titles: they use `_p("menu", "Backup")` (same text, context `menu`). To translate one, give `scripts/i18n.py add` the key `"menu::Backup"`.
+- Values are always named (`_("Key %(label)s revoked", label=x)`), never concatenated.
+- Plurals use `ngettext` (Russian has three forms).
+- In templates, text for JavaScript uses `_js(...)` (unformatted, `%(name)s` replaced by the script) or `_t(...)|tojson` (for `confirm()`).
+- Cached data (queue states, counter labels) are English *keys* translated only when shown. Enumerations are translated with `_(value)` (list in `VALUE_LABELS`).
+- `Decision.reason` (audit, IPP clients) stays English; `Decision.text()` is the localised sentence for the portal.
+
+### How it works
+
+`spoolsteward/i18n.py` keeps the request language in a `ContextVar` set by an ASGI middleware that sits inside the session middleware.
+The `ContextVar` follows the request into the threads of synchronous handlers and into tasks it starts (portal scan), so `_()`
+works everywhere in a request. Outside a request (schedulers) the default applies. `_()` returns trusted Markup in templates;
+`_t()` returns plain text. `user.language` (migration 0007) is written at login and re-aligned if it changes from another device.
+
+
 ## 5. Releases
 
 1. Set `version` in `pyproject.toml`: `1.2.0` for a final release, `1.2.0b1` for a beta.

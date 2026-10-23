@@ -145,15 +145,15 @@ versione; `--check` dice solo se ne esiste una più nuova.
 e un backup programmato attivo e riuscito nelle ultime 48 ore: si fa un backup fresco, poi parte l'aggiornamento. Se la nuova versione non
 parte viene rimessa quella vecchia; il ripristino del backup, se serve, lo fai tu con `scripts/backup.sh restore`.
 
-**Beta.** Una versione come `0.0.0-beta.2` è una release di prova, pubblicata come pre-release su GitHub. Con
+**Beta.** Una versione come `w.x.y-beta.z` è una release di prova, pubblicata come pre-release su GitHub. Con
 `SPOOLSTEWARD_UPDATE_BETA=true` (il valore scritto da `docker-init.sh`) le beta sono proposte come le release finali: nell'avviso di nuova
 versione, dal pulsante *Aggiorna* e da `scripts/update.sh` senza argomenti. Installare una beta chiede una conferma in più (una casella
 da spuntare nel portale; `update.sh` chiede di scrivere `YES`). Con `false` sono proposte solo le release finali; una beta che nomini tu
-(`scripts/update.sh 0.0.0-beta.2`) viene installata qualunque sia l'impostazione.
+(`scripts/update.sh w.x.y-beta.z`) viene installata qualunque sia l'impostazione.
 
 **Modifiche incompatibili.** Una release può dichiarare modifiche incompatibili (*breaking changes*): le sue note di rilascio hanno un
 titolo "Breaking changes", oppure cambia il primo numero della versione, o il secondo mentre il primo è `0` (da `0.1.x` a `0.2.0`). Conta
-anche una release saltata: passare da `0.0.0-beta.1` a `0.0.0-beta.3` è incompatibile se lo era `0.0.0-beta.2`. Allora la conferma avvisa
+anche una release saltata: passare da `w.x.y-beta.y1` a `w.x.y-beta.y3` è incompatibile se lo era `w.x.y-beta.z`. Allora la conferma avvisa
 che l'aggiornamento potrebbe fallire e lasciare SpoolSteward non funzionante, e chiede di copiare prima un backup recente fuori dal server
 e di tenere una copia di `.env` e `config/`; il portale avvia l'aggiornamento solo con la casella spuntata, `update.sh` solo dopo `YES`.
 Leggi le note di rilascio prima di confermare.

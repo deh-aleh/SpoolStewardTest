@@ -42,40 +42,13 @@ is an error (write `none` where a setting may be left unset). After editing `.en
 
 ### 2.1 Part A of `.env` (docker compose variables)
 
-| Variable | Default | Meaning |
-|---|---|---|
-| `PUID`, `PGID` | your user | Unix user that runs the gateway; owns the TLS key and `data/` folders |
-| `PORTAL_PORT` | `8631` | Port published on the host (use `631` if nothing else uses it) |
-| `CUPS_QUEUES` | `none` | Queues created in CUPS at start: `NAME=URI NAME2=URI2` |
-| `CUPS_VIRTUAL_QUEUE` | `0` | `1` creates a queue `virtual` that writes PDFs (try quotas without paper) |
-| `AUDIT_ARCHIVE_HOST_PATH`, `BACKUP_HOST_PATH` | set by init | Only displayed in the portal, to tell where files are on the host |
-| `BACKUP_DIR` | `./data/backups` | Host folder mounted at `/backups`: the only place backups may be written |
-| `SPOOLSTEWARD_REGISTRY`, `SPOOLSTEWARD_VERSION` | set by init | Download published images instead of building; the version that runs (changed by `scripts/update.sh`) |
-| `PROJECT_DIR` | set by init | Full path of the project folder; only the optional `updater` container uses it |
-| `COMPOSE_PROFILES` | unset | `autoupdate` starts the optional `updater` container |
+The variables read by docker compose itself (`PUID`, `PGID`, `PORTAL_PORT`, `CUPS_QUEUES`, the host folders, the version) are listed in [configuration.md](configuration.md#11-part-a-docker-compose-variables).
 
 The file is made from `docker/env.example` (by `scripts/docker-init.sh`, in plain shell: it fills in version, user, folder and generates the secret). An update **never touches `.env`**: new options work with their default value (the one in `spoolsteward/config.py`) even when missing, and `docker/env.example` (replaced by every update) lists them with their explanation. A test checks that every active value of `docker/env.example` equals the default in `spoolsteward/config.py`.
 
 ### 2.2 Part B of `.env` (`SPOOLSTEWARD_*` settings)
 
-The full reference, one variable at a time with what it does and when to change it, is [configuration.md](configuration.md). The commented reference is part B of [`docker/env.example`](../../docker/env.example) (plain English comments) and the
-authoritative list is `spoolsteward/config.py`. Summary:
-
-| Group | Variables |
-|---|---|
-| **Secret** | `SPOOLSTEWARD_SECRET_KEY` — signs session cookies and authenticates gateway→mdns. Also the key that encrypts the file names in the audit. Unset = random at each start (sessions lost on restart, mdns channel unprotected) and file names stored without encryption. **Changing or losing it makes the file names already saved unreadable** (`[encrypted]`) and logs everybody out; an unencrypted backup does not contain it. The gateway warns in the bell (see `secretcheck.py`). |
-| **RADIUS** (optional) | `RADIUS_HOST`, `RADIUS_PORT` (1812), `RADIUS_SECRET`, `RADIUS_TIMEOUT` (5), `AUTH_CACHE_SECONDS` (60), `PASSWORD_CHECKS_AT_ONCE` (3). Both host and secret `none` = local accounts only; only one filled = refuses to start. |
-| **Print authentication** | `IPP_AUTH` (`keys` \| `keys+radius`), `KEY_TTL_DAYS_RADIUS` (90, longest), `KEY_TTL_DAYS_LOCAL` (730, longest), `KEY_ONCE_HOURS` (24), `KEY_ONCE_GRACE_SECONDS` (120), `KEY_HISTORY_DAYS` (14), `KEY_EXPIRY_WARN_ENABLED` (false), `KEY_EXPIRY_WARN_DAYS` (7), `AUTO_CREATE_USERS` (true), `DEFAULT_GROUP` (default), `CUPS_USER_PREFIX` (`gw:`), `ANONYMOUS_DISCOVERY` (true) |
-| **First run** | `BOOTSTRAP_ADMIN` (true), `BOOTSTRAP_ADMIN_USERNAME` (`administrator`) |
-| **Requests** | `MAX_OPEN_REQUESTS` (3), `REQUEST_TTL_DAYS` (14), `REQUEST_REASON_REQUIRED` (false) |
-| **Audit** | `AUDIT_MAX_MB` (50), `AUDIT_ARCHIVE_DIR` (`/data/audit-archive`), `AUDIT_CHECK_INTERVAL` (3600), `DB_SYNC` (`full` \| `normal`) |
-| **Backup** (general) | `BACKUP_ENABLED` (false), `BACKUP_DIR` (`general`), `BACKUP_HOUR` (3), `BACKUP_KEEP_DAILY/WEEKLY/MONTHLY` (7/4/12), `BACKUP_RECIPIENT` (recovery key; `none` = unencrypted, no secrets in the file), `BACKUP_ROOT` (`/backups`), `BACKUP_CONFIG_DIR` (`/config`) |
-| **Printers page** | `PRINTERS_REFRESH_SECONDS` (15; from 5 to 3600) |
-| **USB printers** | `AUTO_DISCOVER` (true), `DISCOVERY_INTERVAL` (30), `USB_BRIDGE_HOST` (`ipp-usb`), `USB_BRIDGE_PORTS` (`60000-60099`), `USB_DIRECT` (true), `OFFLINE_REMOVE_HOURS` (8; 0 = never) |
-| **Printing / scanning** | `WEB_UPLOAD_MB` (25), `WEB_MAX_COPIES` (20), `MAX_REQUEST_MB` (200), `RECONCILE_INTERVAL` (30), `SCAN_URL`, `SCAN_TIMEOUT` (180), `SCAN_KEEP_MB` (50), `SCAN_KEEP_MINUTES` (10), `SCAN_DELETE_AFTER_DOWNLOAD` (false), `ESCL_ANONYMOUS` (false), `ESCL_WINDOW` (true), `ESCL_WINDOW_SECONDS` (180) |
-| **Network / mDNS** | `PORTAL_URL`, `MDNS_HOSTNAME`, `MDNS_ADDRESSES`, `MDNS_PORT`, `MDNS_INTERVAL` (30), `PUBLIC_SCHEME` |
-| **Misc** | `TIMEZONE` (UTC), `LANGUAGE` (en), `LOG_LEVEL` (INFO), `NOTICE_INTERVAL` (0 = by log level), `HEALTHZ_INFO` (`none` = status only), `HSTS_SECONDS` (0 = off), `UPDATE_CHECK` (true) |
-| **Set by the image/compose, do not set** | `TLS_CERTFILE`, `TLS_KEYFILE`, `DATABASE_URL`, `CUPS_URL`, `ALLOW_INSECURE_AUTH` (never in production), `HOST`, `PORT` |
+Every `SPOOLSTEWARD_*` setting, one variable at a time with its default and what it does, is in [configuration.md](configuration.md). The commented version is part B of [`docker/env.example`](../../docker/env.example) and the authoritative list is `spoolsteward/config.py`.
 
 ## 3. The Python package, file by file
 

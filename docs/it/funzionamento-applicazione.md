@@ -42,40 +42,13 @@ Dopo aver modificato `.env` esegui `docker compose up -d` (ricrea i contenitori 
 
 ### 2.1 Parte A di `.env` (variabili di docker compose)
 
-| Variabile | Predefinito | Significato |
-|---|---|---|
-| `PUID`, `PGID` | il tuo utente | Utente Unix che esegue il gateway; possiede la chiave TLS e le cartelle `data/` |
-| `PORTAL_PORT` | `8631` | Porta pubblicata sull'host (usa `631` se nessun altro la usa) |
-| `CUPS_QUEUES` | `none` | Code create in CUPS all'avvio: `NOME=URI NOME2=URI2` |
-| `CUPS_VIRTUAL_QUEUE` | `0` | `1` crea la coda `virtual` che scrive PDF (prova delle quote senza carta) |
-| `AUDIT_ARCHIVE_HOST_PATH`, `BACKUP_HOST_PATH` | impostati dall'init | Solo mostrati nel portale, per dire dove stanno i file sull'host |
-| `BACKUP_DIR` | `./data/backups` | Cartella dell'host montata su `/backups`: l'unico posto dove si possono scrivere i backup |
-| `SPOOLSTEWARD_REGISTRY`, `SPOOLSTEWARD_VERSION` | impostati da init | Scarica le immagini pubblicate invece di costruirle; la versione in uso (la cambia `scripts/update.sh`) |
-| `PROJECT_DIR` | impostato da init | Percorso completo della cartella del progetto; lo usa solo il contenitore facoltativo `updater` |
-| `COMPOSE_PROFILES` | non impostato | `autoupdate` avvia il contenitore facoltativo `updater` |
+Le variabili lette da docker compose stesso (`PUID`, `PGID`, `PORTAL_PORT`, `CUPS_QUEUES`, le cartelle dell'host, la versione) sono elencate in [configurazione.md](configurazione.md#11-parte-a-variabili-di-docker-compose).
 
 Il file nasce da `docker/env.example` (lo fa `scripts/docker-init.sh`, in shell puro: sostituisce versione, utente, cartella e genera il segreto). Un aggiornamento **non tocca mai `.env`**: le opzioni nuove funzionano con il loro valore predefinito (quello di `spoolsteward/config.py`) anche se mancano, e `docker/env.example` (sostituito a ogni aggiornamento) le elenca con la spiegazione. Un test verifica che ogni valore attivo di `docker/env.example` sia uguale al predefinito di `spoolsteward/config.py`.
 
 ### 2.2 Parte B di `.env` (impostazioni `SPOOLSTEWARD_*`)
 
-Il riferimento completo, una variabile alla volta con cosa fa e quando cambiarla, è [configurazione.md](configurazione.md). Il riferimento commentato è la parte B di [`docker/env.example`](../../docker/env.example) (commenti in inglese semplice) e l'elenco
-autorevole è `spoolsteward/config.py`. Riassunto:
-
-| Gruppo | Variabili |
-|---|---|
-| **Segreto** | `SPOOLSTEWARD_SECRET_KEY` — firma i cookie di sessione e autentica gateway→mdns. È anche la chiave che cifra i nomi dei file nell'audit. `none` = casuale a ogni avvio (sessioni perse al riavvio, canale mdns non protetto) e nomi dei file salvati senza cifratura. **Cambiarla o perderla rende illeggibili i nomi dei file già salvati** (`[encrypted]`) e fa rifare il login a tutti; un backup non cifrato non la contiene. Il gateway avvisa nella campanella (vedi `secretcheck.py`). |
-| **RADIUS** (facoltativo) | `RADIUS_HOST`, `RADIUS_PORT` (1812), `RADIUS_SECRET`, `RADIUS_TIMEOUT` (5), `AUTH_CACHE_SECONDS` (60), `PASSWORD_CHECKS_AT_ONCE` (3). Host e secret `none` = solo account locali; uno solo compilato = non parte. |
-| **Autenticazione di stampa** | `IPP_AUTH` (`keys` \| `keys+radius`), `KEY_TTL_DAYS_RADIUS` (90, massimo), `KEY_TTL_DAYS_LOCAL` (730, massimo), `KEY_ONCE_HOURS` (24), `KEY_ONCE_GRACE_SECONDS` (120), `KEY_HISTORY_DAYS` (14), `KEY_EXPIRY_WARN_ENABLED` (false), `KEY_EXPIRY_WARN_DAYS` (7), `AUTO_CREATE_USERS` (true), `DEFAULT_GROUP` (default), `CUPS_USER_PREFIX` (`gw:`), `ANONYMOUS_DISCOVERY` (true) |
-| **Primo avvio** | `BOOTSTRAP_ADMIN` (true), `BOOTSTRAP_ADMIN_USERNAME` (`administrator`) |
-| **Richieste** | `MAX_OPEN_REQUESTS` (3), `REQUEST_TTL_DAYS` (14), `REQUEST_REASON_REQUIRED` (false) |
-| **Audit** | `AUDIT_MAX_MB` (50), `AUDIT_ARCHIVE_DIR` (`/data/audit-archive`), `AUDIT_CHECK_INTERVAL` (3600), `DB_SYNC` (`full` \| `normal`) |
-| **Backup** (generale) | `BACKUP_ENABLED` (false), `BACKUP_DIR` (`general`), `BACKUP_HOUR` (3), `BACKUP_KEEP_DAILY/WEEKLY/MONTHLY` (7/4/12), `BACKUP_RECIPIENT` (chiave di recupero; `none` = non cifrato, senza segreti nel file), `BACKUP_ROOT` (`/backups`), `BACKUP_CONFIG_DIR` (`/config`) |
-| **Pagina Stampanti** | `PRINTERS_REFRESH_SECONDS` (15; da 5 a 3600) |
-| **Stampanti USB** | `AUTO_DISCOVER` (true), `DISCOVERY_INTERVAL` (30), `USB_BRIDGE_HOST` (`ipp-usb`), `USB_BRIDGE_PORTS` (`60000-60099`), `USB_DIRECT` (true), `OFFLINE_REMOVE_HOURS` (8; 0 = mai) |
-| **Stampa / scansione** | `WEB_UPLOAD_MB` (25), `WEB_MAX_COPIES` (20), `MAX_REQUEST_MB` (200), `RECONCILE_INTERVAL` (30), `SCAN_URL`, `SCAN_TIMEOUT` (180), `SCAN_KEEP_MB` (50), `SCAN_KEEP_MINUTES` (10), `SCAN_DELETE_AFTER_DOWNLOAD` (false), `ESCL_ANONYMOUS` (false), `ESCL_WINDOW` (true), `ESCL_WINDOW_SECONDS` (180) |
-| **Rete / mDNS** | `PORTAL_URL`, `MDNS_HOSTNAME`, `MDNS_ADDRESSES`, `MDNS_PORT`, `MDNS_INTERVAL` (30), `PUBLIC_SCHEME` |
-| **Varie** | `TIMEZONE` (UTC), `LANGUAGE` (en), `LOG_LEVEL` (INFO), `NOTICE_INTERVAL` (0 = secondo il livello di log), `HEALTHZ_INFO` (`none` = solo lo stato), `HSTS_SECONDS` (0 = spento), `UPDATE_CHECK` (true) |
-| **Decise da immagine/compose, non impostare** | `TLS_CERTFILE`, `TLS_KEYFILE`, `DATABASE_URL`, `CUPS_URL`, `ALLOW_INSECURE_AUTH` (mai in produzione), `HOST`, `PORT` |
+Tutte le impostazioni `SPOOLSTEWARD_*`, una variabile alla volta con il valore predefinito e cosa fa, sono in [configurazione.md](configurazione.md). La versione commentata è la parte B di [`docker/env.example`](../../docker/env.example) e l'elenco autorevole è `spoolsteward/config.py`.
 
 ## 3. Il pacchetto Python, file per file
 

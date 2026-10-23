@@ -33,12 +33,7 @@ con le **pagine reali** lette da CUPS. Un job con pagine non ancora note vale al
 
 ### Il limite morbido
 
-Il limite pagine è **rigido** solo per i documenti che il gateway sa contare. È **morbido** in questi casi:
-
-- formato sconosciuto, **PDF cifrato** o file oltre 64 MB: il job che supera il limite *viene stampato* e le sue pagine reali
-  bloccano poi i successivi;
-- un job inviato con `Create-Job` + `Send-Document`: le pagine si contano al `Send-Document`, quando il job è già stato accettato;
-- un `Create-Job` senza documento libera la quota solo quando CUPS lo annulla (di default dopo 3 ore).
+Per i file di cui non si possono contare le pagine, e in pochi altri casi, il limite di pagine è morbido: [limiti.md](limiti.md#2-quota).
 
 ### Riserva atomica
 

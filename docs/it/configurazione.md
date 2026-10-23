@@ -160,7 +160,7 @@ ripristino: [backup.md](backup.md).
 | Variabile | Predefinito | Cosa fa |
 |---|---|---|
 | `SPOOLSTEWARD_UPDATE_CHECK` | `true` | Una volta al giorno il gateway chiede a GitHub qual è l'ultima versione e, se è più nuova, mostra un avviso agli amministratori. Non si aggiorna nulla da solo e la richiesta non invia nulla del tuo server. `false` = non chiedere mai. |
-| `SPOOLSTEWARD_UPDATE_BETA` | `true` | `true`: le beta (pre-release di GitHub, per esempio `0.0.0-beta.2`) sono proposte come le release finali, nell'avviso, dal pulsante *Aggiorna* del portale e da `scripts/update.sh` senza argomenti; installarne una chiede una conferma in più. `false`: solo release finali. Vedi [installazione.md](installazione.md#5-aggiornamenti). |
+| `SPOOLSTEWARD_UPDATE_BETA` | `true` | `true`: le beta (pre-release di GitHub, per esempio `w.x.y-beta.z`) sono proposte come le release finali, nell'avviso, dal pulsante *Aggiorna* del portale e da `scripts/update.sh` senza argomenti; installarne una chiede una conferma in più. `false`: solo release finali. Vedi [installazione.md](installazione.md#5-aggiornamenti). |
 | `SPOOLSTEWARD_UPDATE_REPOSITORY` | `deh-aleh/SpoolSteward` | Il repository GitHub, scritto `proprietario/nome`, di cui si controllano e installano le release: lo usano l'avviso, il pulsante *Aggiorna* del portale e `scripts/update.sh` (elenco delle release, download del pacchetto, link alle note di rilascio). Cambialo solo per un fork. |
 | `SPOOLSTEWARD_UPDATE_DIR` | `/data/update` | Cartella condivisa con il contenitore facoltativo `updater` (`docker compose --profile autoupdate`). Lasciala. |
 

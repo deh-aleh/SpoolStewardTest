@@ -7,12 +7,8 @@
 
 [English](README.md) · **Italiano**
 
-> [!WARNING]
-> **SpoolSteward è in beta (versioni 0.x).** Fino alla versione 1.0 un aggiornamento può contenere **modifiche incompatibili**
-> (*breaking changes*): impostazioni di `.env` rinominate o tolte, modifiche al database che una versione precedente non sa leggere,
-> una procedura di installazione o di aggiornamento diversa. Ogni release le elenca nelle sue note su GitHub. Leggi le note prima di
-> aggiornare, tieni un backup (`scripts/update.sh` ne fa uno prima di ogni aggiornamento) e non usare una beta su un server da cui
-> dipendono altre persone senza essere pronto a ripristinarlo.
+> [!NOTE]
+> **Beta (0.x):** gli aggiornamenti possono contenere modifiche incompatibili. Leggi l'[avviso prima di installare](#installazione-docker).
 
 Su una rete condivisa, una stampante lascia stampare chiunque quanto vuole e poi nessuno sa chi ha stampato cosa. SpoolSteward si mette tra le persone e la stampante: ognuno accede con il proprio account, ogni persona o gruppo ha un limite (pagine, colore, solo fronte) e ogni stampa e scansione viene registrata. Serve a case, uffici e scuole che condividono una stampante e vogliono decidere chi stampa quanto e vedere cosa è stato stampato.
 
@@ -73,42 +69,31 @@ browser ───────https───────────▶     │  
 | | Backup programmati per amministratore (cartella, ora, rotazione, cifratura con passphrase/chiave di recupero), ripristino da CLI | ✅ |
 | | Migrazioni del database (Alembic), health check, log, CLI di amministrazione | ✅ |
 | | Immagini per amd64 e arm64 su ghcr.io; script di aggiornamento che scarica un pacchetto di release controllato, fa prima un backup e torna indietro da solo (proponendo il ripristino del backup) se la nuova versione non parte; avviso di nuove versioni; un solo file `.env` che un aggiornamento non tocca mai | ✅ amd64; arm64 in funzione su un Raspberry Pi 4B (64 bit) |
-| | Pulsante Aggiorna nel portale (contenitore facoltativo `updater`, usa il socket di Docker) | ✅  |
+| | Pulsante Aggiorna nel portale (contenitore facoltativo `updater`, usa il socket di Docker) | ✅ |
 | | Backup su disco di rete o USB: file segnaposto contro un disco non montato (attivo di default), avviso nella campanella quando un backup fallisce, limite di tempo per un disco che non risponde | ✅ provato con una condivisione SMB |
 | | Certificato TLS: avvisi (scaduto, indirizzo annunciato mancante, avviso di scadenza facoltativo) e `scripts/cert-sync.sh` per copiare un certificato rinnovato da Nginx Proxy Manager o certbot | 🟡 script provato con simulazioni, non ancora con un vero Nginx Proxy Manager |
 | | Campanella con gli avvisi per gli amministratori (una sola, prima i propri); problemi di stampante (inceppamento, carta, inchiostro) per gli amministratori e per chi aspetta; l'utente è avvisato se cambiano gruppo, diritti, quota o richiesta; promemoria, una volta sola, di salvare `SPOOLSTEWARD_SECRET_KEY` e avviso se cambia; `/healthz` mostra solo lo stato se non chiedi di più | ✅ |
 
 ## Limiti
 
-L'elenco completo, con le soluzioni, è in [docs/it/limiti.md](docs/it/limiti.md). Quelli da conoscere prima di cominciare:
+L'elenco completo è in [docs/it/limiti.md](docs/it/limiti.md). Quelli da conoscere prima di iniziare:
 
-- **Il limite pagine è morbido** per i file di cui non si contano le pagine (formato sconosciuto, PDF cifrato, oltre 64 MB): il job che
-  supera il limite *viene stampato* e le sue pagine reali bloccano poi i successivi. Con `Create-Job` + `Send-Document` il conteggio
-  arriva dopo l'accettazione del job. Un `Create-Job` senza documento libera la quota solo quando CUPS lo annulla (di default 3 h).
-- **Serve un host Linux** per le stampanti USB e per l'annuncio mDNS (Docker Desktop su Windows/macOS: solo stampanti di rete, niente scoperta).
+- **Il limite di pagine è morbido** per i file di cui non si possono contare le pagine (formato sconosciuto, PDF cifrato, oltre 64 MB): il job che supera il limite *viene stampato* e le sue pagine reali bloccano poi quelli successivi.
+- **Serve un host Linux** per le stampanti USB e l'annuncio mDNS (Docker Desktop su Windows/macOS: solo stampanti di rete, senza rilevamento).
 - **Il servizio di stampa di sistema di Android non sa autenticarsi**: usa Mopria Print Service o stampa dal browser. Windows 11 25H2 è provato ([windows.md](docs/it/windows.md)); iPhone e macOS non sono provati.
-- **Un gateway per stampante USB** e **uno per database SQLite** (nessuna alta disponibilità). Tornare a una versione precedente
-  dopo una migrazione può richiedere un backup.
-- **TLS obbligatorio**: installa il certificato autofirmato sui client o usa quello della tua CA.
-- Una stampante scollegata si rileva entro ~30 s (code di rete: prova TCP, non la carta).
-- I **nomi dei file stampati sono cifrati** nel database (chiave da `SPOOLSTEWARD_SECRET_KEY`: non cambiarla); il resto del database no. Per tutto il resto cifra il disco: [protezione-dati.md](docs/it/protezione-dati.md).
-- Le traduzioni in spagnolo, russo e cinese non sono riviste da madrelingua; le pagine stampate dal gateway restano in inglese.
-
-
-## Come è stato sviluppato
-
-SpoolSteward nasce per risolvere un mio problema e l'ho pubblicato perché può servire ad altri. Ho usato strumenti di intelligenza artificiale (IA) in modo rilevante, e preferisco dirlo apertamente:
-
-- **Documentazione, test automatici e commenti nel codice**: scritti per lo più con l'aiuto dell'IA.
-- **Codice dell'applicazione**: scritto in parte da me e in parte con l'aiuto dell'IA.
-- **Traduzioni**: fatte con DeepL e poi uniformate con strumenti di IA. Quelle in spagnolo, russo e cinese non sono state riviste da madrelingua.
-
-Se cerchi un software scritto interamente da una persona, questo non è il repository adatto.
-
-Cosa puoi controllare da solo: i test automatici (`tests/`), la tabella di stato delle funzioni (cosa è stato provato su hardware reale) e l'elenco dei limiti noti. Il codice non ha avuto una revisione indipendente: se lo usi dove conta, guarda con attenzione le parti che riguardano la sicurezza (autenticazione, chiavi di stampa, certificati).
-
+- **Un gateway per ogni stampante USB** e **uno per ogni database SQLite** (nessuna alta disponibilità).
+- **Il TLS è obbligatorio**: installa il certificato autofirmato sui client o usa quello della tua CA.
+- I **nomi dei file** stampati sono cifrati nel database (chiave da `SPOOLSTEWARD_SECRET_KEY`: non cambiarla); il resto no. Vedi [protezione-dati.md](docs/it/protezione-dati.md).
+- Le traduzioni in spagnolo, russo e cinese non sono riviste da madrelingua.
 
 ## Installazione (Docker)
+
+> [!WARNING]
+> **SpoolSteward è in beta (versioni 0.x).** Un aggiornamento può contenere **modifiche incompatibili**
+> (*breaking changes*): impostazioni di `.env` rinominate o tolte, modifiche al database che una versione precedente non sa leggere,
+> una procedura di installazione o di aggiornamento diversa. Ogni release le elenca nelle sue note su GitHub. Leggi le note prima di
+> aggiornare, tieni un backup (`scripts/update.sh` ne fa uno prima di ogni aggiornamento) e non usare una beta su un server da cui
+> dipendono altre persone senza essere pronto a ripristinarlo.
 
 Requisiti: un server **Linux**, Docker Engine con Compose, `openssl`, `curl`, `tar`, `python3`, una stampante USB o di rete e una porta TCP
 raggiungibile dai client (predefinita 8631). Sull'host non si installa nulla.
@@ -137,12 +122,26 @@ docker compose logs gateway | grep "FIRST RUN"
 Guida completa, con certificati, stampanti, aggiornamenti e una prova senza stampante né RADIUS: [docs/it/installazione.md](docs/it/installazione.md).
 Poi utenti e gruppi: [guida-amministratore.md](docs/it/guida-amministratore.md); collegare computer e telefoni: [stampa.md](docs/it/stampa.md).
 
+## Come è stato sviluppato
+
+SpoolSteward nasce per risolvere un mio problema e l'ho pubblicato perché può servire ad altri. Ho usato strumenti di intelligenza artificiale (IA) in modo rilevante, e preferisco dirlo apertamente:
+
+- **Documentazione, test automatici e commenti nel codice**: scritti per lo più con l'aiuto dell'IA.
+- **Codice dell'applicazione**: scritto in parte da me e in parte con l'aiuto dell'IA.
+- **Traduzioni**: fatte con DeepL e poi uniformate con strumenti di IA. Quelle in spagnolo, russo e cinese non sono state riviste da madrelingua.
+
+Se cerchi un software scritto interamente da una persona, questo non è il repository adatto.
+
+Cosa puoi controllare da solo: i test automatici (`tests/`), la tabella di stato delle funzioni (cosa è stato provato su hardware reale) e l'elenco dei limiti noti. Il codice non ha avuto una revisione indipendente: se lo usi dove conta, guarda con attenzione le parti che riguardano la sicurezza (autenticazione, chiavi di stampa, certificati).
+
 ## Documentazione
 
 | Argomento | Documento |
 |---|---|
 | **Installazione** (Docker, stampanti, TLS, aggiornamenti) | [installazione.md](docs/it/installazione.md) |
 | **Risoluzione dei problemi** | [risoluzione-problemi.md](docs/it/risoluzione-problemi.md) |
+| Riferimento: ogni impostazione di `.env` | [configurazione.md](docs/it/configurazione.md) |
+| Windows 11 passo per passo | [windows.md](docs/it/windows.md) |
 | Architettura e tecnologie | [architettura.md](docs/it/architettura.md) |
 | Come è fatta l'applicazione (ogni file sorgente, `.env`, script) | [funzionamento-applicazione.md](docs/it/funzionamento-applicazione.md) |
 | Guida utente · Guida amministratore (CLI compresa) | [guida-utente.md](docs/it/guida-utente.md) · [guida-amministratore.md](docs/it/guida-amministratore.md) |

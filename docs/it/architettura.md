@@ -183,5 +183,4 @@ Tabelle (Alembic applica le migrazioni all'avvio; un test fallisce se un modello
 I test automatici coprono il codec (andata e ritorno su risposte reali), le finestre delle policy (anche attraverso l'ora legale),
 la concorrenza (16 connessioni indipendenti non superano un limite, due admin concedono una volta sola), l'autenticazione con un
 RADIUS vero, il gateway contro un CUPS vero, il portale in ogni lingua, le migrazioni (compreso un database pre-Alembic con dati),
-chiavi, richieste e concessioni, archiviazione e interruzioni. Verifiche di mutazione sulle regole di sicurezza: togliendo un
-controllo almeno un test diventa rosso.
+chiavi, richieste e concessioni, archiviazione e interruzioni.

@@ -7,11 +7,8 @@
 
 **English** · [Italiano](README.it.md)
 
-> [!WARNING]
-> **SpoolSteward is in beta (versions 0.x).** Until version 1.0 an update may contain **breaking changes**: settings in `.env`
-> renamed or removed, database changes that an older version cannot read, a different install or update procedure. Each release
-> lists them in its notes on GitHub. Read the notes before updating, keep a backup (`scripts/update.sh` makes one before every
-> update) and do not use a beta on a server people depend on without being ready to restore it.
+> [!NOTE]
+> **Beta (0.x):** updates may contain breaking changes. Read the [warning before installing](#install-docker).
 
 A printer on a shared network lets anyone print as much as they like, and nobody can tell afterwards who printed what. SpoolSteward sits between people and the printer: everyone signs in, each person or group gets a limit (pages, colour, one-sided), and every print and scan is written down. It is for homes, offices and schools that share a printer and want to decide who prints how much, and to see what was printed.
 
@@ -79,34 +76,23 @@ browser ───────https───────────▶     │  
 
 ## Limits
 
-The full list, with workarounds, is in [docs/en/limitations.md](docs/en/limitations.md). The ones to know before you start:
+The full list is in [docs/en/limitations.md](docs/en/limitations.md). The ones to know before you start:
 
-- **The pages limit is soft** for files whose pages cannot be counted (unknown format, encrypted PDF, over 64 MB): the job that
-  crosses the limit *is printed* and its real pages then block the following ones. With `Create-Job` + `Send-Document` the count
-  arrives after the job was accepted. A `Create-Job` without a document frees its quota only when CUPS cancels it (default 3 h).
+- **The pages limit is soft** for files whose pages cannot be counted (unknown format, encrypted PDF, over 64 MB): the job that crosses the limit *is printed* and its real pages then block the following ones.
 - **Linux host required** for USB printers and mDNS announcement (Docker Desktop on Windows/macOS: network printers only, no discovery).
 - **Android's system print service cannot authenticate**: use Mopria Print Service or print from the browser. Windows 11 25H2 is tested ([windows.md](docs/en/windows.md)); iPhone and macOS are untested.
-- **One gateway per USB printer** and **one per SQLite database** (no high availability). Going back to an older version after a migration may need a backup.
+- **One gateway per USB printer** and **one per SQLite database** (no high availability).
 - **TLS is mandatory**: install the self-signed certificate on clients or use your CA's.
-- Printer disconnection is detected within ~30 s (network queues: a TCP check, not paper).
-- Printed **file names are encrypted** in the database (key from `SPOOLSTEWARD_SECRET_KEY`: do not change it); the rest of the database is not. For everything else encrypt the disk: [data-protection.md](docs/en/data-protection.md).
-- Spanish, Russian and Chinese translations are not reviewed by native speakers; pages printed by the gateway stay English.
-
-
-## How it was developed
-
-SpoolSteward started as a solution to a problem of my own, and I published it because it may be useful to others. I used AI tools in a significant way, and I would rather say so plainly:
-
-- **Documentation, automated tests and code comments** were written mostly with AI assistance.
-- **The application code** was written partly by me and partly with AI assistance.
-- **Translations** were made with DeepL and then harmonised with AI tools. The Spanish, Russian and Chinese ones have not been reviewed by native speakers.
-
-If you are looking for software written entirely by a human, this is not the right repository for you.
-
-What you can check for yourself: the automated tests (`tests/`), the feature status table (what has been tried on real hardware) and the list of known limits. The code has not had an independent review: if you use it where it matters, look closely at the security-sensitive parts (authentication, print keys, certificates).
-
+- Printed **file names are encrypted** in the database (key from `SPOOLSTEWARD_SECRET_KEY`: do not change it); the rest is not. See [data-protection.md](docs/en/data-protection.md).
+- Spanish, Russian and Chinese translations are not reviewed by native speakers.
 
 ## Install (Docker)
+
+> [!WARNING]
+> **SpoolSteward is in beta (versions 0.x).** Until version 1.0 an update may contain **breaking changes**: settings in `.env`
+> renamed or removed, database changes that an older version cannot read, a different install or update procedure. Each release
+> lists them in its notes on GitHub. Read the notes before updating, keep a backup (`scripts/update.sh` makes one before every
+> update) and do not use a beta on a server people depend on without being ready to restore it.
 
 Requirements: a **Linux** server, Docker Engine with Compose, `openssl`, `curl`, `tar`, `python3`, a USB or network printer, and a TCP port
 reachable by clients (default 8631). Nothing is installed on the host.
@@ -135,12 +121,26 @@ docker compose logs gateway | grep "FIRST RUN"
 Full guide, with certificates, printers, updates and a test setup without printer or RADIUS: [docs/en/installation.md](docs/en/installation.md).
 Then users and groups: [admin-guide.md](docs/en/admin-guide.md); connecting computers and phones: [printing.md](docs/en/printing.md).
 
+## How it was developed
+
+SpoolSteward started as a solution to a problem of my own, and I published it because it may be useful to others. I used AI tools in a significant way, and I would rather say so plainly:
+
+- **Documentation, automated tests and code comments** were written mostly with AI assistance.
+- **The application code** was written partly by me and partly with AI assistance.
+- **Translations** were made with DeepL and then harmonised with AI tools. The Spanish, Russian and Chinese ones have not been reviewed by native speakers.
+
+If you are looking for software written entirely by a human, this is not the right repository for you.
+
+What you can check for yourself: the automated tests (`tests/`), the feature status table (what has been tried on real hardware) and the list of known limits. The code has not had an independent review: if you use it where it matters, look closely at the security-sensitive parts (authentication, print keys, certificates).
+
 ## Documentation
 
 | Topic | Document |
 |---|---|
 | **Installation** (Docker, printers, TLS, updates) | [installation.md](docs/en/installation.md) |
 | **Troubleshooting** | [troubleshooting.md](docs/en/troubleshooting.md) |
+| Installation reference: every `.env` setting | [configuration.md](docs/en/configuration.md) |
+| Windows 11 step by step | [windows.md](docs/en/windows.md) |
 | Architecture and technologies | [architecture.md](docs/en/architecture.md) |
 | How the application is built (each source file, `.env`, scripts) | [application-internals.md](docs/en/application-internals.md) |
 | User guide · Administrator guide (incl. CLI) | [user-guide.md](docs/en/user-guide.md) · [admin-guide.md](docs/en/admin-guide.md) |

@@ -143,15 +143,15 @@ version; `--check` only tells whether a newer one exists.
 backup that is on and succeeded in the last 48 hours: a fresh backup is made, then the update starts. If the new version does not start
 the old one is put back; restoring the backup, if needed, is up to you with `scripts/backup.sh restore`.
 
-**Betas.** A version such as `0.0.0-beta.2` is a test release, published as a GitHub pre-release. With
+**Betas.** A version such as `w.x.y-beta.z` is a test release, published as a GitHub pre-release. With
 `SPOOLSTEWARD_UPDATE_BETA=true` (the default written by `docker-init.sh`) betas are offered like final releases: in the note of a new
 version, by the *Update* button and by `scripts/update.sh` without arguments. Installing a beta asks for one more confirmation (a box
 to tick in the portal; `update.sh` asks you to type `YES`). With `false` only final releases are offered; a beta you name
-(`scripts/update.sh 0.0.0-beta.2`) is installed whatever the setting says.
+(`scripts/update.sh w.x.y-beta.z`) is installed whatever the setting says.
 
 **Breaking changes.** A release may declare breaking changes: its release notes have a "Breaking changes" heading, or the first number of
 the version changes, or the second one while the first is `0` (`0.1.x` to `0.2.0`). A release you skip counts too: going from
-`0.0.0-beta.1` to `0.0.0-beta.3` is breaking if `0.0.0-beta.2` was. Then the confirmation warns that the update could fail and leave
+`w.x.y-beta.y1` to `w.x.y-beta.y3` is breaking if `w.x.y-beta.z` was. Then the confirmation warns that the update could fail and leave
 SpoolSteward not working, and asks you to copy a recent backup off the server and keep a copy of `.env` and `config/` first; the portal
 starts the update only with the box ticked, `update.sh` only after `YES`. Read the release notes before you confirm.
 

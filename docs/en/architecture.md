@@ -185,5 +185,4 @@ Tables (Alembic applies migrations at start; a test fails if a model changes wit
 Automated tests cover the codec (round trip on real responses), policy windows (also across DST), concurrency (16
 independent connections cannot exceed a limit, two admins grant once), authentication against a real RADIUS, the gateway
 against a real CUPS, the portal in every language, migrations (including a pre-Alembic database with data), keys,
-requests and grants, archiving and interruptions. Mutation checks on the security rules make at least one test fail when
-a control is removed.
+requests and grants, archiving and interruptions.

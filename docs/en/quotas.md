@@ -32,13 +32,7 @@ estimate with the **real pages** read from CUPS. A job whose page count is not y
 
 ### The soft limit
 
-The pages limit is **hard** only for documents the gateway can count. It is **soft** in these cases:
-
-- unknown format, **encrypted PDF**, or a file larger than 64 MB: the job that crosses the limit *is printed*, and its
-  real pages then block the following jobs;
-- a job sent with `Create-Job` + `Send-Document`: the pages are counted at `Send-Document`, when the job has already
-  been accepted;
-- a `Create-Job` without any document frees its quota only when CUPS cancels it (default after 3 hours).
+For files whose pages cannot be counted, and in a few other cases, the pages limit is soft: [limitations.md](limitations.md#2-quota).
 
 ### Atomic reservation
 
