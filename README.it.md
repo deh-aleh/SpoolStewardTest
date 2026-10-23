@@ -34,45 +34,20 @@ browser ───────https───────────▶     │  
 - **Backup**: programmati per amministratore, cifrati con una chiave di recupero, ripristinabili da riga di comando.
 - **Portale in 5 lingue**: inglese, italiano, spagnolo, russo, cinese semplificato; scelta per utente. La documentazione (inglese e italiano) si legge dentro il portale, per gli amministratori.
 
-## Funzionalità e stato
+## Stato
 
-✅ fatto e provato · 🟡 parziale · ⬜ previsto
+**Provato e funzionante:** stampa attraverso il gateway (IPPS, chiavi di stampa, stampa dal browser), quote e deroghe, permessi per gruppo/utente (colore, solo fronte, stampanti, orari; verificati sulle due stampanti qui sotto), audit e archivi, scansione (eSCL, portale, finestra di scansione), pagina Stampanti, backup programmati (anche su una condivisione SMB), stack docker con script di aggiornamento e pulsante Aggiorna del portale (amd64; arm64 su un Raspberry Pi 4B), campanella degli avvisi.
 
-| Area | Funzionalità | Stato |
-|---|---|---|
-| **Identità** | Account locali (argon2id); accesso RADIUS (facoltativo); primo amministratore con codice monouso | ✅ |
-| | Altri provider (LDAP/AD, OIDC); autenticazione a due fattori per gli admin | ⬜ |
-| **Stampa** | Proxy IPP/IPPS davanti a CUPS; nessun bypass (CUPS non è raggiungibile); chiavi di stampa personali | ✅ |
-| | Qualunque stampante supportata da CUPS (USB via ipp-usb, o di rete) | 🟡 provata con due stampanti via USB: una HP Smart Tank 7300 (tramite ipp-usb) e una Brother DCP-7055 (backend usb di CUPS, driver brlaser: trovata, coda creata e prima stampa riuscita senza alcuna impostazione) |
-| | Annuncio sulla LAN (DNS-SD) e stampa da browser | ✅ visto da Android con Mopria; iPhone non provato |
-| | Le stampanti USB nuove ottengono da sole la loro coda (prima ipp-usb, altrimenti backend usb di CUPS + driver); le code USB irraggiungibili si tolgono dopo un conto alla rovescia, qualunque coda morta si elimina a mano | ✅ |
-| | Stampa trattenuta con rilascio successivo (pull printing) | ⬜ |
-| **Policy** | Utenti e gruppi; limiti di job e pagine per settimana/mese; override per utente | ✅ |
-| | Deroghe: richieste degli utenti, approvazione dell'admin, concessioni temporanee o permanenti; cambio gruppo su richiesta | ✅ |
-| | Pagine contate prima di stampare per PDF, immagini, testo e PostScript | ✅ limite morbido per gli altri file |
-| | Permessi per gruppo/utente: colore, fronte singolo, stampanti, orari consentiti; modalità `adjust` o `refuse`; l'utente chiede ciò che gli manca | 🟡 coperto dai test, non ancora verificato su molte stampanti vere |
-| **Scansione** | eSCL attraverso il gateway (stesse chiavi, audit, insieme alla stampa), scansione dal portale e una finestra di scansione (ultimo rimedio: si fida dell'indirizzo TCP, che NAT e reverse proxy rompono) perché le app che non sanno inviare una password possano scansionare dall'IP di chi ha premuto un pulsante | ✅ |
-| | Client eSCL nativi che sanno autenticarsi (prova sul campo) | ⬜ |
-| **Audit** | Audit di stampe e scansioni con pagine reali; registro separato delle azioni amministrative | ✅ |
-| | Conservazione illimitata con archivi compressi verificati; esportazione CSV, filtri, consultazione e download degli archivi | ✅ |
-| | Report di utilizzo: utenti che stampano di più in un periodo, dettaglio per stampante, gruppi esclusi, pagina / CSV / PDF | ✅ |
-| | Nomi dei file cifrati nel database; pulsante per smettere di salvarli; cancellazione facoltativa dopo qualche giorno | ✅ |
-| | Esportazione verso syslog/SIEM; anonimizzazione | ⬜ |
-| **Portale** | Portale admin (audit, utenti, gruppi, richieste con concessioni, azioni, stampanti, backup, archivio) e area utente (consumo, chiavi, richieste, stampa, scansione); la documentazione è inclusa per gli amministratori (inglese e italiano) | ✅ |
-| | Impostazioni: password, tema, lingua, aggiornamento; interfaccia adatta al telefono; pulsanti «copia» | ✅ |
-| | Pagina Stampanti: stato, inchiostro, contatori a vita (HP), firmware, scanner; blocco, nascondimento, stampanti di prova; manutenzione del gateway | ✅ |
-| | Stampa periodica di manutenzione e stampa di prova con statistiche (stampanti fisiche); elenco con le fisiche per prime, spostabili con le frecce su/giù (ordine proprio per ogni amministratore); code rinominabili; badge IPP-USB / USB | ✅ |
-| | Portale in inglese, italiano, spagnolo, russo, cinese | ✅ spagnolo/russo/cinese da far rivedere a madrelingua |
-| | Notifiche (email/webhook) per le richieste in attesa | ⬜ |
-| | Richieste di permessi (colore, solo fronte, stampanti, orari) | ✅ |
-| **Operatività** | Stack docker (ipp-usb + CUPS + portal + mDNS, da un'unica immagine), nulla installato sull'host | ✅ |
-| | Backup programmati per amministratore (cartella, ora, rotazione, cifratura con passphrase/chiave di recupero), ripristino da CLI | ✅ |
-| | Migrazioni del database (Alembic), health check, log, CLI di amministrazione | ✅ |
-| | Immagini per amd64 e arm64 su ghcr.io; script di aggiornamento che scarica un pacchetto di release controllato, fa prima un backup e torna indietro da solo (proponendo il ripristino del backup) se la nuova versione non parte; avviso di nuove versioni; un solo file `.env` che un aggiornamento non tocca mai | ✅ amd64; arm64 in funzione su un Raspberry Pi 4B (64 bit) |
-| | Pulsante Aggiorna nel portale (contenitore facoltativo `updater`, usa il socket di Docker) | ✅ |
-| | Backup su disco di rete o USB: file segnaposto contro un disco non montato (attivo di default), avviso nella campanella quando un backup fallisce, limite di tempo per un disco che non risponde | ✅ provato con una condivisione SMB |
-| | Certificato TLS: avvisi (scaduto, indirizzo annunciato mancante, avviso di scadenza facoltativo) e `scripts/cert-sync.sh` per copiare un certificato rinnovato da Nginx Proxy Manager o certbot | 🟡 script provato con simulazioni, non ancora con un vero Nginx Proxy Manager |
-| | Campanella con gli avvisi per gli amministratori (una sola, prima i propri); problemi di stampante (inceppamento, carta, inchiostro) per gli amministratori e per chi aspetta; l'utente è avvisato se cambiano gruppo, diritti, quota o richiesta; promemoria, una volta sola, di salvare `SPOOLSTEWARD_SECRET_KEY` e avviso se cambia; `/healthz` mostra solo lo stato se non chiedi di più | ✅ |
+**Provato solo in parte:**
+
+- Stampanti: finora due via USB, una HP Smart Tank 7300 (tramite ipp-usb) e una Brother DCP-7055 (backend usb di CUPS, driver brlaser: trovata, coda creata e prima stampa riuscita senza alcuna impostazione). Qualunque altra stampante supportata da CUPS dovrebbe funzionare, ma non è stata provata; vale anche per i permessi, verificati solo su queste due.
+- Annuncio sulla LAN (DNS-SD): visto da Android con Mopria; iPhone non provato.
+- `scripts/cert-sync.sh`: provato con simulazioni, non ancora con un vero Nginx Proxy Manager.
+- Traduzioni in spagnolo, russo e cinese: non riviste da madrelingua.
+
+**Non ancora fatto:** autenticazione a due fattori per gli admin; stampa trattenuta con rilascio successivo (pull printing); client eSCL nativi che sanno autenticarsi; notifiche email/webhook per le richieste in attesa.
+
+Il dettaglio di ogni area è nella [documentazione](#documentazione).
 
 ## Limiti
 
@@ -132,7 +107,7 @@ SpoolSteward nasce per risolvere un mio problema e l'ho pubblicato perché può 
 
 Se cerchi un software scritto interamente da una persona, questo non è il repository adatto.
 
-Cosa puoi controllare da solo: i test automatici (`tests/`), la tabella di stato delle funzioni (cosa è stato provato su hardware reale) e l'elenco dei limiti noti. Il codice non ha avuto una revisione indipendente: se lo usi dove conta, guarda con attenzione le parti che riguardano la sicurezza (autenticazione, chiavi di stampa, certificati).
+Cosa puoi controllare da solo: i test automatici (`tests/`), la sezione Stato (cosa è stato provato su hardware reale) e l'elenco dei limiti noti. Il codice non ha avuto una revisione indipendente: se lo usi dove conta, guarda con attenzione le parti che riguardano la sicurezza (autenticazione, chiavi di stampa, certificati).
 
 ## Documentazione
 

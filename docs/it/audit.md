@@ -85,4 +85,4 @@ La cartella deve essere scrivibile dall'utente del contenitore; sta sull'host, f
 ## 5. Privacy
 
 Il database e gli archivi **non sono cifrati** e contengono i nomi dei file stampati, che sono dati personali: proteggi `data/` e il
-volume come dati personali. Anonimizzazione ed esportazione verso syslog/SIEM non sono ancora implementate.
+volume come dati personali.

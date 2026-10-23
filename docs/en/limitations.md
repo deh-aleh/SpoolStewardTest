@@ -86,4 +86,4 @@ What SpoolSteward does **not** do (yet) or does with caveats. The short version 
 
 ## 7. Feature status
 
-The status of every feature is in the [README](../../README.md#features-and-status).
+What has been tested and what is missing is in the [README](../../README.md#status).

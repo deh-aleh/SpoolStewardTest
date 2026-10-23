@@ -88,4 +88,4 @@ Ciò che SpoolSteward **non** fa (ancora) o fa con delle riserve. La versione br
 
 ## 7. Stato delle funzionalità
 
-Lo stato di ogni funzionalità è nel [README](../../README.it.md#funzionalità-e-stato).
+Cosa è stato provato e cosa manca è nel [README](../../README.it.md#stato).

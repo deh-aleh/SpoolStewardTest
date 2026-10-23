@@ -84,4 +84,4 @@ copied by hand. It is included in the backups ([backup.md](backup.md)).
 ## 5. Privacy
 
 The database and the archives are **not encrypted** and contain the names of printed files, which are personal data:
-protect `data/` and the volume like personal data. Anonymisation and syslog/SIEM export are not implemented yet.
+protect `data/` and the volume like personal data.

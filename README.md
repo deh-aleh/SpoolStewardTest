@@ -34,45 +34,20 @@ browser ───────https───────────▶     │  
 - **Backups**: scheduled per administrator, encrypted with a recovery key, restorable from the command line.
 - **Portal in 5 languages**: English, Italian, Spanish, Russian, Simplified Chinese; chosen per user. The documentation (English and Italian) is readable inside the portal by administrators.
 
-## Features and status
+## Status
 
-✅ done and tested · 🟡 partial · ⬜ planned
+**Tested and working:** printing through the gateway (IPPS, print keys, printing from the browser), quotas and exceptions, permissions per group/user (colour, one-sided, printers, hours; checked on the two printers below), audit and archives, scanning (eSCL, portal, scan window), the printers page, scheduled backups (also to an SMB share), the Docker stack with the update script and the portal's update button (amd64; arm64 on a Raspberry Pi 4B), the notices bell.
 
-| Area | Feature | Status |
-|---|---|---|
-| **Identity** | Local accounts (argon2id); RADIUS login (optional); first administrator through a one-time code | ✅ |
-| | Other providers (LDAP/AD, OIDC); two-factor authentication for administrators | ⬜ |
-| **Printing** | IPP/IPPS proxy in front of CUPS; no bypass (CUPS is not reachable); personal print keys | ✅ |
-| | Any printer CUPS supports (USB through ipp-usb, or network) | 🟡 tested with two printers over USB: an HP Smart Tank 7300 (through ipp-usb) and a Brother DCP-7055 (CUPS usb backend, brlaser driver: found, queue created and first print worked without any setting) |
-| | LAN announcement (DNS-SD) and printing from the browser | ✅ seen by Android with Mopria; iPhone not tested |
-| | New USB printers get their queue by themselves (ipp-usb first, CUPS usb backend + driver otherwise); unreachable USB queues are removed after a countdown, any dead queue can be deleted by hand | ✅ |
-| | Held printing with later release (pull printing) | ⬜ |
-| **Policy** | Users and groups; job and page limits per week/month; per-user overrides | ✅ |
-| | Exceptions: user requests, administrator approval, temporary or permanent grants; group change on request | ✅ |
-| | Pages counted before printing for PDF, images, text and PostScript | ✅ soft limit for other files |
-| | Permissions per group/user: colour, one-sided, printers, allowed hours; `adjust` or `refuse` mode; users ask for what they lack | 🟡 covered by tests, not yet checked on many real printers |
-| **Scanning** | eSCL through the gateway (same keys, audit, together with printing), scanning from the portal, and a scan window (last resort: it trusts the TCP address, which NAT and reverse proxies break) so apps that cannot send a password can scan from the IP of whoever pressed a button | ✅ |
-| | Native eSCL clients that can authenticate (field test) | ⬜ |
-| **Audit** | Print/scan audit with real pages; separate log of administrative actions | ✅ |
-| | Unlimited retention with verified compressed archives; CSV export, filters, archive viewer and download | ✅ |
-| | Usage report: top users in a period, optional detail per printer, groups left out, page / CSV / PDF | ✅ |
-| | File names encrypted in the database; button to stop saving them; optional erasing after some days | ✅ |
-| | syslog/SIEM export; anonymisation | ⬜ |
-| **Portal** | Admin portal (audit, users, groups, requests with grants, actions, printers, backups, archive) and user area (consumption, keys, requests, print, scan); the documentation is built in for administrators (English and Italian) | ✅ |
-| | Settings: password, theme, language, refresh; phone-friendly layout; copy buttons | ✅ |
-| | Printers page: status, ink, lifetime counters (HP), firmware, scanner; block, hide, test printers; gateway maintenance mode | ✅ |
-| | Periodic maintenance print and test print with statistics (physical printers); ordering physical first, movable with up/down arrows (own order per administrator); queues can be renamed; IPP-USB / USB badges | ✅ |
-| | Portal in English, Italian, Spanish, Russian, Chinese | ✅ Spanish/Russian/Chinese need native review |
-| | Notifications (email/webhook) for pending requests | ⬜ |
-| | Permission requests (colour, one-sided, printers, hours) | ✅ |
-| **Operations** | Docker stack (ipp-usb + CUPS + portal + mDNS, from one image), nothing installed on the host | ✅ |
-| | Scheduled backups per administrator (folder, hour, rotation, passphrase/recovery-key encryption), restore from CLI | ✅ |
-| | Database migrations (Alembic), health check, logs, admin CLI | ✅ |
-| | Images for amd64 and arm64 on ghcr.io; update script that downloads a checked release package, makes a backup first and goes back by itself (and offers to restore the backup) if the new version does not start; notice of new versions; one `.env` file that an update never touches | ✅ amd64; arm64 run on a Raspberry Pi 4B (64-bit) |
-| | Update button in the portal (optional `updater` container, needs the Docker socket) | ✅ |
-| | Backups on a network disk or USB disk: marker file against an unmounted disk (on by default), a notice in the bell when a backup fails, time limit for a disk that stops answering | ✅ tested with an SMB share |
-| | TLS certificate: notices (expired, announced address missing, optional expiry warning) and `scripts/cert-sync.sh` to copy a renewed certificate from Nginx Proxy Manager or certbot | 🟡 script tested with simulations, not yet with a real Nginx Proxy Manager |
-| | Bell with notices for administrators (one bell, their own notices first); printer problems (jam, paper, ink) for administrators and for the users waiting; users are told when their group, rights, quota or request change; a one-time reminder to save `SPOOLSTEWARD_SECRET_KEY` and a notice if it changes; `/healthz` shows only the status unless you ask for more | ✅ |
+**Only partly tested:**
+
+- Printers: two over USB so far, an HP Smart Tank 7300 (through ipp-usb) and a Brother DCP-7055 (CUPS usb backend, brlaser driver: found, queue created and first print worked without any setting). Any other printer CUPS supports should work, but has not been tried; this includes the permissions, which were checked only on these two.
+- LAN announcement (DNS-SD): seen by Android with Mopria; iPhone not tested.
+- `scripts/cert-sync.sh`: tested with simulations, not yet with a real Nginx Proxy Manager.
+- Spanish, Russian and Chinese translations: no native review.
+
+**Not done yet:** two-factor authentication for administrators; held printing with later release (pull printing); native eSCL clients that can authenticate; email/webhook notifications for pending requests.
+
+Details for each area are in the [documentation](#documentation).
 
 ## Limits
 
@@ -131,7 +106,7 @@ SpoolSteward started as a solution to a problem of my own, and I published it be
 
 If you are looking for software written entirely by a human, this is not the right repository for you.
 
-What you can check for yourself: the automated tests (`tests/`), the feature status table (what has been tried on real hardware) and the list of known limits. The code has not had an independent review: if you use it where it matters, look closely at the security-sensitive parts (authentication, print keys, certificates).
+What you can check for yourself: the automated tests (`tests/`), the Status section (what has been tried on real hardware) and the list of known limits. The code has not had an independent review: if you use it where it matters, look closely at the security-sensitive parts (authentication, print keys, certificates).
 
 ## Documentation
 
