@@ -7,97 +7,82 @@ wrong, and `scripts/cert-sync.sh`, which copies a certificate renewed on another
 
 ## 1. What clients validate
 
-A client validates three things before it sends anything; if one fails it refuses the connection or shows a warning:
+A client checks three things before it sends anything; if one fails it refuses the connection or warns:
 
-1. **Chain**: the certificate is issued by a CA the device trusts (public CA, or the company CA installed on the device, §3).
-2. **Name**: the host the client connects to appears in the Subject Alternative Name (SAN) of the certificate, as a DNS name or an IP address.
+1. **Chain**: issued by a CA the device trusts (public CA, or the company CA installed on the device, §3).
+2. **Name**: the host the client connects to is in the certificate's Subject Alternative Name (SAN), as a DNS name or an IP address.
 3. **Validity**: `notAfter` is in the future.
 
-The announcer (mDNS) publishes the IP address of the default route, or `SPOOLSTEWARD_MDNS_ADDRESSES`, and the host name from `SPOOLSTEWARD_MDNS_HOSTNAME`
-(default: the host part of `SPOOLSTEWARD_PORTAL_URL`, otherwise the machine name). Clients that discover the printer through mDNS connect to that
-address, so it must be in the SAN. If the address changes (DHCP), the certificate no longer matches: give the server a fixed address.
+The announcer (mDNS) publishes the IP of the default route, or `SPOOLSTEWARD_MDNS_ADDRESSES`, and the host name of `SPOOLSTEWARD_MDNS_HOSTNAME`
+(default: the host of `SPOOLSTEWARD_PORTAL_URL`, otherwise the machine name). Clients that discover the printer through mDNS connect to that
+address, so it must be in the SAN. Give the server a fixed address: if DHCP changes it, the certificate no longer matches.
 
-**Browsers and HTTPS only (HSTS).** On every HTTPS answer the portal sends `Strict-Transport-Security: max-age=<seconds>`
-(`SPOOLSTEWARD_HSTS_SECONDS`; **off by default**, `0` = never). To turn it on set for example `2592000` (30 days) and run `docker compose up -d`. It tells the browser to use only HTTPS with this **host name**. How it plays out:
+**Browsers and HTTPS only (HSTS).** With `SPOOLSTEWARD_HSTS_SECONDS` above `0` (**off by default**; try `2592000`, 30 days, then `docker compose up -d`)
+the portal tells the browser to use only HTTPS with this **host name**:
 
-- **A certificate the browser does not trust** (the self-signed one of `scripts/docker-init.sh`, with a warning you click through): the browser
-  **ignores** the header, as the standard requires. Nothing changes.
-- **A certificate the browser trusts** (a real authority, or the company CA installed on the computer, §3): the browser remembers it. From then on
-  an address typed or linked as `http://print.lan` becomes `https://print.lan` by itself, and **a certificate error can no longer be clicked
-  through**. Example: Mario trusts the company CA. He opens the portal; the certificate expires 20 days later and nobody renews it; his browser
-  shows "your connection is not private" **without** the "Advanced – continue" link, so he can not even reach the portal to see the notice. As soon as the
-  certificate is renewed it works again at once: what the browser remembers is "no click-through", not the error.
-- **It is per host name, not per port.** If the same name serves something else only in plain `http` (a second web page of the same Raspberry on
-  another port), that browser also forces it to `https` and it stops opening.
+- **A certificate the browser does not trust** (the self-signed one of `docker-init.sh`): the browser **ignores** the header.
+- **A certificate it trusts** (a real authority, or the company CA, §3): the browser remembers it. `http://print.lan` becomes `https://print.lan`
+  by itself and **a certificate error can no longer be clicked through**. If the certificate expires and nobody renews it, the browser shows
+  "your connection is not private" without the "continue" link, so nobody reaches the portal to see the notice. Once the certificate is renewed
+  it works again at once.
+- **It applies to the host name, whatever the port.** A plain-`http` page of the same name on another port stops opening.
 
-If you turned it on and want it off, set `SPOOLSTEWARD_HSTS_SECONDS=0` and run `docker compose up -d`: browsers that already remember it keep the rule until its time is
-over (30 days at most), or until they receive the header with `0` over a valid HTTPS connection, or until the site's data is cleared in the browser.
-With a certificate from a real authority that is renewed by itself you can later raise it to `31536000` (one year).
+To turn it off set `SPOOLSTEWARD_HSTS_SECONDS=0`: browsers keep the rule until its time is over (30 days at most), until they receive the header with
+`0` over valid HTTPS, or until the site's data is cleared. With a self-renewing certificate you can later raise it to `31536000` (one year).
 
 ## 2. Notices in the portal (the bell)
 
-The gateway never replaces the certificate. It reads `SPOOLSTEWARD_TLS_CERTFILE` and `config/tls/sync-status.json` every 6 hours and
-opens or closes notices for administrators. A notice closes by itself when its cause is gone.
+The gateway never replaces the certificate. Every 6 hours it reads `SPOOLSTEWARD_TLS_CERTFILE` and `config/tls/sync-status.json` and opens or closes
+notices for administrators; a notice closes by itself when its cause is gone.
 
-| Notice (title in the bell) | Condition | Switch |
+| Notice | Condition | Switch |
 |---|---|---|
 | **The TLS certificate has expired** | `notAfter` is in the past | always on |
-| **The certificate could not be updated** | the last run of `scripts/cert-sync.sh` wrote `"ok": false` in `sync-status.json` (its message is in the notice) | only appears if the script is used |
-| **The announced address is not in the TLS certificate** | none of the announced addresses/names (mDNS) is in the SAN; wildcards (`*.example.com`) cover one label | `SPOOLSTEWARD_CERT_NAME_CHECK=false` turns it off |
+| **The certificate could not be updated** | the last `scripts/cert-sync.sh` run wrote `"ok": false` in `sync-status.json` (the message is in the notice) | only if the script is used |
+| **The announced address is not in the TLS certificate** | none of the announced addresses/names is in the SAN; wildcards (`*.example.com`) cover one label | `SPOOLSTEWARD_CERT_NAME_CHECK=false` turns it off |
 | **The TLS certificate expires on DATE** | fewer than `SPOOLSTEWARD_CERT_EXPIRY_WARN_DAYS` days left | **off by default**: `SPOOLSTEWARD_CERT_EXPIRY_WARN_ENABLED=true` |
 
-The expiry notice adds a hint based on the last synchronisation: if it succeeded, the source has not renewed (check the renewing program);
-if it failed, it points to the other notice; if the script is not used, it asks to renew and put the files in `config/tls`.
+The expiry notice adds a hint from the last synchronisation: if it succeeded, the source has not renewed; if it failed, see the other notice; if the script
+is not used, renew and put the files in `config/tls`.
 
-**Why the expiry notice is off by default.** A Let's Encrypt certificate lasts 90 days and is renewed about 30 days before `notAfter`. With the
-threshold at 14 days the notice only appears when the renewal has been failing for more than two weeks. Above 30 days it would fire at every
-normal renewal cycle. Certificates of a company CA often last a year and are renewed by hand: there 30 days is reasonable.
-
-The settings are in `.env`; apply them with `docker compose up -d`.
+**Why the expiry notice is off by default.** Let's Encrypt certificates last 90 days and are renewed about 30 days before `notAfter`. With the threshold at
+14 days the notice appears only when the renewal has been failing for over two weeks; above 30 it would fire at every normal cycle. A company CA
+certificate often lasts a year and is renewed by hand: there 30 days is reasonable.
 
 ## 3. The CA file: what to do with it
 
-For a company CA, install the **CA certificate** (a `.crt` or `.pem` file; never the private key) once on every device. Devices then trust
-every certificate that CA issues, the gateway's included:
+For a company CA, install the **CA certificate** (a `.crt` or `.pem` file; never the private key) once on every device:
 
 | Device | What to do |
 |---|---|
-| Android | *Settings → Security → Encryption & credentials → Install a certificate → CA certificate*, pick the file. The browser accepts it; **some apps ignore CAs added by the user**: if an app refuses to connect, use a certificate from a public CA (for example Let's Encrypt). |
-| iPhone / iPad | Open the file (from Mail or Files), *Settings → Profile Downloaded → Install*. Then *Settings → General → About → Certificate Trust Settings* and switch the CA on: without this second step the certificate stays untrusted. |
-| Windows | Double-click the file → *Install Certificate* → *Local Machine* → *Place all certificates in the following store* → *Trusted Root Certification Authorities*. |
-| macOS | Open *Keychain Access*, drag the file into *System*, double-click the certificate → *Trust* → *Always Trust*. |
-| Linux (Debian, Ubuntu) | Copy the file to `/usr/local/share/ca-certificates/` with the extension `.crt`, then `sudo update-ca-certificates`. Firefox has its own store: *Settings → Privacy & Security → Certificates → View Certificates → Authorities → Import*. |
+| Android | *Settings → Security → Encryption & credentials → Install a certificate → CA certificate*. The browser accepts it; **some apps ignore user-added CAs**: then use a public CA (for example Let's Encrypt). |
+| iPhone / iPad | Open the file, *Settings → Profile Downloaded → Install*. Then *Settings → General → About → Certificate Trust Settings* and switch the CA on: without this the certificate stays untrusted. |
+| Windows | Double-click the file → *Install Certificate* → *Local Machine* → *Trusted Root Certification Authorities*. |
+| macOS | *Keychain Access*: drag the file into *System*, double-click it → *Trust* → *Always Trust*. |
+| Linux (Debian, Ubuntu) | Copy it to `/usr/local/share/ca-certificates/` as `.crt`, then `sudo update-ca-certificates`. Firefox has its own store: *Settings → Privacy & Security → Certificates → View Certificates → Authorities → Import*. |
 
-If you have no CA and use the self-signed certificate made by `scripts/docker-init.sh`, the file to install is `config/tls/fullchain.pem`, with the same steps.
-
-With a certificate from a public CA (Let's Encrypt) there is nothing to install on the devices: they already trust it.
+With the self-signed certificate of `scripts/docker-init.sh` the file to install is `config/tls/fullchain.pem`. A public CA (Let's Encrypt) needs nothing on the devices.
 
 ## 4. Copying the certificate by hand
 
-Put `fullchain.pem` (the certificate, with its chain) and `privkey.pem` (the key) in `config/tls/`, make the key readable only by you
-(`chmod 600 config/tls/privkey.pem`) and restart: `docker compose restart gateway`. The key must be readable by the `PUID` user of `.env`.
+Put `fullchain.pem` (certificate and chain) and `privkey.pem` in `config/tls/`, make the key readable only by the `PUID` user of `.env`
+(`chmod 600 config/tls/privkey.pem`) and run `docker compose restart gateway`.
 
-**You already have a valid certificate (for example one issued by Nginx Proxy Manager on another machine).** The simplest way is to let the
-gateway use that same certificate itself, with no proxy in between:
+**You already have a valid certificate (for example from Nginx Proxy Manager on another machine).** Let the gateway use it directly:
 
-1. Make a name that certificate covers (say `print.example.com`) resolve to the server inside your network (local DNS record or router entry).
-2. Copy the pair from the machine that holds it (NPM: `data/letsencrypt/live/npm-<n>/fullchain.pem` and `privkey.pem`; custom certificates:
-   `data/custom_ssl/npm-<n>/`) to `config/tls/fullchain.pem` and `config/tls/privkey.pem`, make the key readable by the `PUID` user
-   (`chmod 600`), and run `docker compose restart gateway`.
-3. Set `SPOOLSTEWARD_PORTAL_URL=https://print.example.com:8631` in `.env`, and use `ipps://print.example.com:8631/printers/<queue>`.
+1. Make a name that certificate covers (say `print.example.com`) resolve to the server inside your network.
+2. Copy the pair (NPM: `data/letsencrypt/live/npm-<n>/` or, for custom certificates, `data/custom_ssl/npm-<n>/`) to `config/tls/`, `chmod 600` the key, and run `docker compose restart gateway`.
+3. Set `SPOOLSTEWARD_PORTAL_URL=https://print.example.com:8631` in `.env` and use `ipps://print.example.com:8631/printers/<queue>`.
 
-Devices that find printers through mDNS are given the `<name>.local` name or the IP, which a certificate for `print.example.com` does not
-cover: use the real name by hand on those devices, or stop the `mdns` service if you do not need discovery.
-
-A Let's Encrypt certificate is renewed about every 60 days; for that case use the script of §5.
+Devices that find printers through mDNS get the `<name>.local` name or the IP, which that certificate does not cover: use the real name by hand there, or stop
+the `mdns` service if you do not need discovery. Let's Encrypt renews about every 60 days: for that case use §5.
 
 ### 4.1 Behind a reverse proxy
 
-Instead of giving the certificate to the gateway, a reverse proxy can keep it and forward to `https://<server>:8631` (not tested by the
-project). The proxy must forward to scheme `https`, allow large bodies and not buffer them (`client_max_body_size 250m;
-proxy_request_buffering off; proxy_read_timeout 600s;`). The gateway sees every client as the proxy's address (login lock-out per address,
-audit IPs) unless `FORWARDED_ALLOW_IPS=<proxy address>` is set in `.env`, so that it trusts `X-Forwarded-For`. Printer addresses given back
-to clients carry the `Host` the proxy forwards, without `:443`, so devices must keep the address they were set up with.
+A reverse proxy can keep the certificate and forward to `https://<server>:8631` (not tested by the project). It must forward to scheme `https`, allow
+large bodies and not buffer them (`client_max_body_size 250m; proxy_request_buffering off; proxy_read_timeout 600s;`). The gateway sees every client as the
+proxy's address (login lock-out, audit IPs) unless `FORWARDED_ALLOW_IPS=<proxy address>` is set in `.env`. Printer addresses given back to clients carry the
+`Host` the proxy forwards, without `:443`, so devices must keep the address they were set up with.
 
 ## 5. Keeping the certificate up to date by itself: `scripts/cert-sync.sh`
 
@@ -105,64 +90,52 @@ to clients carry the `Host` the proxy forwards, without `:443`, so devices must 
 
 Run it once by hand, then from `cron`. Each run:
 
-1. downloads the two files from the machine that renews the certificates (with `rsync` over `ssh`) into a private temporary folder;
-2. checks them: the certificate is not expired and the private key is really its own;
-3. if they are the same as the ones in use, it **stops** (nothing to do, no restart);
-4. otherwise it puts the old pair aside in `config/tls/previous/`, installs the new one and restarts the gateway;
-5. writes how it went to `config/tls/sync-status.json`: if it went badly, the portal shows the notice "the last certificate update failed".
+1. downloads the two files from the machine that renews the certificates (`rsync` over `ssh`) into a private temporary folder;
+2. checks them: the certificate is not expired and the key is really its own;
+3. if they equal the ones in use, **stops** (no restart);
+4. otherwise puts the old pair in `config/tls/previous/`, installs the new one and restarts the gateway;
+5. writes the outcome to `config/tls/sync-status.json`; if it went badly the portal shows a notice.
 
-If something is wrong in the checks, **the files in use are not touched**: a wrong certificate cannot break a server that works.
+If a check fails, **the files in use are not touched**.
 
 ### 5.2 The settings (in `.env`)
 
-| Setting | What | Default |
-|---|---|---|
-| `CERT_SYNC_HOST` | The machine that has the certificate (name or address) | required |
-| `CERT_SYNC_USER` | The user to connect as (the read-only one of §5.3) | required |
-| `CERT_SYNC_KEY` | **Full** path of the ssh private key of this machine | required |
-| `CERT_SYNC_REMOTE_DIR` | **Full** path, on the remote machine, of the folder that holds the two files | required |
-| `CERT_SYNC_PORT` | ssh port | `22` |
-| `CERT_SYNC_CERT_FILE` | Name of the certificate file (with the chain) | `fullchain.pem` |
-| `CERT_SYNC_KEY_FILE` | Name of the key file | `privkey.pem` |
-
-The path and the names change with the program that renews the certificates, which is why they can be chosen:
+`CERT_SYNC_HOST`, `CERT_SYNC_USER`, `CERT_SYNC_KEY` (full path of the ssh private key of this machine) and `CERT_SYNC_REMOTE_DIR` (full path of the folder with
+the two files) are required; `CERT_SYNC_PORT` (`22`), `CERT_SYNC_CERT_FILE` (`fullchain.pem`) and `CERT_SYNC_KEY_FILE` (`privkey.pem`) are optional
+([configuration.md](configuration.md#certificate-synchronisation-cert_sync_)). The folder depends on the program that renews:
 
 | Program | `CERT_SYNC_REMOTE_DIR` (example) | Files |
 |---|---|---|
-| Nginx Proxy Manager, Let's Encrypt certificate | `/home/you/npm/data/letsencrypt/live/npm-3` | `fullchain.pem`, `privkey.pem` |
+| Nginx Proxy Manager, Let's Encrypt | `/home/you/npm/data/letsencrypt/live/npm-3` | `fullchain.pem`, `privkey.pem` |
 | Nginx Proxy Manager, custom certificate | `/home/you/npm/data/custom_ssl/npm-3` | `fullchain.pem`, `privkey.pem` |
 | certbot | `/etc/letsencrypt/live/yourdomain.com` | `fullchain.pem`, `privkey.pem` |
-| Other (Caddy, Traefik, acme.sh, a company CA) | the folder where the program saves the files | the names it uses, for example `cert.pem` and `key.pem` |
+| Other (Caddy, Traefik, acme.sh, company CA) | where the program saves them | the names it uses |
 
-The number in `npm-3` is different on every installation: look at which folder is inside `live/` on the NPM machine. To find where NPM keeps its data:
-`docker inspect CONTAINER-NAME --format '{{ range .Mounts }}{{ .Source }} -> {{ .Destination }}{{ println }}{{ end }}'` (look for the one ending in `/etc/letsencrypt`).
+The number in `npm-3` differs on every installation: look inside `live/` on the NPM machine. To find NPM's data folder:
+`docker inspect CONTAINER-NAME --format '{{ range .Mounts }}{{ .Source }} -> {{ .Destination }}{{ println }}{{ end }}'` (the one ending in `/etc/letsencrypt`).
 
 ### 5.3 Step by step: a user that can only read
 
 The private key is a secret, so the script does not use an administrator's account: a stolen ssh key would give full access to the source machine.
-Create a separate user that can only read the certificates.
+Create a separate user that can only read the certificates. In the example the NPM machine is `npm.lan`, the SpoolSteward one `print.lan` (`192.168.1.50`), the user `certsync`.
 
-In the example the NPM machine is called `npm.lan`, the SpoolSteward one `print.lan` (IP `192.168.1.50`), the user is called `certsync`.
-
-**Step 1 — on `npm.lan`: create the user** (no password: it is entered only with the key).
+**1 — on `npm.lan`: create the user** (no password).
 
 ```sh
 sudo adduser --disabled-password --gecos "" certsync
-sudo apt install rsync acl          # if missing: rsync does the copying, acl is for the permissions of step 4
+sudo apt install rsync acl          # if missing
 ```
 
-**Step 2 — on `print.lan`: create the ssh key** (as your own user, the one that will run cron).
-`rsync` and `ssh` are needed on this machine too (`sudo apt install rsync openssh-client` if missing).
+**2 — on `print.lan`: create the ssh key** (as the user that will run cron; `rsync` and `ssh` are needed here too).
 
 ```sh
 ssh-keygen -t ed25519 -N "" -C "spoolsteward cert-sync" -f ~/.ssh/spoolsteward_certsync
-cat ~/.ssh/spoolsteward_certsync.pub          # one line starting with ssh-ed25519: we use it in step 3
+cat ~/.ssh/spoolsteward_certsync.pub          # one line starting with ssh-ed25519
 ```
 
-The private key (`spoolsteward_certsync`, without `.pub`) must not leave this machine. Its full path (for example `/home/you/.ssh/spoolsteward_certsync`)
-goes into `CERT_SYNC_KEY`.
+The private key must not leave this machine; its full path goes into `CERT_SYNC_KEY`.
 
-**Step 3 — on `npm.lan`: authorise the key, with limits.** Replace `192.168.1.50` with the IP of `print.lan` and the `ssh-ed25519 AAAA…` part with the line printed in step 2.
+**3 — on `npm.lan`: authorise the key, with limits.** Use the IP of `print.lan` and the line printed in step 2.
 
 ```sh
 sudo -u certsync mkdir -p -m 700 /home/certsync/.ssh
@@ -170,31 +143,25 @@ echo 'restrict,from="192.168.1.50" ssh-ed25519 AAAA… spoolsteward cert-sync' |
 sudo chmod 600 /home/certsync/.ssh/authorized_keys
 ```
 
-The two words in front of the key are the limits: `from="192.168.1.50"` makes the key work **only** from `print.lan`; `restrict` removes everything else
-(no port forwarding, no interactive terminal, no ssh agent).
+`from=` makes the key work **only** from `print.lan`; `restrict` removes everything else (port forwarding, terminal, ssh agent).
 
-**Step 4 — on `npm.lan`: give the user permission to read the certificates, and nothing else.** With POSIX ACLs, grant read access on one folder only.
-Example for NPM, with the data in `/home/you/npm/data`:
+**4 — on `npm.lan`: read access on the certificates, nothing else** (POSIX ACLs; example for NPM with data in `/home/you/npm/data`):
 
 ```sh
-# the user must be able to "walk through" the folders above (x) and read (r) the ones with the certificates
-sudo setfacl -m u:certsync:x /home/you /home/you/npm /home/you/npm/data
+sudo setfacl -m u:certsync:x /home/you /home/you/npm /home/you/npm/data          # walk through the folders above
 sudo setfacl -R -m u:certsync:rX /home/you/npm/data/letsencrypt
-sudo setfacl -R -d -m u:certsync:rX /home/you/npm/data/letsencrypt    # also valid for the files created at the next renewals
+sudo setfacl -R -d -m u:certsync:rX /home/you/npm/data/letsencrypt              # also for files created at the next renewals
 ```
 
-For certbot: `sudo setfacl -R -m u:certsync:rX /etc/letsencrypt` (and the same line with `-d`).
-
-If your disk does not support ACLs (`setfacl` answers "Operation not supported"), the alternative is to create a group that can read the folder and add `certsync` to that group.
-
-Check that it works and that it is really read-only:
+For certbot: `sudo setfacl -R -m u:certsync:rX /etc/letsencrypt` (and the same with `-d`). If the disk does not support ACLs, use a group that can read the folder and add `certsync` to it.
+Check:
 
 ```sh
-sudo -u certsync head -1 /home/you/npm/data/letsencrypt/live/npm-3/fullchain.pem     # must print -----BEGIN CERTIFICATE-----
-sudo -u certsync touch /home/you/npm/data/letsencrypt/live/npm-3/test                 # must answer: Permission denied
+sudo -u certsync head -1 /home/you/npm/data/letsencrypt/live/npm-3/fullchain.pem     # -----BEGIN CERTIFICATE-----
+sudo -u certsync touch /home/you/npm/data/letsencrypt/live/npm-3/test                 # Permission denied
 ```
 
-**Step 5 — on `print.lan`: write the settings in `.env`.**
+**5 — on `print.lan`: settings in `.env`.**
 
 ```sh
 CERT_SYNC_HOST=npm.lan
@@ -203,52 +170,39 @@ CERT_SYNC_KEY=/home/you/.ssh/spoolsteward_certsync
 CERT_SYNC_REMOTE_DIR=/home/you/npm/data/letsencrypt/live/npm-3
 ```
 
-**Step 6 — on `print.lan`: try it.** First without changing anything:
+**6 — on `print.lan`: try it,** first without changing anything: `scripts/cert-sync.sh --dry-run`. The first time ssh remembers the fingerprint of `npm.lan` (in
+`config/ssh/known_hosts`); if it ever changes the script refuses to connect. It says "a new certificate is available" or "already up to date". Then the real run:
+`scripts/cert-sync.sh`.
 
-```sh
-scripts/cert-sync.sh --dry-run
-```
-
-The first time, ssh remembers the fingerprint of `npm.lan` (in the file `config/ssh/known_hosts`) and checks it on every later run: if one day that fingerprint changes, the script
-refuses to connect (it is the sign that someone is pretending to be `npm.lan`). If all is well it says "a new certificate is available" or "already up to date".
-Then the real test: `scripts/cert-sync.sh`. Open the portal: no notice about the certificate, and if the certificate had changed the gateway has restarted.
-
-**Step 7 — on `print.lan`: put it in cron.** As your own user (it must be able to use `docker`):
-
-```sh
-crontab -e
-```
-
-and add a line (change the path of the SpoolSteward folder):
+**7 — on `print.lan`: cron.** `crontab -e` as your own user (it must be able to use `docker`), then add (change the path):
 
 ```
 17 4 * * *  cd /home/you/spoolsteward && scripts/cert-sync.sh >> data/cert-sync.log 2>&1
 ```
 
-This runs daily at 4:17 and appends the output to `data/cert-sync.log`. Once a day is enough: if the certificate is unchanged nothing is installed and nothing restarts.
+Once a day is enough: with an unchanged certificate nothing is installed and nothing restarts.
 
 ### 5.4 If something goes wrong
 
-The message appears in the portal (bell) and in `data/cert-sync.log`. To see it right away: `scripts/cert-sync.sh --dry-run`.
+The message appears in the bell and in `data/cert-sync.log`; to see it now run `scripts/cert-sync.sh --dry-run`.
 
 | Message | What it means and what to do |
 |---|---|
-| `set CERT_SYNC_HOST, CERT_SYNC_USER, CERT_SYNC_KEY and CERT_SYNC_REMOTE_DIR in .env` | One of the four required settings is missing. |
-| `the ssh key … does not exist or can not be read by this user` | The path in `CERT_SYNC_KEY` is wrong or the file belongs to another user. It must be the full path. |
-| `could not download … Permission denied (publickey)` | The public key is not in the remote user's `authorized_keys`, or `from=` does not match this machine's IP. Redo step 3. |
-| `could not download … REMOTE HOST IDENTIFICATION HAS CHANGED` | The fingerprint of the remote machine changed (reinstalled, or someone is pretending to be it). If you know why, delete its line from `config/ssh/known_hosts`. |
+| `set CERT_SYNC_HOST, CERT_SYNC_USER, CERT_SYNC_KEY and CERT_SYNC_REMOTE_DIR in .env` | A required setting is missing. |
+| `the ssh key … does not exist or can not be read by this user` | `CERT_SYNC_KEY` is wrong (it must be the full path) or the file belongs to another user. |
+| `could not download … Permission denied (publickey)` | The public key is not in the remote `authorized_keys`, or `from=` does not match this machine's IP. Redo step 3. |
+| `could not download … REMOTE HOST IDENTIFICATION HAS CHANGED` | The remote fingerprint changed (reinstalled, or someone is pretending to be it). If you know why, delete its line from `config/ssh/known_hosts`. |
 | `could not download … No such file or directory` | `CERT_SYNC_REMOTE_DIR` or the file names are wrong (the `npm-3` number, for example). |
-| `could not download … Permission denied` (without `publickey`) | The remote user is not allowed to read: redo step 4. |
-| `the certificate on … is already expired: it was not installed` | The source still has an expired certificate: the problem is there, find out why it does not renew. |
-| `the private key … does not belong to the certificate …: nothing was installed` | The key file and the certificate file are not the same pair (wrong names, or a renewal half done). The files in use were not touched. |
-| `the new certificate is installed but the gateway did not restart` | The new certificate is in place, but `docker compose restart gateway` failed: run it by hand and look at `docker compose logs gateway`. If cron cannot use docker, add its user to the `docker` group. |
+| `could not download … Permission denied` (without `publickey`) | The remote user can not read: redo step 4. |
+| `the certificate on … is already expired: it was not installed` | The source still has an expired certificate: find out why it does not renew. |
+| `the private key … does not belong to the certificate …: nothing was installed` | The key and certificate files are not the same pair. The files in use were not touched. |
+| `the new certificate is installed but the gateway did not restart` | Run `docker compose restart gateway` by hand and read `docker compose logs gateway`. If cron can not use docker, add its user to the `docker` group. |
 
 To go back to the previous pair: copy the two files of `config/tls/previous/` to `config/tls/` and run `docker compose restart gateway`.
 
 ### 5.5 What the script does not do
 
-- It does not **renew** the certificate: it copies it from whoever renews it. If the renewal fails at the source, the old one keeps arriving here; to notice, turn on the "about to expire" notice (§2).
-- It does not change the names in the certificate: if the address the gateway announces is missing, the notice says so, but the certificate must be reissued at the source.
+- It does not **renew** the certificate: it copies it from whoever renews it. To notice a failed renewal, turn on the "about to expire" notice (§2).
+- It does not change the names in the certificate: if the announced address is missing, the certificate must be reissued at the source.
 - It does not touch the devices' CA (§3).
-- It does not use `rrsync` to restrict the key further: `rrsync` refuses to follow symbolic links, and both Nginx Proxy Manager and certbot keep links in `live/` that point into `archive/`.
-  The limits here are those of step 3 (`restrict`, `from=`) and of step 4 (read-only, on the certificates only).
+- It does not use `rrsync`: `rrsync` refuses symbolic links, and both Nginx Proxy Manager and certbot keep links in `live/`. The limits are those of steps 3 and 4.

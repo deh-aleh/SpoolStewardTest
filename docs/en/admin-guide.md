@@ -9,80 +9,61 @@ For people who run the installation. The portal is at `https://<server>:8631/` (
 | **Audit** | `/admin/jobs` | Who printed or scanned what; filters, CSV, usage report (`/admin/report`), cancel queued jobs → [audit.md](audit.md) |
 | **Users** | `/admin/users` | Create local or RADIUS users, edit, reset password, revoke keys, delete |
 | **Groups** | `/admin/groups` | Create, rename, limits, "requestable", delete |
-| **Requests** | `/admin/requests` | Approve, edit or reject quota, group and permission requests (badge = pending); active grants, give or revoke extra quota or a permission directly, history → [quotas.md](quotas.md) |
+| **Requests** | `/admin/requests` | Approve, edit or reject quota, group and permission requests (badge = pending); active grants, direct grants, history → [quotas.md](quotas.md) |
 | **Actions** | `/admin/actions` | Who did what in the portal |
-| **Printers** | `/admin/printers` | State, ink, counters; block, hide, rename, move up/down (your own order), test printers, maintenance print, test print → [printers.md](printers.md) |
+| **Printers** | `/admin/printers` | State, ink, counters; block, hide, rename, order, test printers, maintenance print, test print → [printers.md](printers.md) |
 | **Backup** | `/admin/backups` | Your scheduled backups → [backup.md](backup.md) |
 | **Archive** | `/admin/archive` | Compressed old audit, readable and downloadable |
 | **Print / Scan / Profile** | `/me…` | The same pages users have → [user-guide.md](user-guide.md) |
-| **Logo, name and (user)** | `/me/settings` | The block at the top left opens the settings: theme, language, refresh |
-| **Bell** (administrators only) | `/admin/notices` | Things the gateway noticed (badge = open ones), see "Notices" below |
-| **?** (everybody) | `/docs` | This documentation, in English or Italian (switch at the top of each page). Users who are not administrators see only the user guide and the Windows guide |
+| **Logo, name and (user)** | `/me/settings` | Theme, language, refresh |
+| **Bell** (administrators) | `/admin/notices` | Things the gateway noticed (badge = open ones), see §8 |
+| **?** (everybody) | `/docs` | This documentation, in English or Italian. Users who are not administrators see only the user guide and the Windows guide |
 | **Maintenance** (red traffic cone) | — | Stops print and scan for everyone but administrators |
 | **Door with arrow** | — | Log out |
 
 ## 1. First steps
 
 1. Set the `administrator` password with the one-time code ([installation.md](installation.md#36-first-administrator)).
-2. Create your **own** administrator account (Users → create → administrator) and use it day to day. `administrator` is the emergency account: it belongs to no group and nothing limits it (no quota, no permission rule), so keep it for recovery.
-3. Edit the **default** group limits (Groups) and create groups for the people who need different limits.
+2. Create your **own** administrator account (Users → create → administrator) and use it day to day. `administrator` is the emergency account: no group, no quota, no permission rule; keep it for recovery.
+3. Edit the **default** group limits (Groups) and create groups for people who need different ones.
 4. Create users, or let RADIUS users log in. Tell people to create a print key ([user-guide.md](user-guide.md)).
 5. Set up a backup ([backup.md](backup.md)).
 
 ## 2. Users
 
-The list is read-only: a user's own limit or the inherited one (italics), active grants as a coloured `+N`, consumption and active keys.
-**Edit** opens the page with every field, which shows the **source** of the account (local or RADIUS, for information only), and **Delete** (type the name to confirm).
+The list is read-only: a user's own limit or the inherited one (italics), active grants as a coloured `+N`, consumption and active keys. **Edit** opens the page with every field and the account's **source** (local or RADIUS, informational); **Delete** asks you to type the name.
 
 ![The Users page: the administrator and a local user who must change the password, with group, limits, weekly usage and keys](../images/en/admin-users.png)
 
-- Create **local**: a temporary password is shown once; the user changes it at first login.
-- Create **RADIUS**: choose the group; the person signs in with their office password.
-- **Reset password** (local): new temporary password, shown once.
-- **Keys**: the list per user is at `/admin/users/<id>/keys`. For each key you can **switch it off** (its expiry keeps running; switch it on again later), **extend it** (the new expiry counts from today, the time left is not added) or **revoke it**; "Revoke all" stops every device of the user. The user gets a notice for each action (not for their own). Revoked and expired keys disappear after `SPOOLSTEWARD_KEY_HISTORY_DAYS` days (14).
+- **Local**: a temporary password is shown once; the user changes it at first login. **Reset password** gives a new one. **RADIUS**: choose the group; the person signs in with their office password.
+- **Keys** (`/admin/users/<id>/keys`): **switch off** (the expiry keeps running), **extend** (counted from today) or **revoke** each key; "Revoke all" stops every device of the user. The user gets a notice for each action (not for their own). Revoked and expired keys disappear after `SPOOLSTEWARD_KEY_HISTORY_DAYS`.
 - **Admin flag**: promotion moves the user to the `administrator` group, demotion to `default`.
-- Protected: you can not disable, demote or delete yourself, the emergency account or the last administrator.
-
-Deleting keeps the history ([accounts.md](accounts.md#7-deleting-a-user)).
+- You can not disable, demote or delete yourself, the emergency account or the last administrator. Deleting keeps the history ([accounts.md](accounts.md#7-deleting-a-user)).
 
 ## 3. Groups and limits
 
-A group has limits (jobs / pages, weekly / monthly) and a **requestable** flag. System groups `default` and `administrator` can not be
-deleted; deleting another group moves its users to `default`. Personal limits are set in the user's edit page. Details in [quotas.md](quotas.md).
+A group has limits (jobs / pages, weekly / monthly) and a **requestable** flag. The system groups `default` and `administrator` can not be deleted; deleting another group moves its users to `default`. Personal limits are in the user's edit page. Details: [quotas.md](quotas.md).
 
 ![The Groups page: the two system groups without limits and a group with 10 jobs and 20 pages a week that users may ask to join](../images/en/admin-groups.png)
 
-**Advanced permissions.** At the bottom of the group page and of the user page, the **Advanced permissions** button opens colour, one-sided
-prints, which printers, and which days and hours. A user's field is "as the group" or has its own value. The emergency administrator has no group and no
-limits at all; its page shows the block switched off. `SPOOLSTEWARD_PERMISSION_MODE` decides whether a client that explicitly asks for colour or
-a one-sided print that is not allowed is corrected (`adjust`, default) or refused (`refuse`). Read the notes in
-[quotas.md](quotas.md#5-advanced-permissions) before choosing: with `refuse` many Windows and Android jobs are refused. A user is told in
-their bell when you change their own permissions, and when a job of theirs is refused or corrected.
+**Advanced permissions** (colour, one-sided, printers, days and hours) are at the bottom of the group and user pages. `SPOOLSTEWARD_PERMISSION_MODE` decides whether a client that explicitly asks for something not allowed is corrected (`adjust`, default) or refused (`refuse`): read
+[quotas.md](quotas.md#5-advanced-permissions) first. A user is told in their bell when you change their own permissions and when a job of theirs is refused or corrected.
 
 ## 4. Requests and grants
 
-Everything is on one page, *Requests*, in three parts:
+One page, *Requests*, in three parts:
 
-- **Pending requests**: edit the amount or the kind before approving, add one note (the user sees it, whether you approve or reject). A permission request (colour, one-sided, a printer, outside the hours) is approved *permanent* or *until the end of* a date you choose. If two administrators approve at once, or someone double-clicks, it is granted once.
-- **Active grants**: the extra quota and the permissions that count now; revoke them, or give one directly with a note (choose *quota* or *a permission* in the form).
-- **History** (closed until you open it): the latest decisions and the grants that no longer count (ended or revoked).
-  *Delete ended grants* removes those from the list; active grants are not touched, and the administrators' log (*Actions*) keeps
-  who granted what and who deleted them. It removes the ended permission grants too.
-  More in [quotas.md](quotas.md#asking-for-a-permission).
+- **Pending requests**: edit the amount or the kind before approving, add one note (the user sees it). A permission request is approved *permanent* or *until the end of* a date. Two simultaneous approvals grant once.
+- **Active grants**: extra quota and permissions that count now; revoke them, or give one directly with a note (choose *quota* or *a permission*).
+- **History** (closed until opened): latest decisions and grants that no longer count. *Delete ended grants* removes those (both kinds); the administrators' log keeps who granted what.
 
-Everything is logged.
+More in [quotas.md](quotas.md#asking-for-a-permission). Everything is logged.
 
-## 5. Printers
+## 5. Printers, audit and archive
 
-Block a printer (nobody prints, administrators included), hide it from mDNS, create test printers, set up the periodic maintenance
-print, send a test print with statistics, switch on **gateway maintenance** (red traffic-cone button). See [printers.md](printers.md).
+Block or hide a printer, create test printers, set up the maintenance print, send a test print, switch on **gateway maintenance**: [printers.md](printers.md). For the audit, filters, CSV, cancelling queued jobs and reading archived files: [audit.md](audit.md). Nothing can be deleted there.
 
-## 6. Audit and archive
-
-Use filters and the CSV export; cancel queued jobs; read archived files; verify their integrity. Nothing can be deleted
-([audit.md](audit.md)).
-
-## 7. Command line (`spoolsteward-admin`)
+## 6. Command line (`spoolsteward-admin`)
 
 Inside the container: `docker compose exec gateway spoolsteward-admin <command>` (add `-it` when it asks for a password).
 
@@ -100,52 +81,33 @@ Inside the container: `docker compose exec gateway spoolsteward-admin <command>`
 | `backup-verify <file>` | check a backup file |
 | `backup-restore <file>` | restore database and audit files (stop the gateway first) |
 
+## 7. Operations
+
+- Health: `GET /healthz` → 200 or 503, body `{"status":"ok"}`, no login. `SPOOLSTEWARD_HEALTHZ_INFO=version,printers` adds more. Logs: `docker compose logs gateway`.
+- Migrations run automatically at start. Back up before updating an important database.
+- File names in the audit: the green/red button at the top right of *Audit* stops saving them; `.env` can erase them after some days or encrypt them ([data-protection.md](data-protection.md)).
+- Updates: a note appears at the top when a newer release exists. Update with `scripts/update.sh`, or with the *Update* button in *Backup* when the optional updater container runs and a scheduled backup works ([installation.md](installation.md#5-updates)). The updater controls Docker, which is full control of the server: keep it off if you do not need it.
+- Do not leave test accounts or test printers on a real installation. Protect `config/`, `.env`, `data/` and the volume: they hold secrets and personal data.
+
 ## 8. Notices (the bell)
 
-The bell in the top bar (administrators only) lists what the gateway noticed and nobody asked about. Each notice shows the
-last time, the source, and how many times it happened; *Dismiss* closes it (the dismissal is recorded in *Actions*).
-The kinds of notice:
+The bell lists what the gateway noticed and nobody asked about, with the last time, the source and how many times it happened; *Dismiss* closes it (recorded in *Actions*).
 
-| Notice (as shown in the bell) | Meaning | Closes by itself when |
+| Notice | Meaning | Closes by itself when |
 |---|---|---|
 | A scan request without a user name and password from IP was refused | `SPOOLSTEWARD_ESCL_ANONYMOUS` is off and a client sent no credentials ([scanning.md](scanning.md)) | never (dismiss it) |
-| **Backup not done: the destination folder can not be reached** | The marker file of the destination is missing (disk not mounted); nothing was written ([backup.md](backup.md)) | the next backup works |
-| **Backup failed** | Any other error, with the reason; both notices carry the real name of the backup | the next backup works |
-| **The TLS certificate has expired** | Clients no longer trust the gateway ([certificates.md](certificates.md)) | a valid certificate is in place and the gateway restarted |
-| **The certificate could not be updated** | The last run of `scripts/cert-sync.sh` failed | the next run works |
-| **The announced address is not in the TLS certificate** | Clients that discover the printers through mDNS get a certificate error | the SAN lists the address |
-| **The TLS certificate expires on DATE** | Only if `SPOOLSTEWARD_CERT_EXPIRY_WARN_ENABLED=true` | the certificate is renewed |
-| **Paper jam** / **Out of paper** | A physical printer reports it (checked once a minute, reported after two consecutive checks) | the printer stops reporting it |
-| **Ink or toner is out** / **running low** | Out: level 0, or the printer's state reason says so. Low: the printer's own low mark. Both name the supplies | the printer stops reporting it |
-| **Save the secret key in a safe place** | Once, after the first start: copy `SPOOLSTEWARD_SECRET_KEY` from `.env`. Goes to the first-run administrator (`SPOOLSTEWARD_BOOTSTRAP_ADMIN_USERNAME`) in their own bell, or to all administrators if that account does not exist or `SPOOLSTEWARD_BOOTSTRAP_ADMIN=false`. Not repeated at a restart; repeated once if the key changes | never (dismiss it) |
-| **The secret key has changed** | `SPOOLSTEWARD_SECRET_KEY` differs from the previous start; says how many encrypted file names can no longer be read | never (dismiss it) |
+| **Backup not done: the destination folder can not be reached** | The marker file is missing (disk not mounted); nothing was written ([backup.md](backup.md)) | the next backup works |
+| **Backup failed** | Any other error, with the reason; both carry the backup's real name | the next backup works |
+| **The TLS certificate has expired**, **could not be updated**, **the announced address is not in the certificate**, **expires on DATE** | [certificates.md](certificates.md) | the cause is gone |
+| **Paper jam** / **Out of paper** | A physical printer reports it (checked each minute, reported after two checks) | the printer stops reporting it |
+| **Ink or toner is out** / **running low** | Out: level 0 or the printer says so. Low: the printer's own mark. Both name the supplies | the printer stops reporting it |
+| **Save the secret key in a safe place** | Once, to the first-run administrator (or to all administrators if that account does not exist); repeated once if the key changes ([backup.md](backup.md#save-the-secret-key)) | never (dismiss it) |
+| **The secret key has changed** | The key differs from the previous start; says how many encrypted file names can no longer be read | never (dismiss it) |
 | **No secret key is set** | `SPOOLSTEWARD_SECRET_KEY` is `none` or missing: sessions end at every restart and the printers are not announced (mDNS) | a key is set |
 
-**Printer problems and users.** The notices above about printers are always for administrators. With `SPOOLSTEWARD_PRINTER_ALERTS_USERS=true` (default) the people who have a
-print waiting on that printer get a notice in their own bell too (jam, paper and ink out; not "running low"), once per problem and only them, not everybody.
-It closes by itself when the printer is fine again. With `false` only the administrators are told.
+**Printer problems and users.** Printer notices are always for administrators. With `SPOOLSTEWARD_PRINTER_ALERTS_USERS=true` (default) the people with a print waiting on that printer also get one (jam, paper and ink out; not "running low"), and only them. It closes when the printer is fine again.
 
-**One bell.** An administrator has a single bell: `/admin/notices` shows first the notices about their own account ("For you": their keys, group, quota,
-requests) and then the gateway's ones, and the red number adds both. `/me/notices` sends administrators there.
+**One bell.** An administrator has a single bell: `/admin/notices` shows first the notices about their own account ("For you": keys, group, quota, requests) and then the gateway's; the red number adds both. `/me/notices` sends administrators there.
 
-To keep one client that retries 100 times from filling the list, the same notice from the same source is written again only
-after an interval; the repeats in between are counted. The interval depends on `SPOOLSTEWARD_LOG_LEVEL`, and the same text is
-written to the container log with the same limit:
-
-| `SPOOLSTEWARD_LOG_LEVEL` | Same notice, same source, reported again after |
-|---|---|
-| `DEBUG` | 1 minute |
-| `INFO` (default) | 1 day |
-| `WARNING` | 3 days |
-| `ERROR` | 7 days |
-
-`SPOOLSTEWARD_NOTICE_INTERVAL` (seconds) replaces the table. At most 200 open notices of a kind are kept; dismissed ones are removed after 90 days.
-
-## 9. Operations
-
-- Health: `GET /healthz` → 200 or 503, body `{"status":"ok"}`. It needs no login. `SPOOLSTEWARD_HEALTHZ_INFO=version,printers` adds the version and the number of queues (usb / network / virtual / total); the default is the status only. Logs: `docker compose logs gateway`.
-- Migrations run automatically at start. Back up before updating an important database.
-- File names in the audit: the green/red button at the top right of the *Audit* page stops saving them, `.env` can erase them after some days or encrypt them ([data-protection.md](data-protection.md)).
-- Updates: a note appears at the top of the portal when a newer release exists. Update with `scripts/update.sh`, or with the *Update* button in the menu *Backup* when the optional updater container runs and a scheduled backup works ([installation.md](installation.md#5-updates)). The updater controls Docker, which is full control of the server: keep it off if you do not need it.
-- Do not leave test accounts or test printers on a real installation.
-- Protect `config/`, `.env`, `data/` and the volume: they hold secrets and personal data.
+So that one client retrying 100 times does not fill the list, the same notice from the same source is written again only after an interval, and the repeats are counted; the same text goes to the container log with the same limit. The interval depends on `SPOOLSTEWARD_LOG_LEVEL`
+(`DEBUG` 1 minute, `INFO` 1 day, `WARNING` 3 days, `ERROR` 7 days) or is set by `SPOOLSTEWARD_NOTICE_INTERVAL`. At most 200 open notices of a kind are kept; dismissed ones are removed after 90 days.
