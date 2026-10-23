@@ -1,6 +1,6 @@
 # Contributing
 
-How to run SpoolSteward from the source code, run the tests and publish a release. Installing it for use is described in
+How to run SpoolSteward from the source code, run the tests and send a change. Installing it for use is described in
 [docs/en/installation.md](docs/en/installation.md): that path uses the release package and the published images, not a clone.
 
 ## 1. Run it from the source code
@@ -105,17 +105,6 @@ The `ContextVar` follows the request into the threads of synchronous handlers an
 works everywhere in a request. Outside a request (schedulers) the default applies. `_()` returns trusted Markup in templates;
 `_t()` returns plain text. `user.language` (migration 0007) is written at login and re-aligned if it changes from another device.
 
-
 ## 5. Releases
 
-1. Set `version` in `pyproject.toml`: `1.2.0` for a final release, `1.2.0b1` for a beta.
-2. Push the matching tag: `v1.2.0`, or `v1.2.0-beta.1` for a beta.
-3. `.github/workflows/release.yml` runs the tests, builds the two images for amd64 and arm64
-   (`ghcr.io/<owner>/spoolsteward` and `spoolsteward-updater`), and publishes the GitHub release with the package
-   `spoolsteward-<version>.tar.gz` and `SHA256SUMS`. A beta becomes a GitHub pre-release.
-4. If the release breaks something for those who update (a setting renamed, a manual step, data that cannot go back), give its release
-   notes a `## Breaking changes` heading that says what to do. The portal and `scripts/update.sh` then show a stronger warning and ask for
-   an explicit confirmation. A change of the first number of the version, or of the second while the first is `0`, counts as breaking
-   anyway.
-
-The *Run workflow* button of the release workflow builds everything for both architectures and publishes nothing.
+Releases are made by the maintainer. Do not change `version` in `pyproject.toml` in a pull request.
